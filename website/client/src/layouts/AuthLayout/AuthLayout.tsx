@@ -18,7 +18,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
             <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-white" />
           </div>
           
-          <p className="intro-text">للتعريف بالإسلام</p>
         </div>
       </div>
 

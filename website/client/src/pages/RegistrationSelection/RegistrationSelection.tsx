@@ -17,7 +17,6 @@ const RegistrationSelection = () => {
       <div className="form-container">
         <div className="top-logo">
            <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
-           <p className="top-logo-text">للتعريف بالإسلام</p>
         </div>
 
         <div className="header-text">

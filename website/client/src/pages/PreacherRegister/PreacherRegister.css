@@ -1,0 +1,107 @@
+.preacher-register-container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.preacher-form-container {
+  padding: 1rem 0;
+  width: 100%;
+}
+
+.preacher-header {
+  margin-bottom: 1.5rem;
+}
+
+.preacher-header h2 {
+  font-size: 1.5rem;
+}
+
+.preacher-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+/* Input wrapper */
+.preg-input-icon {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.preg-input-icon input,
+.preg-input-icon select {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 1px solid var(--border-gray);
+  border-radius: 8px;
+  background-color: #fff;
+  color: var(--text-dark);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+  appearance: none;
+  text-align: right;
+  direction: rtl;
+}
+
+.preg-input-icon input:focus,
+.preg-input-icon select:focus {
+  border-color: var(--primary-gold);
+  box-shadow: 0 0 0 2px rgba(219, 168, 65, 0.2);
+}
+
+.preg-icon {
+  position: absolute;
+  left: 1rem;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* File Upload */
+.preg-file-wrap {
+  overflow: hidden;
+}
+
+.preg-file-input {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.preg-file-label {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 1px solid var(--border-gray);
+  border-radius: 8px;
+  background: #fff;
+  color: #9CA3AF;
+  font-family: inherit;
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+/* Grid */
+.preg-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.full-width  { width: 100%; }
+.half-width  { width: calc(50% - 0.5rem); }
+
+@media (max-width: 560px) {
+  .half-width { width: 100%; }
+}

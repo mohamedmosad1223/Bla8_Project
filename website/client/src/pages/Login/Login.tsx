@@ -29,7 +29,10 @@ const Login: React.FC = () => {
             <p>من فضلك قم بملأ البيانات التالية</p>
           </div>
 
-          <form className="login-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="login-form" onSubmit={(e) => {
+            e.preventDefault();
+            navigate('/dashboard');
+          }}>
             <Input 
               type="email" 
               placeholder="البريد الالكتروني" 
