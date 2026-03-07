@@ -3,7 +3,6 @@ import {
   Home, 
   Users, 
   FileText, 
-  UserPlus, 
   Activity,
   User,
   LogOut
@@ -39,12 +38,6 @@ const Sidebar = () => {
             <NavLink to="/requests/new" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <FileText size={20} className="nav-icon" />
               طلبات الدعوة الجديدة
-            </NavLink>
-          </li>
-          <li className="nav-item">
-            <NavLink to="/callers/add" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <UserPlus size={20} className="nav-icon" />
-              اضافة داعية
             </NavLink>
           </li>
           <li className="nav-item">
