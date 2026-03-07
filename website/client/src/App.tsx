@@ -10,6 +10,8 @@ import PreacherAssociationLogin from './pages/PreacherAssociationLogin/PreacherA
 import DashboardLayout from './layouts/DashboardLayout/DashboardLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Notifications from './pages/Notifications/Notifications';
+import PartnerRegister from './pages/PartnerRegister/PartnerRegister';
+import PreacherRegister from './pages/PreacherRegister/PreacherRegister';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/reset-activation" element={<ResetActivation />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/preacher-association-login" element={<PreacherAssociationLogin />} />
+        <Route path="/partner-register" element={<PartnerRegister />} />
+        <Route path="/preacher-register" element={<PreacherRegister />} />
         
         {/* Dashboard Routes wrapper */}
         <Route element={<DashboardLayout />}>

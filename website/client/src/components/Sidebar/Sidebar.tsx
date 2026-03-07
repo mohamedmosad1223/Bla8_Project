@@ -17,7 +17,6 @@ const Sidebar = () => {
         <img src="/logo.png" alt="Logo" className="logo-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         <div className="logo-placeholder">
            <span className="logo-text">البلاغ</span>
-           <span className="logo-subtext">للتعريف بالاسلام</span>
         </div>
       </div>
       
