@@ -6,25 +6,6 @@
   position: relative;
 }
 
-.back-btn {
-  position: absolute;
-  top: -60px; /* Adjust based on exact spacing */
-  right: -20px;
-  background: none;
-  border: none;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--text-dark);
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.back-btn:hover {
-  color: var(--primary-gold);
-}
-
 .login-header {
   margin-bottom: 2rem;
 }

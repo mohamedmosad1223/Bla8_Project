@@ -1,0 +1,26 @@
+.activation-container {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.activation-header {
+  margin-bottom: 2rem;
+}
+
+.activation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.otp-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+.activation-btn {
+  margin-top: 1rem;
+}

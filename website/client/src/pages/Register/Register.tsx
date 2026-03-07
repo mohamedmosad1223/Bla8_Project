@@ -1,12 +1,11 @@
 import React from 'react';
-import { Mail, KeyRound, ChevronRight } from 'lucide-react';
+import { User, Mail, KeyRound, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
-import Checkbox from '../../components/common/Checkbox/Checkbox';
-import './Login.css';
+import './Register.css';
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
 
   return (
@@ -19,17 +18,26 @@ const Login: React.FC = () => {
         عودة <ChevronRight size={18} />
       </button>
 
-      <div className="login-container">
+      <div className="register-container">
         <div className="form-container">
-          <div className="header-text login-header">
+          <div className="header-text register-header">
             <div className="top-logo">
                <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
             </div>
-            <h2>تسجيل الدخول</h2>
-            <p>من فضلك قم بملأ البيانات التالية</p>
+            <h2>إنشاء حساب</h2>
+            <p>من فضلك قم بملأ البيانات التالية لإنشاء حساب جديد</p>
           </div>
 
-          <form className="login-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="register-form" onSubmit={(e) => {
+            e.preventDefault();
+            navigate('/activate');
+          }}>
+            <Input 
+              type="text" 
+              placeholder="الاسم كامل" 
+              icon={<User size={18} />}
+            />
+
             <Input 
               type="email" 
               placeholder="البريد الالكتروني" 
@@ -42,18 +50,19 @@ const Login: React.FC = () => {
               icon={<KeyRound size={18} />}
             />
 
-            <div className="form-options">
-              <a href="/forgot-password" className="forgot-password">نسيت الرقم السري ؟</a>
-              <Checkbox label="تذكرني" />
-            </div>
+            <Input 
+              type="password" 
+              placeholder="تأكيد الباسورد" 
+              icon={<KeyRound size={18} />}
+            />
 
-            <button type="submit" className="auth-btn primary-btn login-btn">
-              تسجيل الدخول
+            <button type="submit" className="auth-btn primary-btn register-btn">
+              إنشاء حساب
             </button>
           </form>
 
           <p className="bottom-link">
-            لا تمتلك حساب؟ <a href="/register">ارسل طلب انشاء حساب</a>
+            لديك حساب بالفعل؟ <a href="/login">تسجيل الدخول</a>
           </p>
         </div>
       </div>
@@ -61,4 +70,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;
