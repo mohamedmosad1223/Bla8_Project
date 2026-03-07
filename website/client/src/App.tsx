@@ -7,6 +7,9 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ResetActivation from './pages/ResetActivation/ResetActivation';
 import ResetPassword from './pages/ResetPassword/ResetPassword';
 import PreacherAssociationLogin from './pages/PreacherAssociationLogin/PreacherAssociationLogin';
+import DashboardLayout from './layouts/DashboardLayout/DashboardLayout';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Notifications from './pages/Notifications/Notifications';
 
 function App() {
   return (
@@ -20,6 +23,13 @@ function App() {
         <Route path="/reset-activation" element={<ResetActivation />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/preacher-association-login" element={<PreacherAssociationLogin />} />
+        
+        {/* Dashboard Routes wrapper */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/notifications" element={<Notifications />} />
+          {/* Add other dashboard routes here later, e.g., /callers */}
+        </Route>
       </Routes>
     </Router>
   );
