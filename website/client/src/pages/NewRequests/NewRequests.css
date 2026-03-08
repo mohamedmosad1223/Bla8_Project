@@ -1,0 +1,247 @@
+/* Page Layout */
+.nreq-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header Area */
+.nreq-header-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.nreq-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Table Design */
+.nreq-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #edf2f7;
+}
+
+.nreq-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.nreq-table th {
+  background-color: #f8fafc;
+  padding: 16px;
+  font-weight: 700;
+  color: #4a5568;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.nreq-table td {
+  padding: 16px;
+  font-size: 0.88rem;
+  color: #2d3748;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.nreq-table tr:hover {
+  background-color: #f7fafc;
+}
+
+.sort-arrow {
+  font-size: 0.75rem;
+  color: #cbd5e0;
+  margin-right: 4px;
+}
+
+.nreq-date-cell {
+  white-space: pre-line;
+  line-height: 1.4;
+}
+
+.nreq-comment-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nreq-eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.nreq-eye-btn:hover {
+  color: var(--primary-blue);
+  background-color: rgba(22, 96, 136, 0.08);
+}
+
+.nreq-comment-text {
+  color: var(--text-gray);
+  font-size: 0.85rem;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --------------------------------
+   Body Wrapper for Filter
+   -------------------------------- */
+.nreq-body-wrapper {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.nreq-content {
+  flex: 1;
+  min-width: 0; /* Important to prevent flex item from overflowing */
+}
+
+/* --------------------------------
+   Detail View
+   -------------------------------- */
+.nreq-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.nreq-detail-card {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.nreq-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.nreq-detail-grid-2 {
+  grid-template-columns: 2fr 1fr;
+}
+
+.nreq-detail-grid-3 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.nreq-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nreq-field-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a0aec0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.nreq-field-value {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 1rem;
+}
+
+.nreq-contact-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nreq-contact-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f0f7ff;
+  color: #1877F2;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.nreq-contact-link {
+  color: #1877F2;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.nreq-caller-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nreq-caller-avatar {
+  width: 32px;
+  height: 32px;
+  background-color: #edf2f7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #dba841;
+}
+
+.nreq-personal-comment-section {
+  background-color: #f8fafc;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+.nreq-personal-comment-text {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #4a5568;
+  margin: 0;
+}
+
+.nreq-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.nreq-empty-title {
+  margin: 24px 0 12px;
+  font-size: 1.25rem;
+  color: #2d3748;
+}
+
+.nreq-empty-desc {
+  color: #718096;
+  max-width: 400px;
+  margin: 0 auto;
+}

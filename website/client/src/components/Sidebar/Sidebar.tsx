@@ -34,15 +34,15 @@ const Sidebar = () => {
             </NavLink>
           </li>
           <li className="nav-item">
-            <NavLink to="/requests/new" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <FileText size={20} className="nav-icon" />
-              طلبات الدعوة الجديدة
-            </NavLink>
-          </li>
-          <li className="nav-item">
             <NavLink to="/requests/current" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <Activity size={20} className="nav-icon" />
               طلبات الدعوة الحالية
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/requests/new" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <FileText size={20} className="nav-icon" />
+              طلبات الدعوة الجديدة
             </NavLink>
           </li>
         </ul>
