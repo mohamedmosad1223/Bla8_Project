@@ -14,6 +14,9 @@ import PartnerRegister from './pages/PartnerRegister/PartnerRegister';
 import PreacherRegister from './pages/PreacherRegister/PreacherRegister';
 import Callers from './pages/Callers/Callers';
 import AddCaller from './pages/AddCaller/AddCaller';
+import NewRequests from './pages/NewRequests/NewRequests';
+import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
+
 
 function App() {
   return (
@@ -36,7 +39,9 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/callers" element={<Callers />} />
           <Route path="/callers/add" element={<AddCaller />} />
-          {/* Add other dashboard routes here later, e.g., /requests */}
+          <Route path="/requests/new" element={<NewRequests />} />
+          <Route path="/requests/current" element={<CurrentRequests />} />
+
         </Route>
       </Routes>
     </Router>

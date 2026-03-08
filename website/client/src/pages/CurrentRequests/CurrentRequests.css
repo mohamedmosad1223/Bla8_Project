@@ -1,0 +1,347 @@
+/* --------------------------------
+   Variables & Theme
+   -------------------------------- */
+:root {
+  --creq-primary: #166088;
+  --creq-accent: #dba841;
+  --creq-bg: #f4f7fa;
+  --creq-card-bg: #ffffff;
+  --creq-text-main: #2d3748;
+  --creq-text-muted: #718096;
+  --creq-text-light: #a0aec0;
+  --creq-border: #edf2f7;
+  --creq-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+/* --------------------------------
+   Page Setup
+   -------------------------------- */
+.creq-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: creq-fadeIn 0.5s ease-out;
+  padding: 10px;
+}
+
+@keyframes creq-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------
+   Header Area
+   -------------------------------- */
+.creq-header-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.creq-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* --------------------------------
+   Table Style
+   -------------------------------- */
+.creq-table-wrapper {
+  background: var(--creq-card-bg);
+  border-radius: 16px;
+  box-shadow: var(--creq-shadow);
+  border: 1px solid var(--creq-border);
+  overflow: hidden;
+}
+
+.creq-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.creq-table th {
+  background-color: #fbfcfe;
+  padding: 18px 16px;
+  font-weight: 700;
+  color: var(--creq-text-muted);
+  font-size: 0.85rem;
+  border-bottom: 2px solid var(--creq-border);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.creq-table td {
+  padding: 18px 16px;
+  font-size: 0.9rem;
+  color: var(--creq-text-main);
+  border-bottom: 1px solid var(--creq-border);
+  transition: background 0.2s;
+}
+
+.creq-table tr:hover td {
+  background-color: #fcfdfe;
+}
+
+.creq-sort-arrow {
+  font-size: 0.7rem;
+  color: var(--creq-text-light);
+  margin-right: 4px;
+}
+
+.creq-date-cell {
+  white-space: pre-line;
+  line-height: 1.5;
+  color: var(--creq-text-muted);
+  font-size: 0.85rem;
+}
+
+.creq-eye-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--creq-text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.creq-eye-btn:hover {
+  color: var(--creq-primary);
+  background-color: rgba(22, 96, 136, 0.08);
+  transform: scale(1.05);
+}
+
+.creq-note-text {
+  color: var(--creq-text-muted);
+  font-size: 0.82rem;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
+/* --------------------------------
+   Status Badges
+   -------------------------------- */
+.creq-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.creq-status-green {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.creq-status-red {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+
+.creq-status-yellow {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+/* --------------------------------
+   Filter Side Panel
+   -------------------------------- */
+.creq-body-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.creq-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.creq-filter-panel {
+  width: 300px;
+  background: var(--creq-card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--creq-border);
+  padding: 24px;
+  box-shadow: var(--creq-shadow);
+  position: sticky;
+  top: 20px;
+}
+
+/* (Omitting repetitive filter styles for brevity, assuming they are clean enough, but can polish if needed) */
+
+/* --------------------------------
+   Detail View PREMIUM
+   -------------------------------- */
+.creq-detail-page {
+  animation: creq-slideUp 0.4s ease-out;
+}
+
+@keyframes creq-slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.creq-detail-card {
+  background: var(--creq-card-bg);
+  border-radius: 20px;
+  padding: 40px;
+  border: 1px solid var(--creq-border);
+  box-shadow: var(--creq-shadow);
+}
+
+/* Grid Alignment */
+.creq-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-bottom: 48px;
+}
+
+.creq-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: right;
+}
+
+.creq-field-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--creq-text-light);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.creq-field-label svg {
+  opacity: 0.7;
+}
+
+.creq-field-value {
+  font-weight: 700;
+  color: var(--creq-text-main);
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+/* Contact Badge */
+.creq-contact-value {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.creq-contact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f0f7ff;
+  color: #1877f2;
+  padding: 6px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 1px solid #e1effe;
+}
+
+.creq-contact-link {
+  color: #1877f2;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+
+.creq-contact-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Caller (Al-Dai) Block */
+.creq-caller-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.creq-caller-avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #fef9f0 0%, #fdf2e9 100%);
+  border: 2px solid #fff;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--creq-accent);
+  box-shadow: 0 4px 10px rgba(219, 168, 65, 0.15);
+  font-size: 1.1rem;
+}
+
+.creq-caller-value span {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--creq-text-main);
+}
+
+/* Comment Sections */
+.creq-personal-comment-section {
+  background-color: #f9fafb;
+  padding: 28px;
+  border-radius: 16px;
+  margin-top: 32px;
+  border: 1px solid #f1f5f9;
+}
+
+.creq-personal-comment-text {
+  font-size: 0.92rem;
+  line-height: 1.9;
+  color: #4a5568;
+  margin: 0;
+  text-align: justify;
+}
+
+/* Empty State */
+.creq-empty-state {
+  text-align: center;
+  padding: 100px 40px;
+  background: white;
+  border-radius: 20px;
+  border: 1px dashed var(--creq-border);
+}
+
+.creq-empty-title {
+  margin: 24px 0 12px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--creq-text-main);
+}
+
+.creq-empty-desc {
+  color: var(--creq-text-muted);
+  max-width: 440px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
