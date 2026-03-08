@@ -1,20 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Upload, Calendar, ChevronDown, Phone, Mail, Building2, FileText, ChevronRight } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
+import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './PartnerRegister.css';
 
 const PartnerRegister: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
   const roleType = searchParams.get('type') || 'association'; 
   
   // Decide titles based on role
   const isPreacher = roleType === 'preacher';
-  const pageTitle = isPreacher ? 'طلب تسجيل بمنصة بلاغ كجمعية' : 'طلب تسجيل بمنصة بلاغ كجمعية';
+  const pageTitle = isPreacher ? 'طلب تسجيل بمنصة بلاغ كداعية' : 'طلب تسجيل بمنصة بلاغ كجمعية';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowModal(true);
   };
 
   return (
@@ -124,6 +127,12 @@ const PartnerRegister: React.FC = () => {
           </p>
         </div>
       </div>
+      <SuccessModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="تم ارسال الطلب بنجاح"
+        description="سيتم الرد عليك قريبا"
+      />
     </AuthLayout>
   );
 };

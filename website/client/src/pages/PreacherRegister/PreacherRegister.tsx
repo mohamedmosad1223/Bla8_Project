@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
+import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './PreacherRegister.css';
 
 const PreacherRegister: React.FC = () => {
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowModal(true);
   };
 
   return (
@@ -109,6 +112,12 @@ const PreacherRegister: React.FC = () => {
           </p>
         </div>
       </div>
+      <SuccessModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="تم ارسال الطلب بنجاح"
+        description="سيتم الرد عليك قريبا"
+      />
     </AuthLayout>
   );
 };

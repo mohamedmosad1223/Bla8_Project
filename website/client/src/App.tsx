@@ -10,7 +10,11 @@ import PreacherAssociationLogin from './pages/PreacherAssociationLogin/PreacherA
 import DashboardLayout from './layouts/DashboardLayout/DashboardLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Notifications from './pages/Notifications/Notifications';
-
+import PartnerRegister from './pages/PartnerRegister/PartnerRegister';
+import PreacherRegister from './pages/PreacherRegister/PreacherRegister';
+import Callers from './pages/Callers/Callers';
+import AddCaller from './pages/AddCaller/AddCaller';
+import Profile from './pages/Profile/Profile';
 function App() {
   return (
     <Router>
@@ -32,6 +36,7 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/callers" element={<Callers />} />
           <Route path="/callers/add" element={<AddCaller />} />
+          <Route path="/profile" element={<Profile />} />
           {/* Add other dashboard routes here later, e.g., /requests */}
         </Route>
       </Routes>

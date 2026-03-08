@@ -5,9 +5,12 @@ import './SuccessModal.css';
 interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
+  title?: string;
+  description?: string;
+  actionLabel?: string;
 }
 
-const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose }) => {
+const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, title, description, actionLabel }) => {
   if (!isOpen) return null;
 
   return (
@@ -24,12 +27,14 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <h3 className="modal-title">تم بنجاح!</h3>
-        <p className="modal-desc">لقد تم تغيير كلمة السر بنجاح</p>
+        <h3 className="modal-title">{title ?? 'تم بنجاح!'}</h3>
+        <p className="modal-desc">{description ?? 'لقد تم تغيير كلمة السر بنجاح'}</p>
 
-        <button className="modal-action-btn" onClick={onClose}>
-          الذهاب للرئيسية
-        </button>
+        {actionLabel && (
+          <button className="modal-action-btn" onClick={onClose}>
+            {actionLabel}
+          </button>
+        )}
       </div>
     </div>
   );
