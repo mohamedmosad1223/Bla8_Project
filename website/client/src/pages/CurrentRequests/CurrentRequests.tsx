@@ -145,138 +145,118 @@ const TableView = ({ requests, onView }: { requests: Request[]; onView: (r: Requ
   </div>
 );
 
+
+// A single labeled field cell
+const DetailField = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
+  <div className="creq-dfield">
+    <span className="creq-dfield-label"><span className="creq-icon-gold">{icon}</span>{label}</span>
+    <span className="creq-dfield-value">{children}</span>
+  </div>
+);
+
 // -------------------------
 // Detail View Component
 // -------------------------
 const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => void }) => (
-  <div className="creq-detail-page">
+  <div className="creq-detail-page" dir="rtl">
     {/* Breadcrumb */}
-    <div className="breadcrumb creq-breadcrumb">
-      <button className="breadcrumb-link" onClick={onBack}>طلبات الدعوة الحالية</button>
-      <ChevronRight size={14} className="breadcrumb-separator" />
-      <span className="breadcrumb-current">عرض الطلب الحالي</span>
+    <div className="creq-breadcrumb">
+      <button className="creq-breadcrumb-link" onClick={onBack}>طلبات الدعوة الحالية</button>
+      <ChevronRight size={14} />
     </div>
-    <h1 className="page-title">عرض الطلب الحالي</h1>
+    <h1 className="creq-detail-title">عرض الطلب الحالي</h1>
 
     <div className="creq-detail-card">
-      {/* Group 1: الأساسيات */}
-      <div className="creq-detail-grid">
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            اسم الشخص
-          </span>
-          <span className="creq-field-value">{detail.donorName}</span>
-        </div>
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8 2 4 5.5 4 10c0 6 8 12 8 12s8-6 8-12c0-4.5-4-8-8-8z"/></svg>
-            الجنسية
-          </span>
-          <span className="creq-field-value">{detail.nationality}</span>
-        </div>
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            اللغة
-          </span>
-          <span className="creq-field-value">{detail.language}</span>
-        </div>
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            الديانة
-          </span>
-          <span className="creq-field-value">{detail.religion}</span>
-        </div>
+
+      {/* ── Row 1: name / nationality / language / religion ── */}
+      <div className="creq-drow">
+        <DetailField label="اسم الشخص" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>}>
+          {detail.donorName}
+        </DetailField>
+        <DetailField label="الجنسية" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}>
+          {detail.nationality}
+        </DetailField>
+        <DetailField label="اللغة" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}>
+          {detail.language}
+        </DetailField>
+        <DetailField label="الديانة" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>}>
+          {detail.religion}
+        </DetailField>
       </div>
 
-      {/* Group 2: معلومات إضافية */}
-      <div className="creq-detail-grid">
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            السن
-          </span>
-          <span className="creq-field-value">{detail.age} عام</span>
-        </div>
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            النوع
-          </span>
-          <span className="creq-field-value">{detail.gender}</span>
-        </div>
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.59 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.48-1.48a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            رقم الهاتف
-          </span>
-          <span className="creq-field-value" dir="ltr">{detail.phone}</span>
-        </div>
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            البريد الإلكتروني
-          </span>
-          <span className="creq-field-value">{detail.email}</span>
-        </div>
+      {/* ── Row 2: email / phone / gender / age ── */}
+      <div className="creq-drow">
+        <DetailField label="البريد الالكتروني" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}>
+          {detail.email}
+        </DetailField>
+        <DetailField label="رقم الهاتف" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.59 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.48-1.48a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>}>
+          <span dir="ltr">{detail.phone}</span>
+        </DetailField>
+        <DetailField label="النوع" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}>
+          {detail.gender}
+        </DetailField>
+        <DetailField label="السن" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}>
+          {detail.age} عام
+        </DetailField>
       </div>
 
-      <div style={{ height: '1px', background: '#edf2f7', margin: '8px 0 40px' }} />
-
-      {/* Row 3: Relationships & Contact */}
-      <div className="creq-detail-grid">
-        <div /> {/* Right Empty */}
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            الداعي
+      {/* ── Row 3: contact / status / preacher ── */}
+      <div className="creq-drow">
+        <div className="creq-dfield">
+          <span className="creq-dfield-label">
+            <span className="creq-icon-gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            طرق التواصل
           </span>
-          <div className="creq-caller-value">
+          <div className="creq-dfield-value creq-contact-row">
+            <span className="creq-fb-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#1877F2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              {detail.contactMethod}
+            </span>
+            <a href={detail.contactLink} target="_blank" rel="noreferrer" className="creq-contact-link">{detail.contactLink}</a>
+          </div>
+        </div>
+
+        <div className="creq-dfield">
+          <span className="creq-dfield-label">
+            <span className="creq-icon-gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg></span>
+            الحاله
+          </span>
+          <span className="creq-dfield-value"><StatusBadge status={detail.status} /></span>
+        </div>
+
+        <div className="creq-dfield creq-dfield-span2">
+          <span className="creq-dfield-label">
+            <span className="creq-icon-gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            الداعية
+          </span>
+          <div className="creq-dfield-value creq-caller-row">
             <div className="creq-caller-avatar">{detail.callerName.charAt(0)}</div>
             <span>{detail.callerName}</span>
           </div>
         </div>
-
-        <div className="creq-detail-field" style={{ gridColumn: 'span 2' }}>
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            طرق التواصل
-          </span>
-          <div className="creq-contact-value">
-            <span className="creq-contact-badge">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              {detail.contactMethod}
-            </span>
-            <StatusBadge status={detail.status} />
-            <a href={detail.contactLink} target="_blank" rel="noreferrer" className="creq-contact-link">{detail.contactLink}</a>
-          </div>
-        </div>
       </div>
 
-      <div className="creq-personal-comment-section">
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            التعليق الخاص بالشخص
-          </span>
-          <p className="creq-personal-comment-text">{detail.personalComment}</p>
-        </div>
+      {/* ── Text sections ── */}
+      <div className="creq-text-section">
+        <span className="creq-text-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          التعليق الخاص بالشخص
+        </span>
+        <p className="creq-text-body">{detail.personalComment}</p>
       </div>
 
-      <div className="creq-personal-comment-section">
-        <div className="creq-detail-field">
-          <span className="creq-field-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            ملاحظات الداعية
-          </span>
-          <p className="creq-personal-comment-text">{detail.callerNote}</p>
-        </div>
+      <div className="creq-text-section">
+        <span className="creq-text-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          متطلبات الداعية
+        </span>
+        <p className="creq-text-body">{detail.callerNote}</p>
       </div>
+
     </div>
   </div>
 );
+
 
 // -------------------------
 // Main Component
@@ -308,7 +288,7 @@ const CurrentRequests = () => {
   const addLanguage = (lang: string) => { if (!filterLanguages.includes(lang)) setFilterLanguages([...filterLanguages, lang]); };
   const toggleAccordion = (name: string) => setOpenAccordion(openAccordion === name ? null : name);
 
-  const handleView = (_req: Request) => {
+  const handleView = () => {
     setSelectedRequest(MOCK_DETAIL);
     setView('detail');
   };
@@ -420,7 +400,7 @@ const CurrentRequests = () => {
                           {availableLanguages.map(lang => {
                             const sel = filterLanguages.includes(lang);
                             return (
-                              <label key={lang} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); sel ? removeLanguage(lang) : addLanguage(lang); }}>
+                              <label key={lang} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeLanguage(lang); } else { addLanguage(lang); } }}>
                                 <div className={`creq-checkbox-custom creq-check-align-left ${sel ? 'checked' : ''}`}>
                                   {sel && <Check size={12} strokeWidth={4} />}
                                 </div>

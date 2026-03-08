@@ -245,3 +245,148 @@
   max-width: 400px;
   margin: 0 auto;
 }
+
+/* ─── Breadcrumb ─── */
+.nreq-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #718096;
+  margin-bottom: 0.5rem;
+  direction: rtl;
+}
+
+.nreq-breadcrumb-link {
+  background: none;
+  border: none;
+  color: #718096;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nreq-breadcrumb-link:hover { color: #dba841; }
+
+.nreq-detail-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin: 0 0 1.5rem;
+  direction: rtl;
+}
+
+/* ─── 4-column row ─── */
+.nreq-drow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px 20px;
+  margin-bottom: 2rem;
+  direction: rtl;
+}
+
+/* Field cell */
+.nreq-dfield {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: right;
+}
+
+.nreq-dfield-span2 { grid-column: span 2; }
+
+.nreq-dfield-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a0aec0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.nreq-dfield-value {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Gold icon wrapper */
+.nreq-icon-gold {
+  color: #dba841;
+  display: flex;
+  align-items: center;
+}
+
+/* Contact row */
+.nreq-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nreq-fb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f7ff;
+  color: #1877f2;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid #e1effe;
+}
+
+/* Caller row */
+.nreq-caller-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nreq-caller-row .nreq-caller-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef9f0, #fdf2e9);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(219,168,65,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #dba841;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+/* Text section */
+.nreq-text-section {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid #f1f5f9;
+  direction: rtl;
+}
+
+.nreq-text-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 0.75rem;
+}
+
+.nreq-text-body {
+  font-size: 0.9rem;
+  line-height: 1.9;
+  color: #4a5568;
+  margin: 0;
+  text-align: justify;
+}
