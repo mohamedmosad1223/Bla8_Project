@@ -1,0 +1,34 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  width: 100%;
+}
+
+.dashboard-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dashboard-page-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Scrollbar styling for webkit browsers */
+.dashboard-page-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashboard-page-container::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+.dashboard-page-container::-webkit-scrollbar-thumb {
+  background-color: var(--border-gray);
+  border-radius: 4px;
+}

@@ -1,0 +1,47 @@
+:root {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  --primary-blue: #166088; 
+  --dark-blue: #104461;
+  --primary-gold: #DBA841; 
+  --border-gold: #E4A936; 
+  --border-gray: #E0E0E0; 
+  --bg-color: #FAFAFA; 
+  --text-dark: #1D2327; 
+  --text-gray: #6B7280; 
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  direction: rtl; /* Set default reading direction to RTL for Arabic */
+}
+
+a {
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}

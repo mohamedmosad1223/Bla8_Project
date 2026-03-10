@@ -1,0 +1,57 @@
+.nationalities-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.nationality-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nat-name-flag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nat-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+.nat-flag {
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.nat-count {
+  font-size: 0.8rem;
+  color: var(--text-gray);
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background-color: var(--bg-color);
+  border-radius: 3px;
+  overflow: hidden;
+  /* Add subtle border/shadow for better blending if needed */
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease-in-out;
+}

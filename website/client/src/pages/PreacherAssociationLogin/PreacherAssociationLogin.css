@@ -1,0 +1,82 @@
+.pa-selection-container {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.pa-header {
+  margin-bottom: 2.5rem;
+}
+
+.highlight-text {
+  color: var(--primary-gold);
+}
+
+.pa-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-gray);
+  line-height: 1.6;
+  max-width: 90%;
+  margin: 0 auto;
+}
+
+.pa-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  align-items: center; /* Center the cards */
+}
+
+.pa-option-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 180px; /* Exact width from mock */
+  padding: 1.5rem;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-gray);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-dark);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.pa-option-card:hover {
+  border-color: var(--primary-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(219, 168, 65, 0.1);
+}
+
+.pa-option-icon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pa-option-icon img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Fallback icons style if physical images are missing */
+.pa-option-icon span {
+  font-size: 2.5rem;
+}
+
+@media (max-width: 480px) {
+  .pa-option-card {
+    width: 80%;
+    padding: 1rem;
+  }
+}

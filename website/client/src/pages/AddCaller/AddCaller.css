@@ -1,0 +1,298 @@
+/* -----------------------------
+   Breadcrumbs & Page Header
+   ----------------------------- */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.breadcrumb-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.breadcrumb-link:hover {
+  color: var(--primary-blue);
+}
+
+.breadcrumb-current {
+  color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* -----------------------------
+   USER'S CUSTOM DIMENSIONS 
+   هذا الجزء يضمن ملء المساحة كما تم طلبه
+   ----------------------------- */
+.form-container {
+  background-color: white;
+  border-radius: 12px;
+  border: 1px solid var(--border-gray);
+  padding: 40px !important;
+  
+  /* إلغاء أي قيود عرض */
+  width: 100% !important;
+  max-width: none !important; 
+  margin: 0 !important;
+  
+  /* لضمان ملء الطول */
+  min-height: 80vh; 
+  box-sizing: border-box;
+}
+
+.form-grid {
+  display: grid !important;
+  /* جعل العمودين يتقاسمان المساحة 50/50 مهما كان عرض الصفحة */
+  grid-template-columns: 1fr 1fr !important; 
+  gap: 32px 48px !important;
+  width: 100% !important;
+}
+
+.add-caller-form {
+  width: 100% !important;
+  max-width: none !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* label to input spacing */
+}
+
+.form-group.relative {
+  position: relative;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 40px;
+  width: 100%;
+}
+
+/* -----------------------------
+   INPUTS AND COMPONENTS STYLES
+   ----------------------------- */
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-gray);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  background-color: white;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input::placeholder {
+  color: #c4c4c4;
+}
+
+.form-input:focus {
+  border-color: var(--primary-blue);
+}
+
+/* File Upload specifically */
+.file-upload-wrapper {
+  position: relative;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-upload-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.placeholder-text {
+  color: #c4c4c4;
+}
+
+.upload-icon {
+  color: var(--text-gray);
+}
+
+/* Tags Input (Language) */
+.tags-input-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  min-height: 46px;
+  background-color: white; /* Ensure bg is white when closed/open */
+}
+
+/* Checkboxes for Language Dropdown */
+.check-align-left {
+  margin-right: auto;
+}
+
+.checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--border-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.checkbox-custom.checked {
+  background-color: var(--primary-gold);
+  border-color: var(--primary-gold);
+  color: white;
+}
+
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+/* Language Dropdown Menu */
+.language-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--border-gray);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.language-dropdown-item {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: var(--text-dark);
+}
+
+.language-dropdown-item:hover {
+  background-color: var(--bg-color);
+}
+
+.tag {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-gray);
+  color: var(--text-dark);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-gray);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tag-remove:hover {
+  color: #EF4444; 
+}
+
+.tag-dropdown-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-gray);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* Password fields */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  padding-left: 40px; 
+}
+
+.password-toggle-btn {
+  position: absolute;
+  left: 14px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-gray);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle-btn:hover {
+  color: var(--primary-blue);
+}
+
+.btn-save {
+  background-color: var(--primary-gold);
+  color: white;
+  padding: 12px 48px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.btn-save:hover {
+  background-color: var(--border-gold);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
