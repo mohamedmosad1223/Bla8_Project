@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Filter as FilterIcon, SortDesc, Eye, ChevronRight, ChevronLeft, ChevronDown, Calendar, X, Check, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter as FilterIcon, Eye, ChevronLeft, ChevronDown, X, Check, Copy } from 'lucide-react';
 import './CurrentRequests.css';
 
 // -------------------------
@@ -164,29 +165,35 @@ const DetailField = ({ label, icon, children }: { label: string; icon: React.Rea
 // -------------------------
 // Detail View Component
 // -------------------------
-const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => void }) => (
-  <div className="creq-detail-page" dir="rtl">
-    {/* Header with Breadcrumb and Action Buttons */}
-    <div className="creq-detail-header-row">
-      <div>
-        <div className="creq-breadcrumb">
-          <button className="creq-breadcrumb-link" onClick={onBack}>الطلبات الحالية</button>
-          <ChevronLeft size={14} className="creq-breadcrumb-chevron" />
+const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => void }) => {
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <div className="creq-detail-page" dir="rtl">
+      {/* Header with Breadcrumb and Action Buttons */}
+      <div className="creq-detail-header-row">
+        <div>
+          <div className="creq-breadcrumb">
+            <button className="creq-breadcrumb-link" onClick={onBack}>الطلبات الحالية</button>
+            <ChevronLeft size={14} className="creq-breadcrumb-chevron" />
+          </div>
+          <h1 className="creq-detail-title">عرض الطلب الحالي</h1>
         </div>
-        <h1 className="creq-detail-title">عرض الطلب الحالي</h1>
+        
+        <div className="creq-detail-actions">
+          {localStorage.getItem('userRole') === 'preacher' && (<>
+            <button className="creq-dtl-btn creq-btn-refresh" onClick={() => setShowUpdateModal(true)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-5.23l.11-.14"/></svg>
+              تحديث الحالة
+            </button>
+            <button className="creq-dtl-btn creq-btn-chat" onClick={() => navigate('/conversations')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              المحادثة
+            </button>
+          </>)}
+        </div>
       </div>
-      
-      <div className="creq-detail-actions">
-        <button className="creq-dtl-btn creq-btn-refresh">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-5.23l.11-.14"/></svg>
-          تحديث الحالة
-        </button>
-        <button className="creq-dtl-btn creq-btn-chat">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          المحادثة
-        </button>
-      </div>
-    </div>
 
     <div className="creq-detail-card">
 
@@ -274,9 +281,88 @@ const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => v
       </div>
 
     </div>
+    
+    {showUpdateModal && <UpdateStatusModal onClose={() => setShowUpdateModal(false)} />}
   </div>
 );
+}
 
+
+// -------------------------
+// Update Status Modal
+// -------------------------
+const UpdateStatusModal = ({ onClose }: { onClose: () => void }) => {
+  const [selected, setSelected] = useState<'Islam' | 'Reject'>('Islam');
+  const [note, setNote] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSave = () => setSuccess(true);
+
+  if (success) {
+    return (
+      <div className="umodal-backdrop" onClick={onClose}>
+        <div className="umodal-box umodal-box-sm" onClick={e => e.stopPropagation()} dir="rtl">
+          <button className="umodal-close" onClick={onClose}><X size={20} strokeWidth={2} /></button>
+          
+          <div className="umodal-success">
+            <div className="umodal-success-icon-wrap">
+               <svg viewBox="0 0 24 24" fill="#0CBC6F" width="100%" height="100%">
+                 <circle cx="12" cy="12" r="12" fill="#0CBC6F" />
+                 <path d="M7 12l3 3 7-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+               </svg>
+            </div>
+            <h2 className="umodal-success-title">تم تحديث الحالة!</h2>
+            <p className="umodal-success-sub">تم تحديث الحالة بنجاح</p>
+            <button className="umodal-btn-done" onClick={onClose}>تم</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="umodal-backdrop" onClick={onClose}>
+      <div className="umodal-box" onClick={e => e.stopPropagation()} dir="rtl">
+        <button className="umodal-close" onClick={onClose}><X size={20} strokeWidth={2} /></button>
+        <h2 className="umodal-title">تحديث الحالة</h2>
+
+        {/* Toggle row */}
+        <div className="umodal-toggle-container">
+          <button
+            className={`umodal-tab-btn ${selected === 'Islam' ? 'active-green' : 'inactive-gray'}`}
+            onClick={() => setSelected('Islam')}
+          >
+            تم اسلامه
+          </button>
+          <button
+            className={`umodal-tab-btn ${selected === 'Reject' ? 'active-green' : 'inactive-gray'}`}
+            onClick={() => setSelected('Reject')}
+          >
+            رفض الاسلام
+          </button>
+        </div>
+
+        {/* Note textarea */}
+        <div className="umodal-field">
+          <textarea
+            className="umodal-textarea"
+            placeholder="مثال ملاحظة"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            rows={4}
+          />
+          <span className="umodal-label-float">ملاحظة</span>
+        </div>
+
+        {/* Actions */}
+        <div className="umodal-actions">
+          <button className="umodal-btn-save" onClick={handleSave}>حفظ</button>
+          <button className="umodal-btn-cancel" onClick={onClose}>الغاء</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // -------------------------
 // Main Component

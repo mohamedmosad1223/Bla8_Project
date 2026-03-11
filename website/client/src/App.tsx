@@ -18,6 +18,7 @@ import Profile from './pages/Profile/Profile';
 import NewRequests from './pages/NewRequests/NewRequests';
 import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
 import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
+import Conversations from './pages/Conversations/Conversations';
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'association';
@@ -50,6 +51,7 @@ function App() {
           {/* Add other dashboard routes here later, e.g., /requests */}
           <Route path="/requests/new" element={<NewRequests />} />
           <Route path="/requests/current" element={<CurrentRequests />} />
+          <Route path="/conversations" element={<Conversations />} />
 
         </Route>
       </Routes>
