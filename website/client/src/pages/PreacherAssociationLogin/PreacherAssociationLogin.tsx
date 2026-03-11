@@ -17,10 +17,10 @@ const PreacherAssociationLogin: React.FC = () => {
     if (role === 'admin') {
       navigate('/login');
     } else if (role === 'preacher') {
-      navigate('/preacher-register');
+      navigate('/login?role=preacher');
     } else {
       // association
-      navigate('/partner-register?type=association');
+      navigate('/login?role=association');
     }
   };
 

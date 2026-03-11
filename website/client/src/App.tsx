@@ -17,6 +17,12 @@ import AddCaller from './pages/AddCaller/AddCaller';
 import Profile from './pages/Profile/Profile';
 import NewRequests from './pages/NewRequests/NewRequests';
 import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
+import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
+
+const RoleDashboard = () => {
+  const role = localStorage.getItem('userRole') || 'association';
+  return role === 'preacher' ? <PreacherDashboard /> : <Dashboard />;
+};
 
 
 function App() {
@@ -36,7 +42,7 @@ function App() {
 
         {/* Dashboard Routes wrapper */}
         <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<RoleDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/callers" element={<Callers />} />
           <Route path="/callers/add" element={<AddCaller />} />

@@ -108,7 +108,7 @@ const PreacherRegister: React.FC = () => {
           </form>
 
           <p className="bottom-link">
-            تمتلك حساب بالفعل ؟ <a href="/login">تسجيل الدخول</a>
+            تمتلك حساب بالفعل ؟ <a href="/login?role=preacher">تسجيل الدخول</a>
           </p>
         </div>
       </div>

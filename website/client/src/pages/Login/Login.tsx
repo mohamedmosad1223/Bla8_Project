@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mail, KeyRound, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
 import Checkbox from '../../components/common/Checkbox/Checkbox';
@@ -8,6 +8,9 @@ import './Login.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const role = new URLSearchParams(location.search).get('role');
+  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'association' ? '/partner-register' : '/register';
 
   return (
     <AuthLayout>
@@ -31,6 +34,8 @@ const Login: React.FC = () => {
 
           <form className="login-form" onSubmit={(e) => {
             e.preventDefault();
+            if (role) localStorage.setItem('userRole', role);
+            else localStorage.setItem('userRole', 'admin');
             navigate('/dashboard');
           }}>
             <Input 
@@ -56,7 +61,7 @@ const Login: React.FC = () => {
           </form>
 
           <p className="bottom-link">
-            لا تمتلك حساب؟ <a href="/register">ارسل طلب انشاء حساب</a>
+            لا تمتلك حساب؟ <a href={registerLink}>ارسل طلب انشاء حساب</a>
           </p>
         </div>
       </div>
