@@ -9,6 +9,9 @@ from app.database import get_db
 from app.schemas import InterestedPersonUpdate, InterestedPersonRegister
 from app.controllers.interested_persons_controller import InterestedPersonsController
 
+from app.auth import check_role
+from app.models.enums import UserRole
+
 router = APIRouter(prefix="/api/interested-persons", tags=["Interested Persons"])
 
 
@@ -18,7 +21,7 @@ def register_interested_person(payload: InterestedPersonRegister, db: Session = 
     return InterestedPersonsController.register(db, payload)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(check_role([UserRole.admin]))])
 def list_interested_persons(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),

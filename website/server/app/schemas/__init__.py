@@ -11,6 +11,7 @@ from app.schemas.schemas import (
     DawahRequestCreate, DawahRequestRead,
     CallerDashboardRead,
     StatusUpdateRequest,
+    SubmitterFeedbackRequest,
     NotificationRead,
 )
 
@@ -27,5 +28,6 @@ __all__ = [
     "DawahRequestCreate", "DawahRequestRead",
     "CallerDashboardRead",
     "StatusUpdateRequest",
+    "SubmitterFeedbackRequest",
     "NotificationRead",
 ]

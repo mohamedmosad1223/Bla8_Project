@@ -37,6 +37,10 @@ class DawahRequest(Base):
     status:          Mapped[RequestStatus] = mapped_column(request_status_enum, nullable=False, default=RequestStatus.pending)
     conversion_date: Mapped[date|None]    = mapped_column(sa.Date)
     notes:           Mapped[str|None]     = mapped_column(sa.Text)
+    
+    # ── التقييم والملاحظات المتبادلة (خاص للأدمن والجمعية) ──────
+    submitter_feedback: Mapped[str|None] = mapped_column(sa.Text)
+    preacher_feedback:  Mapped[str|None] = mapped_column(sa.Text)
 
     # ── v3: قناة التواصل + Deep Link ─────────────────────────
     communication_channel: Mapped[CommunicationChannel|None] = mapped_column(comm_channel_enum)
@@ -54,6 +58,7 @@ class DawahRequest(Base):
     # Relationships
     documents:      Mapped[list["RequestDocument"]]     = relationship("RequestDocument",     back_populates="request", cascade="all, delete-orphan")
     status_history: Mapped[list["RequestStatusHistory"]] = relationship("RequestStatusHistory", back_populates="request", cascade="all, delete-orphan")
+    preacher:       Mapped["Preacher"]                  = relationship("Preacher", foreign_keys=[assigned_preacher_id])
 
     __table_args__ = (
         sa.Index("idx_requests_status",    "status"),

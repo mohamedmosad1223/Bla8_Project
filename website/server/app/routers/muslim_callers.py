@@ -9,6 +9,9 @@ from app.database import get_db
 from app.schemas import MuslimCallerUpdate, MuslimCallerRegister
 from app.controllers.muslim_callers_controller import MuslimCallersController
 
+from app.auth import check_role
+from app.models.enums import UserRole
+
 router = APIRouter(prefix="/api/muslim-callers", tags=["Muslim Callers"])
 
 
@@ -18,7 +21,7 @@ def register_muslim_caller(payload: MuslimCallerRegister, db: Session = Depends(
     return MuslimCallersController.register(db, payload)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(check_role([UserRole.admin]))])
 def list_muslim_callers(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),

@@ -9,13 +9,16 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.models.organization import Organization
-from app.models.enums import UserRole, AccountStatus
 from app.models.responses import OrganizationMessages, UserMessages
+from app.controllers.notifications_controller import NotificationsController
+from app.models.enums import UserRole, AccountStatus, ApprovalStatus, NotificationType
 from app.schemas import OrganizationUpdate, OrganizationRegister
 
 
+from app.auth import get_password_hash
+
 def _hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    return get_password_hash(password)
 
 
 class OrganizationsController:
@@ -73,6 +76,22 @@ class OrganizationsController:
 
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(org, field, value)
+
+        # مزامنة حالة الحساب وإرسال إشعارات
+        if payload.approval_status == ApprovalStatus.approved:
+            if org.user:
+                org.user.status = AccountStatus.active
+            NotificationsController.create_notification(
+                db, org.user_id, NotificationType.account_approved,
+                "تمت الموافقة على حسابك", "مرحباً بك في منصة بلاغ، تم تفعيل حساب الجمعية الخاص بك بنجاح."
+            )
+        elif payload.approval_status == ApprovalStatus.rejected:
+            if org.user:
+                org.user.status = AccountStatus.suspended
+            NotificationsController.create_notification(
+                db, org.user_id, NotificationType.account_rejected,
+                "تم رفض طلب الانضمام", f"نأسف لإبلاغك بأنه تم رفض طلبك. السبب: {org.rejection_reason or 'غير محدد'}"
+            )
 
         db.commit()
         db.refresh(org)

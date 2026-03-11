@@ -273,6 +273,8 @@ class DawahRequestRead(BaseModel):
     deep_link:             Optional[str]
     submission_date:       datetime
     accepted_at:           Optional[datetime]
+    submitter_feedback:    Optional[str] = None
+    preacher_feedback:     Optional[str] = None
     updated_at:            datetime
     model_config = {"from_attributes": True}
 
@@ -295,6 +297,7 @@ class CallerDashboardRead(BaseModel):
 class StatusUpdateRequest(BaseModel):
     new_status: RequestStatus
     note: Optional[str] = Field(None, max_length=1000)
+    preacher_feedback: Optional[str] = Field(None, max_length=2000)
     conversion_date: Optional[date] = None
 
     @model_validator(mode="after")
@@ -302,6 +305,10 @@ class StatusUpdateRequest(BaseModel):
         if self.new_status == RequestStatus.converted and not self.conversion_date:
             raise ValueError("تاريخ الإسلام مطلوب عند تغيير الحالة إلى 'converted'")
         return self
+
+
+class SubmitterFeedbackRequest(BaseModel):
+    feedback: str = Field(..., min_length=5, max_length=2000)
 
 
 # ─── Notification ────────────────────────────────────────────────────────────
@@ -345,6 +352,7 @@ class OrganizationUpdate(BaseModel):
     phone:              Optional[str]       = None
     email:              Optional[EmailStr]  = None
     approval_status:    Optional[ApprovalStatus] = None
+    rejection_reason:   Optional[str] = None
 
     @field_validator("phone")
     @classmethod
@@ -368,6 +376,7 @@ class PreacherUpdate(BaseModel):
     scientific_qualification: Optional[str]            = Field(None, max_length=255)
     status:                   Optional[PreacherStatus] = None
     approval_status:          Optional[ApprovalStatus] = None
+    rejection_reason:         Optional[str] = None
 
     @field_validator("phone")
     @classmethod
@@ -428,7 +437,7 @@ class AdminRegister(BaseModel):
 class OrganizationRegister(BaseModel):
     """Register a new Organization: creates User + Organization profile atomically."""
     email:              EmailStr
-    password:           str            = Field(..., min_length=8, max_length=128)
+    password:           str            = Field(..., min_length=8, max_length=72)
     organization_name:  str            = Field(..., min_length=3, max_length=255)
     license_number:     Optional[str]  = Field(None, max_length=100)
     establishment_date: Optional[date] = None
@@ -455,8 +464,8 @@ class OrganizationRegister(BaseModel):
 class PreacherRegister(BaseModel):
     """Register a new Preacher: creates User + Preacher profile atomically."""
     email:                    EmailStr
-    password:                 str            = Field(..., min_length=8, max_length=128)
-    type:                     PreacherType
+    password:                 str            = Field(..., min_length=8, max_length=72)
+    type:                     Optional[PreacherType] = None
     full_name:                str            = Field(..., min_length=2, max_length=255)
     phone:                    Optional[str]  = None
     preacher_email:           Optional[EmailStr] = None
@@ -491,7 +500,7 @@ class PreacherRegister(BaseModel):
 class MuslimCallerRegister(BaseModel):
     """Register a new MuslimCaller: creates User + MuslimCaller profile atomically."""
     email:                  EmailStr
-    password:               str            = Field(..., min_length=8, max_length=128)
+    password:               str            = Field(..., min_length=8, max_length=72)
     full_name:              str            = Field(..., min_length=2, max_length=255)
     phone:                  Optional[str]  = None
     nationality_country_id: Optional[int]  = None
@@ -514,7 +523,7 @@ class MuslimCallerRegister(BaseModel):
 class InterestedPersonRegister(BaseModel):
     """Register a new InterestedPerson: creates User + InterestedPerson profile atomically."""
     email:                  EmailStr
-    password:               str            = Field(..., min_length=8, max_length=128)
+    password:               str            = Field(..., min_length=8, max_length=72)
     first_name:             str            = Field(..., min_length=1, max_length=150)
     father_name:            Optional[str]  = Field(None, max_length=150)
     last_name:              str            = Field(..., min_length=1, max_length=150)

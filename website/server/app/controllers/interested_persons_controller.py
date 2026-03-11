@@ -12,10 +12,14 @@ from app.models.interested_person import InterestedPerson
 from app.models.enums import UserRole, AccountStatus
 from app.models.responses import InterestedPersonMessages, UserMessages
 from app.schemas import InterestedPersonUpdate, InterestedPersonRegister
+from app.models.dawah_request import DawahRequest, RequestStatusHistory
+from app.models.enums import RequestType, RequestStatus
 
+
+from app.auth import get_password_hash
 
 def _hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    return get_password_hash(password)
 
 
 class InterestedPersonsController:
@@ -47,6 +51,24 @@ class InterestedPersonsController:
             phone=payload.phone,
         )
         db.add(person)
+        db.flush()
+
+        # أوتوماتيك: عمل طلب دعوة جديد لهذا الشخص
+        request = DawahRequest(
+            request_type=RequestType.self_interested,
+            submitted_by_person_id=person.person_id,
+            status=RequestStatus.pending,
+            notes="طلب تسجيل ذاتي من النظام"
+        )
+        db.add(request)
+        db.flush()
+
+        history = RequestStatusHistory(
+            request_id=request.request_id,
+            new_status=RequestStatus.pending,
+            note="تم إنشاء طلب آلي عند تسجيل الشخص المهتم"
+        )
+        db.add(history)
         db.commit()
         db.refresh(person)
         return {"message": InterestedPersonMessages.REGISTERED, "data": person}

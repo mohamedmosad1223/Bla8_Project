@@ -14,8 +14,10 @@ from app.models.responses import AdminMessages, UserMessages
 from app.schemas import AdminUpdate, AdminRegister
 
 
+from app.auth import get_password_hash
+
 def _hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    return get_password_hash(password)
 
 
 class AdminsController:

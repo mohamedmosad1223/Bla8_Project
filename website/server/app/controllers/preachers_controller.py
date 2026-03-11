@@ -13,27 +13,64 @@ from app.models.preacher import Preacher
 from app.models.enums import (
     UserRole, AccountStatus,
     PreacherType, PreacherStatus, GenderType, ApprovalStatus,
+    RequestStatus, NotificationType
 )
+from app.controllers.notifications_controller import NotificationsController
 from app.models.responses import PreacherMessages, UserMessages
 from app.schemas import PreacherUpdate, PreacherRegister
+from app.models.dawah_request import DawahRequest
 
+
+from app.auth import get_password_hash, get_current_user
+from app.auth import check_role
 
 def _hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    return get_password_hash(password)
 
 
 class PreachersController:
 
     @staticmethod
-    def register(db: Session, payload: PreacherRegister):
+    def register(db: Session, payload: PreacherRegister, current_user: Optional[User] = None):
+        # التحقق من وجود الإيميل مسبقاً
         if db.query(User).filter(User.email == payload.email).first():
             raise HTTPException(status_code=409, detail=UserMessages.EMAIL_REGISTERED)
+
+        # تحديد نوع التسجيل والحالة
+        # الحالة 1: جمعية بتضيف داعية (رسمي أوتوماتيك)
+        if current_user and current_user.role == UserRole.organization:
+            if not current_user.organization:
+                raise HTTPException(status_code=400, detail="حساب الجمعية غير مكتمل")
+            payload.org_id = current_user.organization.org_id
+            payload.type = PreacherType.official
+            account_status = AccountStatus.active
+            approval_status = ApprovalStatus.approved
+            is_official = True
+
+        # الحالة 2: أدمن بيضيف داعية
+        elif current_user and current_user.role == UserRole.admin:
+            is_official = payload.org_id is not None
+            if is_official:
+                account_status = AccountStatus.active
+                approval_status = ApprovalStatus.approved
+            else:
+                account_status = AccountStatus.pending
+                approval_status = ApprovalStatus.pending
+
+        # الحالة 3: تسجيل ذاتي (منفرد) من بره
+        else:
+            if payload.org_id is not None:
+                raise HTTPException(status_code=403, detail="لا يمكنك تحديد جمعية عند التسجل ذاتياً")
+            payload.type = PreacherType.volunteer
+            is_official = False
+            account_status = AccountStatus.pending
+            approval_status = ApprovalStatus.pending
 
         user = User(
             email=payload.email,
             password_hash=_hash_password(payload.password),
             role=UserRole.preacher,
-            status=AccountStatus.pending,
+            status=account_status,
         )
         db.add(user)
         db.flush()
@@ -49,6 +86,8 @@ class PreachersController:
             org_id=payload.org_id,
             identity_number=payload.identity_number,
             scientific_qualification=payload.scientific_qualification,
+            approval_status=approval_status,
+            status=PreacherStatus.active if account_status == AccountStatus.active else PreacherStatus.suspended
         )
         db.add(preacher)
         db.commit()
@@ -100,6 +139,39 @@ class PreachersController:
 
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(preacher, field, value)
+
+        # منطق استرداد الطلبات في حالة الإيقاف
+        if payload.status == PreacherStatus.suspended:
+            # إعادة كل الطلبات الحالية (in_progress) لتصبح (pending)
+            db.query(DawahRequest).filter(
+                DawahRequest.assigned_preacher_id == preacher_id,
+                DawahRequest.status == RequestStatus.in_progress
+            ).update({
+                DawahRequest.status: RequestStatus.pending,
+                DawahRequest.assigned_preacher_id: None
+            })
+            
+            # تحديث حالة حساب المستخدم المرتبط للإيقاف أيضاً
+            if preacher.user:
+                preacher.user.status = AccountStatus.suspended
+
+        # في حالة التفعيل مرة أخرى والموافقة
+        if (payload.status == PreacherStatus.active or payload.approval_status == ApprovalStatus.approved) and preacher.approval_status == ApprovalStatus.approved:
+             if preacher.user:
+                preacher.user.status = AccountStatus.active
+             NotificationsController.create_notification(
+                 db, preacher.user_id, NotificationType.account_approved,
+                 "تمت الموافقة على حسابك", "تم تفعيل حسابك كداعية بنجاح، يمكنك الآن البدء في استقبال طلبات الدعوة."
+             )
+        
+        # في حالة الرفض
+        elif payload.approval_status == ApprovalStatus.rejected:
+            if preacher.user:
+                preacher.user.status = AccountStatus.suspended
+            NotificationsController.create_notification(
+                db, preacher.user_id, NotificationType.account_rejected,
+                "تم رفض طلب الانضمام", f"نأسف لإبلاغك بأنه تم رفض طلبك. السبب: {preacher.rejection_reason or 'غير محدد'}"
+            )
 
         db.commit()
         db.refresh(preacher)

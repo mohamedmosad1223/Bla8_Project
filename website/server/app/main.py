@@ -9,6 +9,9 @@ from app.routers import (
     preachers_router,
     muslim_callers_router,
     interested_persons_router,
+    auth_router,
+    dawah_requests_router,
+    notifications_router,
 )
 
 app = FastAPI(
@@ -35,6 +38,9 @@ app.include_router(organizations_router)
 app.include_router(preachers_router)
 app.include_router(muslim_callers_router)
 app.include_router(interested_persons_router)
+app.include_router(auth_router)
+app.include_router(dawah_requests_router)
+app.include_router(notifications_router)
 
 
 @app.get("/", tags=["Health"])

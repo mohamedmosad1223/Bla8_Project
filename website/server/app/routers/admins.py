@@ -8,17 +8,19 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas import AdminUpdate, AdminRegister
 from app.controllers.admins_controller import AdminsController
+from app.auth import check_role
+from app.models.enums import UserRole
 
 router = APIRouter(prefix="/api/admins", tags=["Admins"])
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED, dependencies=[Depends(check_role([UserRole.admin]))])
 def register_admin(payload: AdminRegister, db: Session = Depends(get_db)):
     """تسجيل أدمن جديد — ينشئ User + Admin في عملية واحدة"""
     return AdminsController.register(db, payload)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(check_role([UserRole.admin]))])
 def list_admins(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),

@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas import OrganizationUpdate, OrganizationRegister
 from app.controllers.organizations_controller import OrganizationsController
+from app.auth import check_role
+from app.models.enums import UserRole
 
 router = APIRouter(prefix="/api/organizations", tags=["Organizations"])
 
@@ -18,7 +20,7 @@ def register_organization(payload: OrganizationRegister, db: Session = Depends(g
     return OrganizationsController.register(db, payload)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(check_role([UserRole.admin]))])
 def list_organizations(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -41,7 +43,7 @@ def update_organization(org_id: int, payload: OrganizationUpdate, db: Session = 
     return OrganizationsController.update_organization(db, org_id, payload)
 
 
-@router.delete("/{org_id}")
+@router.delete("/{org_id}", dependencies=[Depends(check_role([UserRole.admin]))])
 def delete_organization(org_id: int, db: Session = Depends(get_db)):
     """حذف جمعية — يحذف البروفايل ويعمل soft-delete للمستخدم"""
     return OrganizationsController.delete_organization(db, org_id)

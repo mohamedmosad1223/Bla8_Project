@@ -47,6 +47,9 @@ class Settings:
     APP_ENV:      str  = _get("APP_ENV",      "development")
     SECRET_KEY:   str  = _get("SECRET_KEY",   "change-me-in-production")
     DEBUG:        bool = _get("DEBUG", "true").lower() == "true"
+    JWT_SECRET_KEY: str = _get("JWT_SECRET_KEY", "705fae3e46180cf2823652de9e33842c510fc14187640f0f58079234857")
+    ALGORITHM:      str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
 
 
 settings = Settings()

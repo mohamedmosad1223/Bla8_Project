@@ -10,6 +10,11 @@ from app.models.user import User
 from app.models.enums import AccountStatus
 from app.models.responses import UserMessages
 from app.schemas import UserUpdate
+from app.auth import get_password_hash
+
+
+def _hash_password(password: str) -> str:
+    return get_password_hash(password)
 
 
 class UsersController:
