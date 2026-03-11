@@ -32,6 +32,9 @@
 
 .notifications-header-area .page-title {
   margin-bottom: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-dark);
 }
 
 .notifications-content {

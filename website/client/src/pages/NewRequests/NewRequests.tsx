@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Filter as FilterIcon, SortDesc, Eye, ChevronRight, ChevronDown, Calendar, X, Check } from 'lucide-react';
+import { Search, Filter as FilterIcon, SortDesc, Eye, ChevronRight, ChevronDown, X, Check } from 'lucide-react';
 import './NewRequests.css';
 
 // -------------------------
@@ -74,18 +74,73 @@ const EmptyState = () => (
 );
 
 // -------------------------
+// Modals
+// -------------------------
+const AcceptModal = ({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) => (
+  <div className="nreq-modal-overlay">
+    <div className="nreq-modal nreq-accept-modal" dir="rtl">
+      <button className="nreq-modal-close" onClick={onClose}><X size={20} /></button>
+      
+      <div className="nreq-modal-content">
+        <div className="nreq-modal-icon-success">
+          <Check size={40} strokeWidth={3} />
+        </div>
+        <h2 className="nreq-modal-title">تم بنجاح!</h2>
+        <p className="nreq-modal-desc">تم استلام الطلب بنجاح</p>
+        
+        <button className="nreq-modal-btn-full nreq-btn-success" onClick={onConfirm}>
+          تم
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const RejectModal = ({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) => (
+  <div className="nreq-modal-overlay">
+    <div className="nreq-modal nreq-reject-modal" dir="rtl">
+      <button className="nreq-modal-close" onClick={onClose}><X size={20} /></button>
+      
+      <div className="nreq-modal-content">
+        <div className="nreq-modal-icon-danger">
+          <X size={40} strokeWidth={3} />
+        </div>
+        <h2 className="nreq-modal-title">رفض الطلب</h2>
+        <p className="nreq-modal-desc mx-auto">هل تود ان تتخذ هذا الاجراء ؟</p>
+        
+        <div className="nreq-modal-textarea-wrapper">
+          <textarea 
+            className="nreq-modal-textarea" 
+            placeholder="ملاحظة&#10;مثال ملاحظة"
+            rows={4}
+          />
+        </div>
+        
+        <div className="nreq-modal-actions">
+          <button className="nreq-modal-btn nreq-btn-cancel" onClick={onClose}>
+            الغاء
+          </button>
+          <button className="nreq-modal-btn nreq-btn-danger" onClick={onConfirm}>
+            تأكيد
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// -------------------------
 // Table View Component
 // -------------------------
-const TableView = ({ requests, onView }: { requests: Request[]; onView: (r: Request) => void }) => (
+const TableView = ({ requests, onView, isPreacher, onAccept, onReject }: { requests: Request[]; onView: (r: Request) => void; isPreacher: boolean; onAccept: (r: Request) => void; onReject: (r: Request) => void }) => (
   <div className="nreq-table-wrapper">
     <table className="nreq-table">
       <thead>
         <tr>
           <th>رقم <span className="sort-arrow">↕</span></th>
-          <th>اسم المدعو <span className="sort-arrow">↕</span></th>
-          <th>اسم الداعي <span className="sort-arrow">↕</span></th>
-          <th>اسم الداعية <span className="sort-arrow">↕</span></th>
+          <th>اسم الشخص <span className="sort-arrow">↕</span></th>
           <th>الجنسية <span className="sort-arrow">↕</span></th>
+          <th>اسم الداعي <span className="sort-arrow">↕</span></th>
           <th>لغة التواصل <span className="sort-arrow">↕</span></th>
           <th>الديانة <span className="sort-arrow">↕</span></th>
           <th>تاريخ الارسال <span className="sort-arrow">↕</span></th>
@@ -98,17 +153,28 @@ const TableView = ({ requests, onView }: { requests: Request[]; onView: (r: Requ
           <tr key={req.id}>
             <td>{req.serial}</td>
             <td>{req.donorName}</td>
-            <td>{req.donorName}</td>
-            <td>{req.callerName}</td>
             <td>{req.nationality}</td>
+            <td>{req.callerName}</td>
             <td>{req.language}</td>
             <td>{req.religion}</td>
             <td className="nreq-date-cell">{req.sendDate}</td>
             <td><span className="nreq-comment-text">{req.comment}</span></td>
             <td>
-              <button className="nreq-eye-btn" onClick={() => onView(req)} title="عرض التفاصيل">
-                <Eye size={18} />
-              </button>
+              <div className="nreq-actions-cell">
+                {isPreacher && (
+                  <>
+                    <button className="nreq-action-btn nreq-accept-btn" title="قبول" onClick={() => onAccept(req)}>
+                      <Check size={18} />
+                    </button>
+                    <button className="nreq-action-btn nreq-reject-btn" title="إلغاء" onClick={() => onReject(req)}>
+                      <X size={18} />
+                    </button>
+                  </>
+                )}
+                <button className="nreq-action-btn nreq-eye-btn" onClick={() => onView(req)} title="عرض التفاصيل">
+                  <Eye size={18} />
+                </button>
+              </div>
             </td>
           </tr>
         ))}
@@ -128,14 +194,31 @@ const NField = ({ label, icon, children }: { label: string; icon: React.ReactNod
 // -------------------------
 // Detail View Component
 // -------------------------
-const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => void }) => (
+const DetailView = ({ detail, onBack, isPreacher, onAccept, onReject }: { detail: RequestDetail; onBack: () => void; isPreacher: boolean; onAccept: () => void; onReject: () => void }) => (
   <div className="nreq-detail-page" dir="rtl">
-    {/* Breadcrumb */}
-    <div className="nreq-breadcrumb">
-      <button className="nreq-breadcrumb-link" onClick={onBack}>طلبات الدعوة الجديدة</button>
-      <ChevronRight size={14} />
+    <div className="nreq-detail-header-wrapper">
+      <div className="nreq-detail-header-titles">
+        {/* Breadcrumb */}
+        <div className="nreq-breadcrumb">
+          <button className="nreq-breadcrumb-link" onClick={onBack}>طلبات الدعوة الجديدة</button>
+          <ChevronRight size={14} />
+        </div>
+        <h1 className="nreq-detail-title">عرض الطلب الجديد</h1>
+      </div>
+
+      {isPreacher && (
+        <div className="nreq-detail-actions">
+          <button className="nreq-detail-btn nreq-detail-accept" onClick={onAccept}>
+            استلام الطلب
+            <Check size={18} />
+          </button>
+          <button className="nreq-detail-btn nreq-detail-reject" onClick={onReject}>
+            رفض الطلب
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
-    <h1 className="nreq-detail-title">عرض الطلب الجديد</h1>
 
     <div className="nreq-detail-card">
 
@@ -219,6 +302,14 @@ const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => v
 const NewRequests = () => {
   const [view, setView] = useState<'empty' | 'table' | 'detail'>(MOCK_REQUESTS.length > 0 ? 'table' : 'empty');
   const [selectedRequest, setSelectedRequest] = useState<RequestDetail | null>(null);
+  
+  // Modals state
+  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  // Optional: const [selectedActionRequest, setSelectedActionRequest] = useState<Request | null>(null);
+  
+  const userRole = localStorage.getItem('userRole') || 'association';
+  const isPreacher = userRole === 'preacher';
 
   // Filter + Sort state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -229,16 +320,20 @@ const NewRequests = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('مفعل');
   const availableLanguages = ['العربية', 'الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية', 'الهندية'];
   const sortRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
         setIsSortOpen(false);
       }
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [sortRef]);
+  }, [sortRef, filterRef]);
 
   const removeLanguage = (lang: string) => setFilterLanguages(filterLanguages.filter(l => l !== lang));
   const addLanguage = (lang: string) => { if (!filterLanguages.includes(lang)) setFilterLanguages([...filterLanguages, lang]); };
@@ -254,10 +349,46 @@ const NewRequests = () => {
     setView(MOCK_REQUESTS.length > 0 ? 'table' : 'empty');
   };
 
+  const handleOpenAcceptModal = () => {
+    // setSelectedActionRequest(req || null);
+    setIsAcceptModalOpen(true);
+  };
+
+  const handleOpenRejectModal = () => {
+    // setSelectedActionRequest(req || null);
+    setIsRejectModalOpen(true);
+  };
+
+  const closeModals = () => {
+    setIsAcceptModalOpen(false);
+    setIsRejectModalOpen(false);
+    // setSelectedActionRequest(null);
+  };
+
+  const handleConfirmAccept = () => {
+    // Handle Accept Logic Here
+    closeModals();
+  };
+
+  const handleConfirmReject = () => {
+    // Handle Reject Logic Here
+    closeModals();
+  };
+
   return (
     <div className="nreq-page">
+      {/* Modals */}
+      {isAcceptModalOpen && <AcceptModal onClose={closeModals} onConfirm={handleConfirmAccept} />}
+      {isRejectModalOpen && <RejectModal onClose={closeModals} onConfirm={handleConfirmReject} />}
+
       {view === 'detail' && selectedRequest ? (
-        <DetailView detail={selectedRequest} onBack={handleBack} />
+        <DetailView 
+          detail={selectedRequest} 
+          onBack={handleBack} 
+          isPreacher={isPreacher}
+          onAccept={() => handleOpenAcceptModal()}
+          onReject={() => handleOpenRejectModal()}
+        />
       ) : (
         <>
           <div className="nreq-header-area">
@@ -269,13 +400,124 @@ const NewRequests = () => {
                 <input type="text" placeholder="ابحث" className="search-input-outlined" />
               </div>
 
-              <button
-                className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-              >
-                <FilterIcon size={18} />
-                فلتر
-              </button>
+              <div className="filter-popup-container" ref={filterRef}>
+                <button
+                  className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                >
+                  <FilterIcon size={18} />
+                  فلتر
+                </button>
+
+                {/* Filter Side Panel Popup */}
+                {isFilterOpen && (
+                  <div className="filter-panel" dir="rtl">
+                    <div className="filter-panel-header">
+                      <h2 className="filter-title">الفلتر</h2>
+                      <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>تطبيق الفلتر</button>
+                    </div>
+
+                    <div className="filter-body">
+                      {/* Search */}
+                      <div className="filter-search">
+                        <Search size={16} className="filter-search-icon" />
+                        <input type="text" placeholder="ابحث ..." className="filter-search-input" />
+                      </div>
+
+                      {/* Date */}
+                      <div className="filter-accordion">
+                        <div className="filter-accordion-header" onClick={() => toggleAccordion('date')}>
+                          <span>تاريخ الارسال</span>
+                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'date' ? 'rotate-180' : ''}`} />
+                        </div>
+                        {openAccordion === 'date' && (
+                          <div className="filter-accordion-content mt-2">
+                            <div className="filter-date-input active-outline relative-date-input">
+                              <input type="date" className="custom-date-picker" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Type */}
+                      <div className="filter-accordion">
+                        <div className="filter-accordion-header" onClick={() => toggleAccordion('type')}>
+                          <span>النوع</span>
+                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'type' ? 'rotate-180' : ''}`} />
+                        </div>
+                        {openAccordion === 'type' && (
+                          <div className="filter-accordion-content mt-2">
+                            <div className="filter-submenu-list bordered-list">
+                              <label className="submenu-item" onClick={(e) => { e.preventDefault(); setSelectedType('داعية'); }}>
+                                <div className={`checkbox-custom check-align-left ${selectedType === 'داعية' ? 'checked-gold' : ''}`}>
+                                  {selectedType === 'داعية' && <Check size={12} strokeWidth={3} color="white" />}
+                                </div>
+                                <span>داعية</span>
+                              </label>
+                              <label className="submenu-item" onClick={(e) => { e.preventDefault(); setSelectedType('غير ذلك'); }}>
+                                <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked-gold' : ''}`}>
+                                  {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={3} color="white" />}
+                                </div>
+                                <span>غير ذلك</span>
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Language */}
+                      <div className="filter-accordion">
+                        <div className="filter-accordion-header" onClick={() => toggleAccordion('language')}>
+                          <span>اللغة</span>
+                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'language' ? 'rotate-180' : ''}`} />
+                        </div>
+                        <div className="filter-accordion-content mt-2">
+                          <div className="filter-tags-wrapper">
+                            {filterLanguages.map((lang, i) => (
+                              <span key={i} className="filter-tag">
+                                <span>{lang}</span>
+                                <button type="button" onClick={() => removeLanguage(lang)}><X size={12} /></button>
+                              </span>
+                            ))}
+                          </div>
+                          {openAccordion === 'language' && (
+                            <div className="filter-submenu-list bordered-list mt-3">
+                              {availableLanguages.map(lang => {
+                                const sel = filterLanguages.includes(lang);
+                                return (
+                                  <label key={lang} className="submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeLanguage(lang); } else { addLanguage(lang); } }}>
+                                    <div className={`checkbox-custom check-align-left ${sel ? 'checked-gold' : ''}`}>
+                                      {sel && <Check size={12} strokeWidth={3} color="white" />}
+                                    </div>
+                                    <span>{lang}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status */}
+                      <div className="filter-accordion no-border">
+                        <div className="filter-accordion-header filter-status-header">
+                          <span>الحالة</span>
+                        </div>
+                        <div className="filter-accordion-content status-content mt-2">
+                          {[{ key: 'مفعل', cls: 'active-status' }, { key: 'غير مفعل', cls: 'inactive-status' }].map(({ key, cls }) => (
+                            <label key={key} className={`status-option ${selectedStatus === key ? cls : ''}`} onClick={() => setSelectedStatus(key)}>
+                              <div className={`checkbox-custom check-align-left ${selectedStatus === key ? 'checked-gold' : ''}`}>
+                                {selectedStatus === key && <Check size={12} strokeWidth={3} color="white" />}
+                              </div>
+                              <span>{key}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="sort-container" ref={sortRef}>
                 <button
@@ -297,114 +539,10 @@ const NewRequests = () => {
 
           <div className="nreq-body-wrapper">
             <div className="nreq-content">
-              {view === 'empty' ? <EmptyState /> : <TableView requests={MOCK_REQUESTS} onView={handleView} />}
+              {view === 'empty' ? <EmptyState /> : <TableView requests={MOCK_REQUESTS} onView={handleView} isPreacher={isPreacher} onAccept={handleOpenAcceptModal} onReject={handleOpenRejectModal} />}
             </div>
 
-            {/* Filter Side Panel */}
-            {isFilterOpen && (
-              <div className="filter-panel">
-                <div className="filter-panel-header">
-                  <h2 className="filter-title">الفلتر</h2>
-                  <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>تطبيق الفلتر</button>
-                </div>
 
-                <div className="filter-body">
-                  {/* Search */}
-                  <div className="filter-search">
-                    <Search size={16} className="filter-search-icon" />
-                    <input type="text" placeholder="ابحث ....." className="filter-search-input" />
-                  </div>
-
-                  {/* Join Date */}
-                  <div className="filter-accordion">
-                    <div className="filter-accordion-header" onClick={() => toggleAccordion('date')}>
-                      <span>تاريخ الانضمام</span>
-                      <ChevronDown size={16} className={`text-gray ${openAccordion === 'date' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openAccordion === 'date' && (
-                      <div className="filter-accordion-content mt-2">
-                        <div className="filter-date-input active-outline relative-date-input">
-                          <Calendar size={16} className="text-gray" />
-                          <input type="date" className="custom-date-picker" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Type */}
-                  <div className="filter-accordion">
-                    <div className="filter-accordion-header" onClick={() => toggleAccordion('type')}>
-                      <span>النوع</span>
-                      <ChevronDown size={16} className={`text-gray ${openAccordion === 'type' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openAccordion === 'type' && (
-                      <div className="filter-accordion-content mt-2">
-                        <div className="filter-submenu-list bordered-list">
-                          {['داعية', 'غير ذلك'].map(t => (
-                            <label key={t} className="submenu-item" onClick={(e) => { e.preventDefault(); setSelectedType(t); }}>
-                              <div className={`checkbox-custom check-align-left ${selectedType === t ? 'checked' : ''}`}>
-                                {selectedType === t && <Check size={12} strokeWidth={4} />}
-                              </div>
-                              <span>{t}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Language */}
-                  <div className="filter-accordion">
-                    <div className="filter-accordion-header" onClick={() => toggleAccordion('language')}>
-                      <span>اللغة</span>
-                      <ChevronDown size={16} className={`text-gray ${openAccordion === 'language' ? 'rotate-180' : ''}`} />
-                    </div>
-                    <div className="filter-accordion-content">
-                      <div className="filter-tags-wrapper">
-                        {filterLanguages.map((lang, i) => (
-                          <span key={i} className="filter-tag">
-                            <span>{lang}</span>
-                            <button type="button" onClick={() => removeLanguage(lang)}><X size={12} /></button>
-                          </span>
-                        ))}
-                      </div>
-                      {openAccordion === 'language' && (
-                        <div className="filter-submenu-list bordered-list mt-3">
-                          {availableLanguages.map(lang => {
-                            const sel = filterLanguages.includes(lang);
-                            return (
-                              <label key={lang} className="submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeLanguage(lang); } else { addLanguage(lang); } }}>
-                                <div className={`checkbox-custom check-align-left ${sel ? 'checked' : ''}`}>
-                                  {sel && <Check size={12} strokeWidth={4} />}
-                                </div>
-                                <span>{lang}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Status */}
-                  <div className="filter-accordion no-border">
-                    <div className="filter-accordion-header filter-status-header">
-                      <span>الحالة</span>
-                    </div>
-                    <div className="filter-accordion-content status-content mt-2">
-                      {[{ key: 'مفعل', cls: 'active-status' }, { key: 'غير مفعل', cls: 'inactive-status' }].map(({ key, cls }) => (
-                        <label key={key} className={`status-option ${selectedStatus === key ? cls : ''}`} onClick={() => setSelectedStatus(key)}>
-                          <div className={`checkbox-custom check-align-left ${selectedStatus === key ? (key === 'مفعل' ? 'checked' : 'checked-red') : ''}`}>
-                            {selectedStatus === key && <Check size={12} strokeWidth={4} />}
-                          </div>
-                          <span>{key}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}

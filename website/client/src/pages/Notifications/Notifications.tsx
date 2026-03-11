@@ -6,7 +6,7 @@ const Notifications = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="notifications-page">
+    <div className="notifications-page" dir="rtl">
       <div className="notifications-header-area">
         <button 
           className="back-button" 
@@ -21,10 +21,13 @@ const Notifications = () => {
       <div className="notifications-content">
         <div className="empty-state">
           <div className="empty-state-icon">
-            {/* Custom Bell Icon resembling the design */}
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.36 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.63 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16ZM16 17H8V11C8 8.52 9.51 6.5 12 6.5C14.49 6.5 16 8.52 16 11V17Z" fill="#DBA841" stroke="#DBA841" strokeWidth="0.5"/>
-              <path d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z" fill="#166088"/>
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Outer stroke/bell shape in gold */}
+              <path d="M50 20C38 20 32 30 32 45V60C32 65 25 65 25 70H75C75 65 68 65 68 60V45C68 30 62 20 50 20Z" stroke="#dba841" strokeWidth="4" fill="white" strokeLinejoin="round" />
+              {/* Clapper/Bottom blue arc */}
+              <path d="M42 70C42 75 45 78 50 78C55 78 58 75 58 70" stroke="#166088" strokeWidth="4" strokeLinecap="round" fill="none" />
+              {/* Top loop/hanger in gold */}
+              <path d="M46 20C46 17 48 15 50 15C52 15 54 17 54 20" stroke="#dba841" strokeWidth="4" strokeLinecap="round" fill="none" />
             </svg>
           </div>
           <h2 className="empty-state-title">لا يوجد اشعارات في الوقت الحالي</h2>

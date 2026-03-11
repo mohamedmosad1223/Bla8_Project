@@ -99,6 +99,7 @@
   flex: 1;
   position: relative;
   align-items: flex-start;
+  width: 100%;
 }
 
 .callers-content {
@@ -194,18 +195,27 @@
   border-radius: 6px;
 }
 
-/* Filter Panel */
+/* Filter Panel Overlay */
+.filter-popup-container {
+  position: relative;
+  display: flex;
+}
+
 .filter-panel {
-  width: 320px;
+  width: 310px;
   background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--border-gray);
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  flex-shrink: 0; /* prevent shrinking if content gets large */
+  flex-shrink: 0;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 100;
 }
 
 .filter-panel-header {
@@ -497,9 +507,9 @@
   color: white;
 }
 
-.checkbox-custom.checked-red {
-  background-color: #EF4444; /* Red Checkbox! */
-  border-color: #EF4444;
+.checkbox-custom.checked-gold {
+  background-color: #DBA841; /* Gold Checkbox! */
+  border-color: #dba841;
   color: white;
 }
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter as FilterIcon, SortDesc, ChevronDown, Calendar, X, Check } from 'lucide-react';
+import { Plus, Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check } from 'lucide-react';
 import './Callers.css';
 
 const Callers = () => {
@@ -12,17 +12,21 @@ const Callers = () => {
   const [filterLanguages, setFilterLanguages] = useState<string[]>(['الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية']);
   
   const sortRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
-  // Close sort menu when clicking outside
+  // Close sort & filter menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
         setIsSortOpen(false);
       }
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [sortRef]);
+  }, [sortRef, filterRef]);
 
   const removeLanguage = (langToRemove: string) => {
     setFilterLanguages(filterLanguages.filter(lang => lang !== langToRemove));
@@ -68,13 +72,181 @@ const Callers = () => {
               />
             </div>
             
-            <button 
-              className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-            >
-              <FilterIcon size={18} />
-              فلتر
-            </button>
+            <div className="filter-popup-container" ref={filterRef}>
+              <button 
+                className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
+                <FilterIcon size={18} />
+                فلتر
+              </button>
+
+              {/* Filter Side Panel / Modal */}
+              {isFilterOpen && (
+                <div className="filter-panel" dir="rtl">
+                  <div className="filter-panel-header">
+                    <h2 className="filter-title">الفلتر</h2>
+                    <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>
+                      تطبيق الفلتر
+                    </button>
+                  </div>
+
+                  <div className="filter-body">
+                    {/* Search */}
+                    <div className="filter-search">
+                      <Search size={16} className="filter-search-icon" />
+                      <input type="text" placeholder="ابحث ....." className="filter-search-input" />
+                    </div>
+
+                    {/* Join Date Accordion */}
+                    <div className="filter-accordion">
+                      <div 
+                        className="filter-accordion-header"
+                        onClick={() => toggleAccordion('date')}
+                      >
+                        <span>تاريخ الانضمام</span>
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-gray transition-transform ${openAccordion === 'date' ? 'rotate-180' : ''}`} 
+                        />
+                      </div>
+                      {openAccordion === 'date' && (
+                        <div className="filter-accordion-content mt-2">
+                          <div className="filter-date-input active-outline relative-date-input">
+                            <input 
+                              type="date"
+                              className="custom-date-picker"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Type Accordion */}
+                    <div className="filter-accordion">
+                      <div 
+                        className="filter-accordion-header"
+                        onClick={() => toggleAccordion('type')}
+                      >
+                        <span>النوع</span>
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-gray transition-transform ${openAccordion === 'type' ? 'rotate-180' : ''}`} 
+                        />
+                      </div>
+                      {openAccordion === 'type' && (
+                        <div className="filter-accordion-content mt-2">
+                          <div className="filter-submenu-list bordered-list">
+                            <label 
+                              className="submenu-item"
+                              onClick={(e) => { e.preventDefault(); setSelectedType('داعية'); }}
+                            >
+                              <div className={`checkbox-custom check-align-left ${selectedType === 'داعية' ? 'checked-gold' : ''}`}>
+                                  {selectedType === 'داعية' && <Check size={12} strokeWidth={3} color="white" />}
+                              </div>
+                              <span>داعية</span>
+                            </label>
+                            <label 
+                              className="submenu-item"
+                              onClick={(e) => { e.preventDefault(); setSelectedType('غير ذلك'); }}
+                            >
+                               <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked-gold' : ''}`}>
+                                  {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={3} color="white" />}
+                              </div>
+                              <span>غير ذلك</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Language Accordion */}
+                    <div className="filter-accordion">
+                      <div 
+                        className="filter-accordion-header"
+                        onClick={() => toggleAccordion('language')}
+                      >
+                        <span>اللغة</span>
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-gray transition-transform ${openAccordion === 'language' ? 'rotate-180' : ''}`} 
+                        />
+                      </div>
+                      
+                      <div className="filter-accordion-content mt-2">
+                        <div className="filter-tags-wrapper">
+                          {filterLanguages.map((lang, index) => (
+                            <span key={index} className="filter-tag">
+                              <span>{lang}</span>
+                              <button type="button" onClick={() => removeLanguage(lang)}>
+                                <X size={12} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+
+                        {openAccordion === 'language' && (
+                           <div className="filter-submenu-list bordered-list mt-3">
+                             {availableLanguages.map((lang) => {
+                               const isSelected = filterLanguages.includes(lang);
+                               return (
+                                  <label key={lang} className="submenu-item" onClick={(e) => {
+                                    e.preventDefault();
+                                    if (isSelected) {
+                                      removeLanguage(lang);
+                                    } else {
+                                      addLanguage(lang);
+                                    }
+                                  }}>
+                                    <div className={`checkbox-custom check-align-left ${isSelected ? 'checked-gold' : ''}`}>
+                                      {isSelected && <Check size={12} strokeWidth={3} color="white" />}
+                                    </div>
+                                    <span>{lang}</span>
+                                  </label>
+                               );
+                             })}
+                           </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Accordion */}
+                    <div className="filter-accordion no-border">
+                      <div className="filter-accordion-header filter-status-header" onClick={() => toggleAccordion('status')}>
+                        <span>الحالة</span>
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-gray transition-transform ${openAccordion === 'status' ? 'rotate-180' : ''}`} 
+                        />
+                      </div>
+                      {openAccordion === 'status' && (
+                        <div className="filter-accordion-content status-content mt-2">
+                          <label 
+                            className={`status-option ${selectedStatus === 'مفعل' ? 'active-status' : ''}`}
+                            onClick={() => setSelectedStatus('مفعل')}
+                          >
+                            <div className={`checkbox-custom check-align-left ${selectedStatus === 'مفعل' ? 'checked-gold' : ''}`}>
+                                {selectedStatus === 'مفعل' && <Check size={12} strokeWidth={3} color="white" />}
+                            </div>
+                            <span>مفعل</span>
+                          </label>
+                          <label 
+                            className={`status-option ${selectedStatus === 'غير مفعل' ? 'inactive-status' : ''}`}
+                            onClick={() => setSelectedStatus('غير مفعل')}
+                          >
+                            <div className={`checkbox-custom check-align-left ${selectedStatus === 'غير مفعل' ? 'checked-gold' : ''}`}>
+                                 {selectedStatus === 'غير مفعل' && <Check size={12} strokeWidth={3} color="white" />}
+                            </div>
+                            <span>غيرمفعل</span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="sort-container" ref={sortRef}>
               <button 
@@ -123,167 +295,6 @@ const Callers = () => {
             </p>
           </div>
         </div>
-
-        {/* Filter Side Panel / Modal */}
-        {isFilterOpen && (
-          <div className="filter-panel">
-            <div className="filter-panel-header">
-              <h2 className="filter-title">الفلتر</h2>
-              <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>
-                تطبيق الفلتر
-              </button>
-            </div>
-
-            <div className="filter-body">
-              {/* Search */}
-              <div className="filter-search">
-                <Search size={16} className="filter-search-icon" />
-                <input type="text" placeholder="ابحث ....." className="filter-search-input" />
-              </div>
-
-              {/* Join Date Accordion */}
-              <div className="filter-accordion">
-                <div 
-                  className="filter-accordion-header"
-                  onClick={() => toggleAccordion('date')}
-                >
-                  <span>تاريخ الانضمام</span>
-                  <ChevronDown 
-                    size={16} 
-                    className={`text-gray transition-transform ${openAccordion === 'date' ? 'rotate-180' : ''}`} 
-                  />
-                </div>
-                {openAccordion === 'date' && (
-                  <div className="filter-accordion-content mt-2">
-                    <div className="filter-date-input active-outline relative-date-input">
-                      <Calendar size={16} className="text-gray" />
-                      <input 
-                        type="date"
-                        className="custom-date-picker"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Type Accordion */}
-              <div className="filter-accordion">
-                <div 
-                  className="filter-accordion-header"
-                  onClick={() => toggleAccordion('type')}
-                >
-                  <span>النوع</span>
-                  <ChevronDown 
-                    size={16} 
-                    className={`text-gray transition-transform ${openAccordion === 'type' ? 'rotate-180' : ''}`} 
-                  />
-                </div>
-                {openAccordion === 'type' && (
-                  <div className="filter-accordion-content mt-2">
-                    <div className="filter-submenu-list bordered-list">
-                      <label 
-                        className="submenu-item"
-                        onClick={(e) => { e.preventDefault(); setSelectedType('داعية'); }}
-                      >
-                        <div className={`checkbox-custom check-align-left ${selectedType === 'داعية' ? 'checked' : ''}`}>
-                            {selectedType === 'داعية' && <Check size={12} strokeWidth={4} />}
-                        </div>
-                        <span>داعية</span>
-                      </label>
-                      <label 
-                        className="submenu-item"
-                        onClick={(e) => { e.preventDefault(); setSelectedType('غير ذلك'); }}
-                      >
-                         <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked' : ''}`}>
-                            {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={4} />}
-                        </div>
-                        <span>غير ذلك</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Language Accordion */}
-              <div className="filter-accordion">
-                <div 
-                  className="filter-accordion-header"
-                  onClick={() => toggleAccordion('language')}
-                >
-                  <span>اللغة</span>
-                  <ChevronDown 
-                    size={16} 
-                    className={`text-gray transition-transform ${openAccordion === 'language' ? 'rotate-180' : ''}`} 
-                  />
-                </div>
-                
-                <div className="filter-accordion-content">
-                  <div className="filter-tags-wrapper">
-                    {filterLanguages.map((lang, index) => (
-                      <span key={index} className="filter-tag">
-                        <span>{lang}</span>
-                        <button type="button" onClick={() => removeLanguage(lang)}>
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-
-                  {openAccordion === 'language' && (
-                     <div className="filter-submenu-list bordered-list mt-3">
-                       {availableLanguages.map((lang) => {
-                         const isSelected = filterLanguages.includes(lang);
-                         return (
-                            <label key={lang} className="submenu-item" onClick={(e) => {
-                              e.preventDefault();
-                              if (isSelected) {
-                                removeLanguage(lang);
-                              } else {
-                                addLanguage(lang);
-                              }
-                            }}>
-                              <div className={`checkbox-custom check-align-left ${isSelected ? 'checked' : ''}`}>
-                                {isSelected && <Check size={12} strokeWidth={4} />}
-                              </div>
-                              <span>{lang}</span>
-                            </label>
-                         );
-                       })}
-                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Status Accordion */}
-              <div className="filter-accordion no-border">
-                <div className="filter-accordion-header filter-status-header">
-                  <span>الحالة</span>
-                </div>
-                <div className="filter-accordion-content status-content mt-2">
-                  <label 
-                    className={`status-option ${selectedStatus === 'مفعل' ? 'active-status' : ''}`}
-                    onClick={() => setSelectedStatus('مفعل')}
-                  >
-                    <div className={`checkbox-custom check-align-left ${selectedStatus === 'مفعل' ? 'checked' : ''}`}>
-                        {selectedStatus === 'مفعل' && <Check size={12} strokeWidth={4} />}
-                    </div>
-                    <span>مفعل</span>
-                  </label>
-                  <label 
-                    className={`status-option ${selectedStatus === 'غير مفعل' ? 'inactive-status' : ''}`}
-                    onClick={() => setSelectedStatus('غير مفعل')}
-                  >
-                    <div className={`checkbox-custom check-align-left ${selectedStatus === 'غير مفعل' ? 'checked-red' : ''}`}>
-                         {selectedStatus === 'غير مفعل' && <Check size={12} strokeWidth={4} />}
-                    </div>
-                    <span>غيرمفعل</span>
-                  </label>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
