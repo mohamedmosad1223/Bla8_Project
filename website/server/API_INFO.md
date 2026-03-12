@@ -67,15 +67,15 @@
 ---
 
 ## 🤝 Dawah Requests (الطلبات الدعوية والتقييم)
-- `POST /api/dawah-requests/` — رفع طلب دعوي جديد (للمسلم الداعي أو المهتم).
-- `GET /api/dawah-requests/pool` — جلب الطلبات الجديدة (Pending) المتاحة للقبول (للدعاة والجمعيات).
-- `GET /api/dawah-requests/my` — (للدعاة) جلب الطلبات التي قبلها الداعية ومسؤول عنها.
-- `GET /api/dawah-requests/org-requests` — (للجمعيات) جلب طلبات كل الدعاة التابعين لها شاملة `preacher_feedback`.
-- `GET /api/dawah-requests/my-submissions` — (لرافع الطلب) جلب الطلبات التي رفعها وأسماء الدعاة الذين استلموها.
-- `GET /api/dawah-requests/{request_id}` — جلب تفاصيل الطلب (يطبق نظام حماية الخصوصية والـ Masking للملاحظات المتبادلة).
-- `POST /api/dawah-requests/{request_id}/accept` — (للدعاة) قبول الطلب وسدحبه للـ Dashboard الخاصة به.
-- `PATCH /api/dawah-requests/{request_id}/status` — (للدعاة) تحديث الحالة وتضمين ملاحظة (`preacher_feedback`) للجمعية.
-- `POST /api/dawah-requests/{request_id}/feedback` — (لرافع الطلب) تقييم التجربة والملاحظة (`submitter_feedback`) للجمعية والأدمن.
+- `POST /api/dawah-requests/` — رفع طلب دعوي جديد (للمسلم الداعي أو المهتم). السيرفر يكتشف أوتوماتيكياً نوع الطلب (`request_type`) وهوية الشخص من الـ Token.
+- `GET /api/dawah-requests/pool` — جلب الطلبات الأحدث (Pending) المتاحة للقبول (خاص بالدعاة والجمعيات).
+- `GET /api/dawah-requests/my` — (للدعاة) جلب الطلبات التي قبلها الداعية ليتابعها.
+- `GET /api/dawah-requests/org-requests` — (للجمعيات) جلب طلبات كل الدعاة التابعين لها شاملة الملاحظات (`preacher_feedback` و `submitter_feedback` و `notes`).
+- `GET /api/dawah-requests/my-submissions` — (لرافع الطلب) رؤية الطلبات التي رفعها وحالتها لمعرفة ما إذا قبلها داعية.
+- `GET /api/dawah-requests/{request_id}` — جلب تفاصيل طلب معين (مُأمنة بصلاحيات).
+- `POST /api/dawah-requests/{request_id}/accept` — (للدعاة) قبول الطلب وربطه بالداعية.
+- `PATCH /api/dawah-requests/{request_id}/status` — (للدعاة) تحديث الحالة أو فقط إضافة ملاحظات للجمعية. معامل `new_status` هنا *اختياري* (Optional)، مما يسمح بإرسال `preacher_feedback` أو `note` فقط دون تغيير حالة الطلب.
+- `POST /api/dawah-requests/{request_id}/feedback` — (لرافع الطلب) تقييم التجربة، وهذا التقييم يظهر للجمعية باسم `submitter_feedback`.
 
 ---
 
@@ -86,9 +86,17 @@
 ---
 
 ## 💬 Messages & Chat (المحادثات المباشرة)
-- `POST /api/messages/`: إرسال رسالة.
-- `GET /api/messages/chat-history/{request_id}`: جلب سجل المحادثة.
-- `GET /api/messages/my-chats`: جلب معاينة المحادثات النشطة.
+*(أي طلب يتحول لحالة in_progress يفتح أوتوماتيكياً غرفة دردشة بين الداعية ورافع الطلب)*
+
+1. `GET /api/messages/my-chats`: **(شاشة الـ Inbox الرئيسية)**
+   - يجلب قائمة (Previews) لكل المحادثات الناشطة للمستخدم الحالي.
+   - يعيد `request_id` (بمثابة Room ID)، اسم الطرف الآخر (`other_party_name`)، آخر رسالة (`last_message`)، وعدد الرسائل غير المقروءة (`unread_count`).
+2. `GET /api/messages/chat-history/{request_id}`: **(عند الدخول للمحادثة)**
+   - يجلب التاريخ الكامل للرسائل (`Array of Messages`) بين الطرفين من الأقدم للأحدث، وتُحسب فيه الرسائل غير المقروءة على أنها مقروءة أوتوماتيكياً.
+   - شكل الرسالة المردود: `{"message_id": 1, "sender_id": 12, "receiver_id": 15, "message_text": "...", "created_at": "..."}`
+3. `POST /api/messages/`: **(إرسال رسالة)**
+   - Body المطلوب فقط: `{"request_id": 1, "message_text": "نص الرسالة هنا"}`.
+   - السيرفر سيعرف المُرسل والمُستقبل تلقائياً.
 
 ---
 

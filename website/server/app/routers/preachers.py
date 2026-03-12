@@ -73,8 +73,14 @@ def list_preachers(
     nationality_country_id: Optional[int] = Query(None),
     org_id: Optional[int] = Query(None, description="Filter by organization"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """قائمة الدعاة — مع فلترة متقدمة"""
+    """قائمة الدعاة — مع فلترة متقدمة (يتم تحديد الجمعية تلقائياً إذا كان المستخدم جمعية)"""
+    
+    # لو المستخدم عبارة عن جمعية، نجبر الفلتر إنه يجيب الدعاة بتوعها بس
+    if current_user.role == UserRole.organization:
+        org_id = current_user.organization.org_id
+
     return PreachersController.list_preachers(
         db, skip, limit, full_name, type,
         preacher_status, gender, approval_status,
