@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
+from app.models.admin import Admin
+from app.models.organization import Organization
+from app.models.preacher import Preacher
+from app.models.muslim_caller import MuslimCaller
+from app.models.interested_person import InterestedPerson
 from app.models.enums import UserRole, AccountStatus
 from app.auth import verify_password, create_access_token, get_current_user
 from app.limiter import limiter

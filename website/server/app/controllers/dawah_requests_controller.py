@@ -126,19 +126,27 @@ class DawahRequestsController:
             raise HTTPException(status_code=404, detail="الطلب غير موجود أو غير مسند إليك")
         
         old_status = request.status
-        request.status = payload.new_status
+        if payload.new_status:
+            request.status = payload.new_status
+            
         if payload.conversion_date:
             request.conversion_date = payload.conversion_date
         if payload.preacher_feedback:
-            request.preacher_feedback = payload.preacher_feedback
+            # Append feedback if already exists or just set it
+            if request.preacher_feedback:
+                request.preacher_feedback += f"\n- {payload.preacher_feedback}"
+            else:
+                request.preacher_feedback = payload.preacher_feedback
+                
         if payload.note:
             request.notes = payload.note
             
+        # إضافة سجل للتاريخ حتى لو لم تتغير الحالة ولكن تمت إضافة ملاحظة
         history = RequestStatusHistory(
             request_id=request.request_id,
             old_status=old_status,
-            new_status=payload.new_status,
-            note=payload.note
+            new_status=request.status,
+            note=payload.note or payload.preacher_feedback or "تحديث بيانات الطلب"
         )
         db.add(history)
         db.commit()
@@ -169,7 +177,9 @@ class DawahRequestsController:
                 "accepted_at": r.accepted_at,
                 "created_at": r.created_at,
                 "updated_at": r.updated_at,
-                "preacher_feedback": r.preacher_feedback
+                "preacher_feedback": r.preacher_feedback,
+                "submitter_feedback": r.submitter_feedback,
+                "notes": r.notes
             }
             rich_data.append(item)
             

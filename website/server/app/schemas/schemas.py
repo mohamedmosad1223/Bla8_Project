@@ -229,7 +229,7 @@ class InterestedPersonRead(InterestedPersonCreate):
 # ─── Dawah Request ───────────────────────────────────────────────────────────
 
 class DawahRequestCreate(BaseModel):
-    request_type: RequestType
+    request_type: Optional[RequestType] = None
 
     # بيانات المدعو
     invited_first_name:         Optional[str]  = Field(None, max_length=150)
@@ -256,10 +256,6 @@ class DawahRequestCreate(BaseModel):
 
     @model_validator(mode="after")
     def check_consistency(self) -> "DawahRequestCreate":
-        if self.request_type == RequestType.invited and not self.submitted_by_caller_id:
-            raise ValueError("نوع الطلب 'invited' يتطلب submitted_by_caller_id")
-        if self.request_type == RequestType.self_interested and not self.submitted_by_person_id:
-            raise ValueError("نوع الطلب 'self_interested' يتطلب submitted_by_person_id")
         if self.communication_channel == CommunicationChannel.whatsapp and self.invited_phone:
             # توليد deep_link تلقائياً لو مش موجود
             if not self.deep_link:
@@ -298,7 +294,7 @@ class CallerDashboardRead(BaseModel):
 # ─── Status Update ───────────────────────────────────────────────────────────
 
 class StatusUpdateRequest(BaseModel):
-    new_status: RequestStatus
+    new_status: Optional[RequestStatus] = None
     note: Optional[str] = Field(None, max_length=1000)
     preacher_feedback: Optional[str] = Field(None, max_length=2000)
     conversion_date: Optional[date] = None
