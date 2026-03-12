@@ -17,9 +17,26 @@ from app.models.enums import NotificationType
 class DawahRequestsController:
 
     @staticmethod
-    def create_request(db: Session, payload: DawahRequestCreate):
+    def create_request(db: Session, payload: DawahRequestCreate, current_user: User):
         # Create the request
-        request = DawahRequest(**payload.model_dump())
+        request_data = payload.model_dump()
+        
+        # Override submitter IDs with the current user's actual profile IDs to prevent spoofing
+        request_data["submitted_by_caller_id"] = None
+        request_data["submitted_by_person_id"] = None
+        
+        if current_user.role == UserRole.muslim_caller:
+            if not current_user.muslim_caller:
+                raise HTTPException(status_code=400, detail="بروفايل المسلم الداعي غير مكتمل")
+            request_data["submitted_by_caller_id"] = current_user.muslim_caller.caller_id
+            request_data["request_type"] = RequestType.invited
+        elif current_user.role == UserRole.interested:
+            if not current_user.interested_person:
+                raise HTTPException(status_code=400, detail="بروفايل الشخص المهتم غير مكتمل")
+            request_data["submitted_by_person_id"] = current_user.interested_person.person_id
+            request_data["request_type"] = RequestType.self_interested
+        
+        request = DawahRequest(**request_data)
         db.add(request)
         db.flush()
         
@@ -195,10 +212,13 @@ class DawahRequestsController:
             caller = db.query(MuslimCaller).filter(MuslimCaller.user_id == user_id).first()
             if not caller: return {"message": "لم يتم العثور على بروفايل داعي", "data": []}
             q = q.filter(DawahRequest.submitted_by_caller_id == caller.caller_id)
+        elif role == UserRole.interested:
+            from app.models.interested_person import InterestedPerson
+            person = db.query(InterestedPerson).filter(InterestedPerson.user_id == user_id).first()
             if not person: return {"message": "لم يتم العثور على بروفايل مهتم", "data": []}
             q = q.filter(DawahRequest.submitted_by_person_id == person.person_id)
         else:
-            return {"message": "غير مسموح لهذا الرول", "data": []}
+            return {"message": "غير مسموح لهذا الرول برؤية الطلبات المرفوعة", "data": []}
             
         # استخدام selectinload لضمان جلب البيانات حتى لو كان الاستعلام معقداً
         requests = q.options(selectinload(DawahRequest.preacher)).order_by(DawahRequest.created_at.desc()).offset(skip).limit(limit).all()

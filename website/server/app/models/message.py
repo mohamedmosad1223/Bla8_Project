@@ -23,3 +23,5 @@ class Message(Base):
     __table_args__ = (
         sa.Index("idx_messages_request", "request_id"),
     )
+
+    request: Mapped["DawahRequest"] = relationship("DawahRequest", back_populates="messages")

@@ -12,25 +12,23 @@ from app.models.organization import Organization
 from app.models.responses import OrganizationMessages, UserMessages
 from app.controllers.notifications_controller import NotificationsController
 from app.models.enums import UserRole, AccountStatus, ApprovalStatus, NotificationType
-from app.schemas import OrganizationUpdate, OrganizationRegister
-
-
 from app.auth import get_password_hash
-
-def _hash_password(password: str) -> str:
-    return get_password_hash(password)
-
+from app.schemas import OrganizationRegister, OrganizationUpdate
+from app.utils.file_handler import save_upload_file
 
 class OrganizationsController:
 
     @staticmethod
-    def register(db: Session, payload: OrganizationRegister):
+    def register(db: Session, payload: OrganizationRegister, license_file: any):
         if db.query(User).filter(User.email == payload.email).first():
             raise HTTPException(status_code=409, detail=UserMessages.EMAIL_REGISTERED)
 
+        # حفظ الملف المرفوع
+        file_path = save_upload_file(license_file, "organizations/licenses")
+
         user = User(
             email=payload.email,
-            password_hash=_hash_password(payload.password),
+            password_hash=get_password_hash(payload.password),
             role=UserRole.organization,
             status=AccountStatus.pending,
         )
@@ -41,6 +39,7 @@ class OrganizationsController:
             user_id=user.user_id,
             organization_name=payload.organization_name,
             license_number=payload.license_number,
+            license_file=file_path,
             establishment_date=payload.establishment_date,
             country_id=payload.country_id,
             governorate=payload.governorate,

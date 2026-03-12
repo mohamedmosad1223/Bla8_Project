@@ -85,7 +85,23 @@
 
 ---
 
+## 💬 Messages & Chat (المحادثات المباشرة)
+- `POST /api/messages/`: إرسال رسالة.
+- `GET /api/messages/chat-history/{request_id}`: جلب سجل المحادثة.
+- `GET /api/messages/my-chats`: جلب معاينة المحادثات النشطة.
+
+---
+
+## 📊 Dashboard
+- `GET /api/dashboard/preacher`: جلب إحصائيات لوحة التحكم للداعية (لنفسه).
+- `GET /api/dashboard/preacher/{preacher_id}`: جلب إحصائيات لوحة التحكم لداعية معين (خاص بالجمعية أو الأدمن).
+- `GET /api/dashboard/organization`: جلب إحصائيات لوحة التحكم الشاملة للجمعية (إجمالي الدعاة، المحادثات، إلخ).
+
+---
+
 ## 📝 ملاحظات هامة للفرونت
 - **Headers:** دائماً استخدم `Content-Type: application/json` في طلبات الـ POST و الـ PATCH.
 - **Pagination:** استخدم `?skip=0&limit=50` في كل طلبات الـ GET للقوائم.
 - **Success Response:** الداتا دائماً بترجع داخل Object اسمه `data`.
+- **Registration (Uploads):** عمليات تسجيل الجمعية والداعية تتطلب استخدام `multipart/form-data` لإرسال الملفات (PDF/Images) مع بقية البيانات.
+- **Static Files:** الملفات المرفوعة يمكن الوصول إليها عبر الرابط: `/uploads/{الرابط_المخزن}`.

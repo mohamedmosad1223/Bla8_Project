@@ -11,7 +11,11 @@ from app.controllers.admins_controller import AdminsController
 from app.auth import check_role
 from app.models.enums import UserRole
 
-router = APIRouter(prefix="/api/admins", tags=["Admins"])
+router = APIRouter(
+    prefix="/api/admins",
+    tags=["Admins"],
+    dependencies=[Depends(check_role([UserRole.admin]))]
+)
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, dependencies=[Depends(check_role([UserRole.admin]))])

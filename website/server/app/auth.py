@@ -10,21 +10,15 @@ from app.config import settings
 from app.database import get_db
 from app.models.user import User
 
-# OAuth2 scheme for token extraction
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    try:
-        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-    except Exception:
-        return False
+    return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
-    # bcrypt limit is 72 bytes. We truncate to ensure stability with passlib legacy hashes if any, 
-    # but here we just ensure it doesn't crash.
-    # Most users won't have > 72 char passwords anyway.
-    pwd_bytes = password.encode('utf-8')
-    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
+    return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -36,48 +30,43 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+def get_current_user(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        # fallback to bearer for backward compatibility (optional)
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header.split(" ")[1]
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="برجاء تسجيل الدخول أولاً",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise credentials_exception
+            raise HTTPException(status_code=401, detail="توكن غير صالح")
     except JWTError:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="انتهت الجلسة أو توكن غير صالح")
     
     user = db.query(User).filter(User.email == email).first()
     if user is None:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="مستخدم غير موجود")
     return user
 
 async def get_optional_current_user(request: Request, db: Session = Depends(get_db)):
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        # Check if it was passed in lowercase 'authorization' just in case (though FastAPI handles this)
-        auth_header = request.headers.get("authorization")
+    token = request.cookies.get("access_token")
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header.split(" ")[1]
     
-    if not auth_header:
+    if not token:
         return None
-    
-    # Clean up the header: remove < > and extra spaces
-    cleaned_header = auth_header.replace("<", "").replace(">", "").strip()
-    
-    # Case-insensitive check for "bearer "
-    if not cleaned_header.lower().startswith("bearer "):
-        return None
-    
-    # Extract token by removing "bearer " (case-insensitive) and stripping
-    # Logic: find the first space and take everything after it
-    parts = cleaned_header.split(None, 1) # Split by any whitespace
-    if len(parts) < 2:
-        return None
-    
-    token = parts[1].strip()
     
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -94,7 +83,7 @@ def check_role(roles: list):
         if user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have enough permissions to perform this action"
+                detail="ليس لديك صلاحية للقيام بهذا الإجراء"
             )
         return user
     return role_checker

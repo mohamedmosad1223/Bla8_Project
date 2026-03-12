@@ -45,6 +45,7 @@ class DawahRequest(Base):
     # ── v3: قناة التواصل + Deep Link ─────────────────────────
     communication_channel: Mapped[CommunicationChannel|None] = mapped_column(comm_channel_enum)
     deep_link:             Mapped[str|None] = mapped_column(sa.Text)  # e.g. wa.me/+201234567890
+    governorate:           Mapped[str|None] = mapped_column(sa.String(150))
 
     # ── v3: نظام الاسترداد (48h + 72h) ──────────────────────
     alert_48h_sent_at: Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
@@ -59,6 +60,7 @@ class DawahRequest(Base):
     documents:      Mapped[list["RequestDocument"]]     = relationship("RequestDocument",     back_populates="request", cascade="all, delete-orphan")
     status_history: Mapped[list["RequestStatusHistory"]] = relationship("RequestStatusHistory", back_populates="request", cascade="all, delete-orphan")
     preacher:       Mapped["Preacher"]                  = relationship("Preacher", foreign_keys=[assigned_preacher_id])
+    messages:       Mapped[list["Message"]]             = relationship("Message", back_populates="request", cascade="all, delete-orphan")
 
     __table_args__ = (
         sa.Index("idx_requests_status",    "status"),

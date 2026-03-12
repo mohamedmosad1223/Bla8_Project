@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/dawah-requests", tags=["Dawah Requests"])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_request(payload: DawahRequestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """تقديم طلب دعوة جديد (متاح للمسلمين الدعاة وللأشخاص المهتمين)"""
-    return DawahRequestsController.create_request(db, payload)
+    return DawahRequestsController.create_request(db, payload, current_user)
 
 @router.get("/pool", dependencies=[Depends(check_role([UserRole.preacher, UserRole.admin, UserRole.organization]))])
 def get_incoming_pool(skip: int = Query(0, ge=0), limit: int = Query(50, ge=1), db: Session = Depends(get_db)):

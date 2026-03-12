@@ -1,5 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from app.limiter import limiter
+
+from fastapi.staticfiles import StaticFiles
+from app.utils.file_handler import ensure_upload_dirs
 
 from app.config import settings
 from app.routers import (
@@ -12,6 +19,8 @@ from app.routers import (
     auth_router,
     dawah_requests_router,
     notifications_router,
+    messages_router,
+    dashboard_router,
 )
 
 app = FastAPI(
@@ -22,6 +31,10 @@ app = FastAPI(
     redoc_url="/api/redoc",
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],     # يُضبط في production
@@ -29,6 +42,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# التأكد من مجلدات الرفع وربطها برابط ثابت
+ensure_upload_dirs()
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ─── Register Routers ───────────────────────────────────────────────────────
 
@@ -41,6 +58,8 @@ app.include_router(interested_persons_router)
 app.include_router(auth_router)
 app.include_router(dawah_requests_router)
 app.include_router(notifications_router)
+app.include_router(messages_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/", tags=["Health"])

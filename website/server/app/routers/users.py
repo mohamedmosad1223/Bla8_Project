@@ -1,14 +1,11 @@
-"""
-Users Router — Routes delegate to UsersController.
-"""
-
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas import UserUpdate
 from app.controllers.users_controller import UsersController
-from app.auth import check_role
+from app.auth import get_current_user, check_role
+from app.models.user import User
 from app.models.enums import UserRole
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
@@ -27,14 +24,18 @@ def list_users(
 
 
 @router.get("/{user_id}")
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """جلب مستخدم واحد بالـ ID"""
+    if current_user.role != UserRole.admin and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="لا يمكنك الوصول لبيانات مستخدم آخر")
     return UsersController.get_user(db, user_id)
 
 
 @router.patch("/{user_id}")
-def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)):
+def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """تحديث بيانات المستخدم الأساسية (email / status)"""
+    if current_user.role != UserRole.admin and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات مستخدم آخر")
     return UsersController.update_user(db, user_id, payload)
 
 

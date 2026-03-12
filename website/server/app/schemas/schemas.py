@@ -5,7 +5,7 @@ Pydantic Schemas — Input validation + output serialization
 
 from __future__ import annotations
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List, Any, Union
 import re
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
@@ -94,9 +94,9 @@ class UserRead(BaseModel):
 # ─── Admin ───────────────────────────────────────────────────────────────────
 
 class AdminCreate(BaseModel):
-    user_id: int
+    user_id: int = Field(..., gt=0)
     full_name: str = Field(..., min_length=2, max_length=255)
-    phone: Optional[str] = None
+    phone: Optional[str] = Field(None, max_length=30)
     level: AdminLevel = AdminLevel.admin
 
     @field_validator("phone")
@@ -113,14 +113,15 @@ class AdminRead(AdminCreate):
 # ─── Organization ────────────────────────────────────────────────────────────
 
 class OrganizationCreate(BaseModel):
-    organization_name: str  = Field(..., min_length=3, max_length=255)
-    license_number:    Optional[str] = Field(None, max_length=100)
-    establishment_date:Optional[date] = None
-    country_id:        Optional[int]  = None
-    governorate:       Optional[str]  = Field(None, max_length=150)
-    manager_name:      str            = Field(..., min_length=3, max_length=255)
-    phone:             Optional[str]  = None
-    email:             Optional[EmailStr] = None
+    organization_name:  str            = Field(..., min_length=3, max_length=255)
+    license_number:     str            = Field(..., min_length=1, max_length=100)
+    license_file:       str            = Field(..., min_length=1, max_length=500)
+    establishment_date: date
+    country_id:         int            = Field(..., gt=0)
+    governorate:        str            = Field(..., min_length=2, max_length=150)
+    manager_name:       str            = Field(..., min_length=3, max_length=255)
+    phone:              str            = Field(..., min_length=7, max_length=30)
+    email:              EmailStr
 
     @field_validator("phone")
     @classmethod
@@ -146,13 +147,15 @@ class OrganizationRead(OrganizationCreate):
 class PreacherCreate(BaseModel):
     type:                     PreacherType
     full_name:                str            = Field(..., min_length=2, max_length=255)
-    phone:                    Optional[str]  = None
-    email:                    Optional[EmailStr] = None
+    phone:                    Optional[str]  = Field(None, max_length=30)
+    email:                    Optional[EmailStr] = Field(None, max_length=255)
     gender:                   Optional[GenderType] = None
-    nationality_country_id:   Optional[int]  = None
-    org_id:                   Optional[int]  = None
+    nationality_country_id:   Optional[int]  = Field(None, gt=0)
+    org_id:                   Optional[int]  = Field(None, gt=0)
     identity_number:          Optional[str]  = Field(None, max_length=100)
-    scientific_qualification: Optional[str]  = Field(None, max_length=255)
+    scientific_qualification: str            = Field(..., min_length=2, max_length=255)
+    qualification_file:       Optional[str]  = Field(None, max_length=500)
+    languages:                List[int]      = Field(default_factory=list)
 
     @field_validator("phone")
     @classmethod
@@ -184,8 +187,8 @@ class PreacherRead(PreacherCreate):
 
 class MuslimCallerCreate(BaseModel):
     full_name:             str            = Field(..., min_length=2, max_length=255)
-    phone:                 Optional[str]  = None
-    nationality_country_id:Optional[int]  = None
+    phone:                 Optional[str]  = Field(None, max_length=30)
+    nationality_country_id:Optional[int]  = Field(None, gt=0)
     gender:                Optional[GenderType] = None
 
     @field_validator("phone")
@@ -206,11 +209,11 @@ class InterestedPersonCreate(BaseModel):
     father_name:            Optional[str]  = Field(None, max_length=150)
     last_name:              str            = Field(..., min_length=1, max_length=150)
     gender:                 Optional[GenderType] = None
-    nationality_country_id: Optional[int]  = None
-    current_country_id:     Optional[int]  = None
-    communication_lang_id:  Optional[int]  = None
-    email:                  Optional[EmailStr] = None
-    phone:                  Optional[str]  = None
+    nationality_country_id: Optional[int]  = Field(None, gt=0)
+    current_country_id:     Optional[int]  = Field(None, gt=0)
+    communication_lang_id:  Optional[int]  = Field(None, gt=0)
+    email:                  Optional[EmailStr] = Field(None, max_length=255)
+    phone:                  Optional[str]  = Field(None, max_length=30)
 
     @field_validator("phone")
     @classmethod
@@ -232,20 +235,20 @@ class DawahRequestCreate(BaseModel):
     invited_first_name:         Optional[str]  = Field(None, max_length=150)
     invited_last_name:          Optional[str]  = Field(None, max_length=150)
     invited_gender:             Optional[GenderType] = None
-    invited_nationality_id:     Optional[int]  = None
-    invited_current_country_id: Optional[int]  = None
-    invited_language_id:        Optional[int]  = None
-    invited_phone:              Optional[str]  = None
-    invited_email:              Optional[EmailStr] = None
+    invited_nationality_id:     Optional[int]  = Field(None, gt=0)
+    invited_current_country_id: Optional[int]  = Field(None, gt=0)
+    invited_language_id:        Optional[int]  = Field(None, gt=0)
+    invited_phone:              Optional[str]  = Field(None, max_length=30)
+    invited_email:              Optional[EmailStr] = Field(None, max_length=255)
 
     # من رفعه
-    submitted_by_caller_id: Optional[int] = None
-    submitted_by_person_id: Optional[int] = None
+    submitted_by_caller_id: Optional[int] = Field(None, gt=0)
+    submitted_by_person_id: Optional[int] = Field(None, gt=0)
 
     # قناة التواصل (v3)
     communication_channel: Optional[CommunicationChannel] = None
     deep_link:             Optional[str] = Field(None, max_length=500)
-    notes:                 Optional[str] = None
+    notes:                 Optional[str] = Field(None, max_length=3000)
 
     @field_validator("invited_phone")
     @classmethod
@@ -416,6 +419,7 @@ class AdminRegister(BaseModel):
     """Register a new Admin: creates User + Admin profile atomically."""
     email:     EmailStr
     password:  str        = Field(..., min_length=8, max_length=128)
+    password_confirm: str = Field(..., min_length=8, max_length=128)
     full_name: str        = Field(..., min_length=2, max_length=255)
     phone:     Optional[str] = None
     level:     AdminLevel = AdminLevel.admin
@@ -433,21 +437,46 @@ class AdminRegister(BaseModel):
     @classmethod
     def phone_valid(cls, v): return validate_phone(v)
 
+    @model_validator(mode="after")
+    def passwords_match(self) -> "AdminRegister":
+        if self.password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
+
 
 class OrganizationRegister(BaseModel):
     """Register a new Organization: creates User + Organization profile atomically."""
     email:              EmailStr
     password:           str            = Field(..., min_length=8, max_length=72)
+    password_confirm:   str            = Field(..., min_length=8, max_length=72)
     organization_name:  str            = Field(..., min_length=3, max_length=255)
-    license_number:     Optional[str]  = Field(None, max_length=100)
-    establishment_date: Optional[date] = None
-    country_id:         Optional[int]  = None
-    governorate:        Optional[str]  = Field(None, max_length=150)
+    license_number:     str            = Field(..., min_length=1, max_length=100)
+    license_file:       str            = Field(..., min_length=1, max_length=500, description="مسار ملف الترخيص PDF")
+    establishment_date: date
+    country_id:         int            = Field(..., gt=0)
+    governorate:        str            = Field(..., min_length=2, max_length=150)
     manager_name:       str            = Field(..., min_length=3, max_length=255)
-    phone:              Optional[str]  = None
-    org_email:          Optional[EmailStr] = None
+    phone:              str            = Field(..., min_length=7, max_length=30)
+    org_email:          EmailStr
 
     @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
+        return v
+
+    @field_validator("phone")
+    @classmethod
+    def phone_valid(cls, v): return validate_phone(v)
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "OrganizationRegister":
+        if self.password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
     @classmethod
     def password_strength(cls, v: str) -> str:
         if not re.search(r"[A-Z]", v):
@@ -465,15 +494,17 @@ class PreacherRegister(BaseModel):
     """Register a new Preacher: creates User + Preacher profile atomically."""
     email:                    EmailStr
     password:                 str            = Field(..., min_length=8, max_length=72)
+    password_confirm:         str            = Field(..., min_length=8, max_length=72)
     type:                     Optional[PreacherType] = None
     full_name:                str            = Field(..., min_length=2, max_length=255)
-    phone:                    Optional[str]  = None
-    preacher_email:           Optional[EmailStr] = None
+    phone:                    str            = Field(..., min_length=7, max_length=30)
+    preacher_email:           EmailStr
     gender:                   Optional[GenderType] = None
-    nationality_country_id:   Optional[int]  = None
-    org_id:                   Optional[int]  = None
-    identity_number:          Optional[str]  = Field(None, max_length=100)
-    scientific_qualification: Optional[str]  = Field(None, max_length=255)
+    nationality_country_id:   int            = Field(..., gt=0)
+    org_id:                   Optional[int]  = Field(None, gt=0)
+    scientific_qualification: str            = Field(..., min_length=2, max_length=255)
+    qualification_file:       str            = Field(..., min_length=1, max_length=500, description="مسار ملف الشهادات PDF")
+    languages:                list[int]      = Field(default_factory=list, description="قائمة معرفات اللغات")
 
     @field_validator("password")
     @classmethod
@@ -489,11 +520,19 @@ class PreacherRegister(BaseModel):
     def phone_valid(cls, v): return validate_phone(v)
 
     @model_validator(mode="after")
-    def check_org_consistency(self) -> "PreacherRegister":
-        if self.type == PreacherType.official and self.org_id is None:
-            raise ValueError("الداعية الرسمي يجب أن ينتمي لجمعية (org_id مطلوب)")
+    def check_register_consistency(self) -> "PreacherRegister":
+        if self.password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        
+        if self.type == PreacherType.official:
+            if self.org_id is None:
+                raise ValueError("الداعية الرسمي يجب أن ينتمي لجمعية (org_id مطلوب)")
+            if not self.languages:
+                raise ValueError("يجب تحديد لغة واحدة على الأقل للداعية التابع لجمعية")
+        
         if self.type == PreacherType.volunteer and self.org_id is not None:
             raise ValueError("الداعية المنفرد لا ينتمي لجمعية")
+            
         return self
 
 
@@ -502,8 +541,8 @@ class MuslimCallerRegister(BaseModel):
     email:                  EmailStr
     password:               str            = Field(..., min_length=8, max_length=72)
     full_name:              str            = Field(..., min_length=2, max_length=255)
-    phone:                  Optional[str]  = None
-    nationality_country_id: Optional[int]  = None
+    phone:                  Optional[str]  = Field(None, max_length=30)
+    nationality_country_id: Optional[int]  = Field(None, gt=0)
     gender:                 Optional[GenderType] = None
 
     @field_validator("password")
@@ -528,11 +567,11 @@ class InterestedPersonRegister(BaseModel):
     father_name:            Optional[str]  = Field(None, max_length=150)
     last_name:              str            = Field(..., min_length=1, max_length=150)
     gender:                 Optional[GenderType] = None
-    nationality_country_id: Optional[int]  = None
-    current_country_id:     Optional[int]  = None
-    communication_lang_id:  Optional[int]  = None
-    person_email:           Optional[EmailStr] = None
-    phone:                  Optional[str]  = None
+    nationality_country_id: Optional[int]  = Field(None, gt=0)
+    current_country_id:     Optional[int]  = Field(None, gt=0)
+    communication_lang_id:  Optional[int]  = Field(None, gt=0)
+    person_email:           Optional[EmailStr] = Field(None, max_length=255)
+    phone:                  Optional[str]  = Field(None, max_length=30)
 
     @field_validator("password")
     @classmethod
@@ -568,3 +607,83 @@ class PreacherFilterParams(BaseModel):
             if self.joined_after > self.joined_before:
                 raise ValueError("joined_after يجب أن يكون قبل joined_before")
         return self
+
+
+# ─── Messages (Chat) ─────────────────────────────────────────────────────────
+
+class MessageCreate(BaseModel):
+    request_id:   int = Field(..., gt=0)
+    message_text: str = Field(..., min_length=1, max_length=5000)
+    message_type: Optional[MessageType] = MessageType.text
+    file_path:    Optional[str] = Field(None, max_length=500)
+
+class MessageRead(BaseModel):
+    message_id:   int
+    request_id:   int
+    sender_id:    int
+    receiver_id:  int
+    message_text: Optional[str]
+    message_type: MessageType
+    file_path:    Optional[str]
+    is_read:      bool
+    created_at:   datetime
+    model_config = {"from_attributes": True}
+
+class ChatPreviewRead(BaseModel):
+    request_id:   int
+    other_party_name: str
+    last_message: Optional[str]
+    last_message_at: Optional[datetime]
+    unread_count: int
+    status: RequestStatus
+    model_config = {"from_attributes": True}
+
+# ─── Dashboard ───────────────────────────────────────────────────────────────
+
+class StatCard(BaseModel):
+    title: str
+    value: int
+    change_percentage: Optional[float] = None
+    is_positive: bool = True
+
+class ChartDataPoint(BaseModel):
+    label: str
+    value: float
+
+class PreacherDashboardRead(BaseModel):
+    # Top Stats
+    total_requests: StatCard
+    converted_count: StatCard
+    engagement_count: StatCard
+    rejected_count: StatCard
+    
+    # Charts
+    response_speed_chart: list[ChartDataPoint] # Time in minutes per month/period
+    requests_by_status: list[ChartDataPoint]  # Distribution for donut chart
+    follow_up_24h_rate: float                 # Percentage
+    ai_suggestions_rate: float                # Percentage
+    governorates_distribution: list[ChartDataPoint]
+    countries_distribution: list[ChartDataPoint]
+    
+    # Activity over time (for the line graph)
+    activity_chart: list[ChartDataPoint]
+    
+    model_config = {"from_attributes": True}
+
+class OrganizationDashboardRead(BaseModel):
+    # Top Stats (8 Cards)
+    total_preachers: StatCard
+    new_requests_today: StatCard
+    active_conversations: StatCard
+    total_beneficiaries: StatCard
+    needs_followup_count: StatCard
+    total_messages: StatCard
+    total_converts: StatCard
+    total_rejections: StatCard
+    
+    # Charts
+    top_nationalities: list[ChartDataPoint] # horizontal bar chart
+    requests_distribution: list[ChartDataPoint] # donut chart
+    conversion_trends: list[ChartDataPoint] # grouped bar chart
+    
+    model_config = {"from_attributes": True}

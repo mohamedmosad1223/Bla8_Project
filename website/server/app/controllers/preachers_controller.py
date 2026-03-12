@@ -21,8 +21,8 @@ from app.schemas import PreacherUpdate, PreacherRegister
 from app.models.dawah_request import DawahRequest
 
 
-from app.auth import get_password_hash, get_current_user
-from app.auth import check_role
+from app.auth import get_password_hash
+from app.utils.file_handler import save_upload_file
 
 def _hash_password(password: str) -> str:
     return get_password_hash(password)
@@ -31,10 +31,13 @@ def _hash_password(password: str) -> str:
 class PreachersController:
 
     @staticmethod
-    def register(db: Session, payload: PreacherRegister, current_user: Optional[User] = None):
+    def register(db: Session, payload: PreacherRegister, qualification_file: any, current_user: Optional[User] = None):
         # التحقق من وجود الإيميل مسبقاً
         if db.query(User).filter(User.email == payload.email).first():
             raise HTTPException(status_code=409, detail=UserMessages.EMAIL_REGISTERED)
+
+        # حفظ الملف
+        file_path = save_upload_file(qualification_file, "preachers/certificates")
 
         # تحديد نوع التسجيل والحالة
         # الحالة 1: جمعية بتضيف داعية (رسمي أوتوماتيك)
@@ -68,13 +71,15 @@ class PreachersController:
 
         user = User(
             email=payload.email,
-            password_hash=_hash_password(payload.password),
+            password_hash=get_password_hash(payload.password),
             role=UserRole.preacher,
             status=account_status,
         )
         db.add(user)
         db.flush()
 
+        from app.models.preacher import PreacherLanguage
+        
         preacher = Preacher(
             user_id=user.user_id,
             type=payload.type,
@@ -84,12 +89,18 @@ class PreachersController:
             gender=payload.gender,
             nationality_country_id=payload.nationality_country_id,
             org_id=payload.org_id,
-            identity_number=payload.identity_number,
             scientific_qualification=payload.scientific_qualification,
+            qualification_file=file_path,
             approval_status=approval_status,
             status=PreacherStatus.active if account_status == AccountStatus.active else PreacherStatus.suspended
         )
         db.add(preacher)
+        db.flush()
+
+        # إضافة اللغات
+        for lang_id in payload.languages:
+            db.add(PreacherLanguage(preacher_id=preacher.preacher_id, language_id=lang_id))
+
         db.commit()
         db.refresh(preacher)
         return {"message": PreacherMessages.REGISTERED, "data": preacher}

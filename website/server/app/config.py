@@ -1,34 +1,18 @@
-"""
-App configuration — reads docker/.env using standard library only.
-No extra pip packages needed beyond what's already in requirements.txt.
-"""
 from pathlib import Path
 from urllib.parse import quote_plus
 import os
+from dotenv import load_dotenv
 
-
-# ── Read docker/.env manually (no python-dotenv needed) ─────────────────────
-
-_ENV_FILE = Path(__file__).parent.parent.parent / "docker" / ".env"
-_env_vars: dict = {}
-
-if _ENV_FILE.exists():
-    with open(_ENV_FILE, "r", encoding="utf-8") as _f:
-        for _line in _f:
-            _line = _line.strip()
-            if _line and not _line.startswith("#") and "=" in _line:
-                _k, _v = _line.split("=", 1)
-                _env_vars[_k.strip()] = _v.strip()
-
+# ── Load .env ───────────────────────────────────────────────────────────────
+_BASE_DIR = Path(__file__).parent.parent.parent
+_ENV_FILE = _BASE_DIR / ".env"
+load_dotenv(_ENV_FILE)
 
 def _get(key: str, default: str = "") -> str:
-    """Reads from env var first, then from .env file, then default."""
-    return os.environ.get(key) or _env_vars.get(key, default)
-
+    return os.environ.get(key, default)
 
 def _build_url() -> str:
     """Builds DATABASE_URL safely with quote_plus for the password."""
-    # If DATABASE_URL set directly (shell/CI), use it as-is
     direct = _get("DATABASE_URL")
     if direct:
         return direct
