@@ -111,7 +111,11 @@ class MessagesController:
         if unread_msgs:
             db.commit()
 
-        return {"message": "تم جلب تاريخ المحادثة", "data": messages}
+        # تحويل الأوبجكتات للـ Schema عشان تظهر في الـ JSON
+        from app.schemas.schemas import MessageRead
+        serialized_messages = [MessageRead.model_validate(m).model_dump() for m in messages]
+
+        return {"message": "تم جلب تاريخ المحادثة", "data": serialized_messages}
 
     @staticmethod
     def get_my_chats_preview(db: Session, user_id: int, role: UserRole):
