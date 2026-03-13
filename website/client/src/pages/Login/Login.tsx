@@ -1,16 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, KeyRound, ChevronRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
 import Checkbox from '../../components/common/Checkbox/Checkbox';
+import { authService } from '../../services/authService';
 import './Login.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = new URLSearchParams(location.search).get('role');
-  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'association' ? '/partner-register' : '/register';
+  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'organization' ? '/partner-register' : '/register';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authService.login(email, password);
+      
+      // Optionally store generic user data
+      localStorage.setItem('userData', JSON.stringify(response.user));
+      localStorage.setItem('userRole', response.user.role || 'admin');
+      
+      navigate('/dashboard');
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      setError(err.response?.data?.detail || 'حدث خطأ أثناء تسجيل الدخول');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthLayout>
@@ -32,22 +59,24 @@ const Login: React.FC = () => {
             <p>من فضلك قم بملأ البيانات التالية</p>
           </div>
 
-          <form className="login-form" onSubmit={(e) => {
-            e.preventDefault();
-            if (role) localStorage.setItem('userRole', role);
-            else localStorage.setItem('userRole', 'admin');
-            navigate('/dashboard');
-          }}>
+          <form className="login-form" onSubmit={handleSubmit}>
+            {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
             <Input 
               type="email" 
               placeholder="البريد الالكتروني" 
               icon={<Mail size={18} />}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
             
             <Input 
               type="password" 
               placeholder="الباسورد" 
               icon={<KeyRound size={18} />}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
 
             <div className="form-options">
@@ -55,8 +84,8 @@ const Login: React.FC = () => {
               <Checkbox label="تذكرني" />
             </div>
 
-            <button type="submit" className="auth-btn primary-btn login-btn">
-              تسجيل الدخول
+            <button type="submit" className="auth-btn primary-btn login-btn" disabled={loading}>
+              {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
             </button>
           </form>
 

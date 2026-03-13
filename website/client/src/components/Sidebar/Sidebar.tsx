@@ -4,8 +4,8 @@ import './Sidebar.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('userRole') || 'association';
-  const isAssociation = userRole === 'association';
+  const userRole = localStorage.getItem('userRole') || 'organization';
+  const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
 
   const handleLogout = () => {

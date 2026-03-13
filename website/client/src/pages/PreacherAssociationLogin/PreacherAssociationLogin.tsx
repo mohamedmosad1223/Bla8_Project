@@ -19,8 +19,8 @@ const PreacherAssociationLogin: React.FC = () => {
     } else if (role === 'preacher') {
       navigate('/login?role=preacher');
     } else {
-      // association
-      navigate('/login?role=association');
+      // organization
+      navigate('/login?role=organization');
     }
   };
 
@@ -52,8 +52,8 @@ const PreacherAssociationLogin: React.FC = () => {
             </button>
 
             <button 
-              className={`pa-option-card ${selectedRole === 'association' ? 'selected' : ''}`}
-              onClick={() => handleRoleSelect('association')}
+              className={`pa-option-card ${selectedRole === 'organization' ? 'selected' : ''}`}
+              onClick={() => handleRoleSelect('organization')}
             >
                <div className="pa-option-icon">
                   <img src={associationIcon} alt="Islamic Association" />

@@ -3,15 +3,76 @@ import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload } from 'lucide-rea
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
+import { preacherService } from '../../services/preacherService';
 import './PreacherRegister.css';
 
 const PreacherRegister: React.FC = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Form State
+  const [formData, setFormData] = useState({
+    fullName: '',
+    nationalityId: '',
+    qualificationName: '',
+    phone: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowModal(true);
+    if (formData.password !== formData.confirmPassword) {
+      setError('كلمات المرور غير متطابقة');
+      return;
+    }
+    if (!file) {
+      setError('يرجى إرفاق شهادة المؤهل');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const payload = new FormData();
+      payload.append('full_name', formData.fullName);
+      payload.append('email', formData.email);
+      payload.append('preacher_email', formData.email); 
+      payload.append('password', formData.password);
+      payload.append('password_confirm', formData.confirmPassword);
+      payload.append('phone', formData.phone);
+      payload.append('scientific_qualification', formData.qualificationName);
+      payload.append('nationality_country_id', formData.nationalityId);
+      payload.append('qualification_file', file);
+      
+      // Default to voluntary preacher for now if not specified
+      payload.append('type', 'voluntary');
+      payload.append('gender', 'male');
+
+      await preacherService.register(payload);
+      setShowModal(true);
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      setError(err.response?.data?.detail || 'حدث خطأ أثناء إرسال الطلب');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,11 +94,12 @@ const PreacherRegister: React.FC = () => {
           </div>
 
           <form className="preacher-form" onSubmit={handleSubmit}>
-
+            {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+            
             {/* Full Name */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="text" placeholder="الاسم بالكامل" required />
+                <input type="text" name="fullName" placeholder="الاسم بالكامل" value={formData.fullName} onChange={handleInputChange} required />
                 <span className="preg-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
               </div>
             </div>
@@ -45,12 +107,12 @@ const PreacherRegister: React.FC = () => {
             {/* Nationality */}
             <div className="preg-group full-width">
               <div className="preg-input-icon preg-select-wrap">
-                <select required defaultValue="">
+                <select name="nationalityId" value={formData.nationalityId} onChange={handleInputChange} required>
                   <option value="" disabled>الجنسية</option>
-                  <option value="eg">مصري</option>
-                  <option value="sa">سعودي</option>
-                  <option value="sy">سوري</option>
-                  <option value="jo">أردني</option>
+                  <option value="1">مصري</option>
+                  <option value="2">سعودي</option>
+                  <option value="3">سوري</option>
+                  <option value="4">أردني</option>
                 </select>
                 <span className="preg-icon"><ChevronDown size={18} /></span>
               </div>
@@ -59,13 +121,15 @@ const PreacherRegister: React.FC = () => {
             {/* Qualification Name + Upload */}
             <div className="preg-group half-width">
               <div className="preg-input-icon">
-                <input type="text" placeholder="اكتب اسم ونوع المؤهل" required />
+                <input type="text" name="qualificationName" placeholder="اكتب اسم ونوع المؤهل" value={formData.qualificationName} onChange={handleInputChange} required />
               </div>
             </div>
             <div className="preg-group half-width">
               <div className="preg-input-icon preg-file-wrap">
-                <input type="file" id="cert-upload" className="preg-file-input" />
-                <label htmlFor="cert-upload" className="preg-file-label">ارفع شهاداتك</label>
+                <input type="file" id="cert-upload" className="preg-file-input" onChange={handleFileChange} required />
+                <label htmlFor="cert-upload" className="preg-file-label">
+                  {file ? file.name : 'ارفع شهاداتك'}
+                </label>
                 <span className="preg-icon"><Upload size={18} /></span>
               </div>
             </div>
@@ -73,7 +137,7 @@ const PreacherRegister: React.FC = () => {
             {/* Phone */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="tel" placeholder="رقم الهاتف" required />
+                <input type="tel" name="phone" placeholder="رقم الهاتف" value={formData.phone} onChange={handleInputChange} required />
                 <span className="preg-icon"><Phone size={18} /></span>
               </div>
             </div>
@@ -81,7 +145,7 @@ const PreacherRegister: React.FC = () => {
             {/* Email */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="email" placeholder="البريد الالكتروني" required />
+                <input type="email" name="email" placeholder="البريد الالكتروني" value={formData.email} onChange={handleInputChange} required />
                 <span className="preg-icon"><Mail size={18} /></span>
               </div>
             </div>
@@ -89,7 +153,7 @@ const PreacherRegister: React.FC = () => {
             {/* Password */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="password" placeholder="الباسورد" required />
+                <input type="password" name="password" placeholder="الباسورد" value={formData.password} onChange={handleInputChange} required />
                 <span className="preg-icon"><Lock size={18} /></span>
               </div>
             </div>
@@ -97,13 +161,13 @@ const PreacherRegister: React.FC = () => {
             {/* Confirm Password */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="password" placeholder="تأكيد الباسورد" required />
+                <input type="password" name="confirmPassword" placeholder="تأكيد الباسورد" value={formData.confirmPassword} onChange={handleInputChange} required />
                 <span className="preg-icon"><Lock size={18} /></span>
               </div>
             </div>
 
-            <button type="submit" className="auth-btn primary-btn full-width">
-              ارسال الطلب
+            <button type="submit" className="auth-btn primary-btn full-width" disabled={loading}>
+              {loading ? 'جاري الإرسال...' : 'ارسال الطلب'}
             </button>
           </form>
 

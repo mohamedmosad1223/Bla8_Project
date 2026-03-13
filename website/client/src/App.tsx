@@ -21,7 +21,7 @@ import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
 import Conversations from './pages/Conversations/Conversations';
 
 const RoleDashboard = () => {
-  const role = localStorage.getItem('userRole') || 'association';
+  const role = localStorage.getItem('userRole') || 'organization';
   return role === 'preacher' ? <PreacherDashboard /> : <Dashboard />;
 };
 

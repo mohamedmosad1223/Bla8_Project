@@ -1,23 +1,87 @@
 import React, { useState } from 'react';
-import { Upload, Calendar, ChevronDown, Phone, Mail, Building2, FileText, ChevronRight } from 'lucide-react';
+import { Upload, Calendar, ChevronDown, Phone, Mail, Building2, FileText, ChevronRight, Lock } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
+import { orgService } from '../../services/orgService';
 import './PartnerRegister.css';
 
 const PartnerRegister: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const roleType = searchParams.get('type') || 'association'; 
   
   // Decide titles based on role
   const isPreacher = roleType === 'preacher';
   const pageTitle = isPreacher ? 'طلب تسجيل بمنصة بلاغ كداعية' : 'طلب تسجيل بمنصة بلاغ كجمعية';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Form State
+  const [formData, setFormData] = useState({
+    organizationName: '',
+    licenseNumber: '',
+    establishmentDate: '',
+    countryId: '',
+    governorate: '',
+    managerName: '',
+    phone: '', // Will map from input
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowModal(true);
+    if (formData.password !== formData.confirmPassword) {
+      setError('كلمات المرور غير متطابقة');
+      return;
+    }
+    if (!file) {
+      setError('يرجى إرفاق رخصة الجمعية');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const payload = new FormData();
+      payload.append('organization_name', formData.organizationName);
+      payload.append('license_number', formData.licenseNumber);
+      payload.append('establishment_date', formData.establishmentDate);
+      payload.append('country_id', formData.countryId);
+      payload.append('governorate', formData.governorate);
+      payload.append('manager_name', formData.managerName);
+      payload.append('phone', formData.phone);
+      payload.append('email', formData.email);
+      payload.append('org_email', formData.email);
+      payload.append('password', formData.password);
+      payload.append('password_confirm', formData.confirmPassword);
+      payload.append('license_file', file);
+      
+      await orgService.register(payload);
+      setShowModal(true);
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      setError(err.response?.data?.detail || 'حدث خطأ أثناء إرسال الطلب');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,11 +103,12 @@ const PartnerRegister: React.FC = () => {
           </div>
 
           <form className="partner-form" onSubmit={handleSubmit}>
-            
+            {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+
             {/* Row 1 */}
             <div className="form-group full-width">
               <div className="input-with-icon">
-                <input type="text" placeholder={isPreacher ? 'اسم الجمعية' : 'اسم الجمعية'} required />
+                <input type="text" name="organizationName" placeholder={isPreacher ? 'اسم الجمعية' : 'اسم الجمعية'} value={formData.organizationName} onChange={handleInputChange} required />
                 <span className="icon-wrapper"><Building2 size={18} /></span>
               </div>
             </div>
@@ -51,14 +116,16 @@ const PartnerRegister: React.FC = () => {
             {/* Row 2 */}
             <div className="form-group half-width">
               <div className="input-with-icon">
-                <input type="text" placeholder="رقم الترخيص" required />
+                <input type="text" name="licenseNumber" placeholder="رقم الترخيص" value={formData.licenseNumber} onChange={handleInputChange} required />
                 <span className="icon-wrapper"><FileText size={18} /></span>
               </div>
             </div>
             <div className="form-group half-width">
               <div className="input-with-icon file-upload-wrapper">
-                <input type="file" id="license-upload" className="file-input" />
-                <label htmlFor="license-upload" className="file-label">إرفاق رخصة الجمعية</label>
+                <input type="file" id="license-upload" className="file-input" onChange={handleFileChange} required />
+                <label htmlFor="license-upload" className="file-label">
+                  {file ? file.name : 'إرفاق رخصة الجمعية'}
+                </label>
                 <span className="icon-wrapper"><Upload size={18} /></span>
               </div>
             </div>
@@ -66,7 +133,7 @@ const PartnerRegister: React.FC = () => {
             {/* Row 3 */}
             <div className="form-group full-width">
               <div className="input-with-icon">
-                <input type="text" placeholder="تاريخ انشاء الجمعية" onFocus={(e) => e.target.type = 'date'} onBlur={(e) => {if(!e.target.value) e.target.type = 'text'}} required />
+                <input type="text" name="establishmentDate" placeholder="تاريخ انشاء الجمعية" onFocus={(e) => e.target.type = 'date'} onBlur={(e) => {if(!e.target.value) e.target.type = 'text'}} value={formData.establishmentDate} onChange={handleInputChange} required />
                 <span className="icon-wrapper"><Calendar size={18} /></span>
               </div>
             </div>
@@ -74,37 +141,38 @@ const PartnerRegister: React.FC = () => {
             {/* Row 4 */}
             <div className="form-group half-width">
               <div className="input-with-icon select-wrapper">
-                <select required defaultValue="">
+                <select name="countryId" value={formData.countryId} onChange={handleInputChange} required>
                   <option value="" disabled>الدولة</option>
-                  <option value="eg">مصر</option>
-                  <option value="sa">السعودية</option>
+                  <option value="1">مصر</option>
+                  <option value="2">السعودية</option>
                 </select>
                 <span className="icon-wrapper"><ChevronDown size={18} /></span>
               </div>
             </div>
             <div className="form-group half-width">
               <div className="input-with-icon select-wrapper">
-                <select required defaultValue="">
+                <select name="governorate" value={formData.governorate} onChange={handleInputChange} required>
                   <option value="" disabled>المحافظة</option>
                   <option value="cairo">القاهرة</option>
                   <option value="giza">الجيزة</option>
+                  <option value="alexandria">الاسكندرية</option>
                 </select>
                 <span className="icon-wrapper"><ChevronDown size={18} /></span>
               </div>
             </div>
 
             {/* Row 5 */}
-            <div className="form-group half-width">
-              <input type="text" className="input-default" placeholder="اسم مدير الجمعية" required />
-            </div>
-            <div className="form-group half-width">
-              <input type="tel" className="input-default" placeholder="رقم الجوال" required />
+            <div className="form-group full-width">
+              <div className="input-with-icon">
+                <input type="text" className="input-default" name="managerName" placeholder="اسم مدير الجمعية" value={formData.managerName} onChange={handleInputChange} required />
+                <span className="icon-wrapper"><FileText size={18} /></span>
+              </div>
             </div>
 
             {/* Row 6 */}
             <div className="form-group full-width">
               <div className="input-with-icon">
-                <input type="tel" placeholder="رقم الهاتف" required />
+                <input type="tel" name="phone" placeholder="رقم الهاتف أو الجوال" value={formData.phone} onChange={handleInputChange} required />
                 <span className="icon-wrapper"><Phone size={18} /></span>
               </div>
             </div>
@@ -112,13 +180,27 @@ const PartnerRegister: React.FC = () => {
             {/* Row 7 */}
             <div className="form-group full-width">
               <div className="input-with-icon">
-                <input type="email" placeholder="البريد الالكتروني" required />
+                <input type="email" name="email" placeholder="البريد الالكتروني" value={formData.email} onChange={handleInputChange} required />
                 <span className="icon-wrapper"><Mail size={18} /></span>
               </div>
             </div>
 
-            <button type="submit" className="auth-btn primary-btn submit-partner-btn full-width">
-              ارسال الطلب
+            {/* Row 8 Password */}
+             <div className="form-group half-width">
+              <div className="input-with-icon">
+                <input type="password" name="password" placeholder="الباسورد" value={formData.password} onChange={handleInputChange} required />
+                <span className="icon-wrapper"><Lock size={18} /></span>
+              </div>
+            </div>
+            <div className="form-group half-width">
+              <div className="input-with-icon">
+                <input type="password" name="confirmPassword" placeholder="تأكيد الباسورد" value={formData.confirmPassword} onChange={handleInputChange} required />
+                <span className="icon-wrapper"><Lock size={18} /></span>
+              </div>
+            </div>
+
+            <button type="submit" className="auth-btn primary-btn submit-partner-btn full-width" disabled={loading}>
+              {loading ? 'جاري الإرسال...' : 'ارسال الطلب'}
             </button>
           </form>
 
