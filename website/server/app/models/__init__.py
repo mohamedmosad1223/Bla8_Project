@@ -11,7 +11,8 @@ from app.models.preacher import Preacher, PreacherLanguage, PreacherDocument, Pr
 from app.models.muslim_caller import MuslimCaller  # noqa: F401
 from app.models.interested_person import InterestedPerson  # noqa: F401
 from app.models.dawah_request import (  # noqa: F401
-    DawahRequest, RequestDocument, RequestStatusHistory
+    DawahRequest, RequestDocument, RequestStatusHistory,
+    DawahReport, ContactAttempt
 )
 from app.models.message import Message  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
@@ -24,6 +25,7 @@ __all__ = [
     "Preacher", "PreacherLanguage", "PreacherDocument", "PreacherStatistics",
     "MuslimCaller", "InterestedPerson",
     "DawahRequest", "RequestDocument", "RequestStatusHistory",
+    "DawahReport", "ContactAttempt",
     "Message", "Notification", "AuditLog", "ReportMetric",
     "Language", "Country",
 ]

@@ -61,6 +61,8 @@ class DawahRequest(Base):
     status_history: Mapped[list["RequestStatusHistory"]] = relationship("RequestStatusHistory", back_populates="request", cascade="all, delete-orphan")
     preacher:       Mapped["Preacher"]                  = relationship("Preacher", foreign_keys=[assigned_preacher_id])
     messages:       Mapped[list["Message"]]             = relationship("Message", back_populates="request", cascade="all, delete-orphan")
+    reports:        Mapped[list["DawahReport"]]         = relationship("DawahReport", back_populates="request", cascade="all, delete-orphan")
+    contact_attempts:Mapped[list["ContactAttempt"]]     = relationship("ContactAttempt", back_populates="request", cascade="all, delete-orphan")
 
     __table_args__ = (
         sa.Index("idx_requests_status",    "status"),
@@ -110,3 +112,29 @@ class RequestStatusHistory(Base):
     changed_at: Mapped[datetime]         = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now())
 
     request: Mapped["DawahRequest"] = relationship("DawahRequest", back_populates="status_history")
+
+
+class DawahReport(Base):
+    __tablename__ = "dawah_reports"
+
+    report_id:             Mapped[int]      = mapped_column(sa.BigInteger, primary_key=True, autoincrement=True)
+    request_id:            Mapped[int]      = mapped_column(sa.BigInteger, sa.ForeignKey("dawah_requests.request_id", ondelete="CASCADE"), nullable=False)
+    preacher_id:           Mapped[int]      = mapped_column(sa.BigInteger, sa.ForeignKey("preachers.preacher_id", ondelete="CASCADE"), nullable=False)
+    communication_type:    Mapped[str|None] = mapped_column(sa.String(100)) # e.g. "Platform", "Social Media", "Phone"
+    communication_details: Mapped[str|None] = mapped_column(sa.String(255)) # e.g. "WhatsApp", "Facebook Messenger"
+    content:               Mapped[str]      = mapped_column(sa.Text, nullable=False)
+    created_at:            Mapped[datetime] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now())
+
+    request: Mapped["DawahRequest"] = relationship("DawahRequest", back_populates="reports")
+
+
+class ContactAttempt(Base):
+    __tablename__ = "contact_attempts"
+
+    attempt_id:  Mapped[int]      = mapped_column(sa.BigInteger, primary_key=True, autoincrement=True)
+    request_id:  Mapped[int]      = mapped_column(sa.BigInteger, sa.ForeignKey("dawah_requests.request_id", ondelete="CASCADE"), nullable=False)
+    preacher_id: Mapped[int]      = mapped_column(sa.BigInteger, sa.ForeignKey("preachers.preacher_id", ondelete="CASCADE"), nullable=False)
+    channel:     Mapped[comm_channel_enum] = mapped_column(comm_channel_enum, nullable=False)
+    clicked_at:  Mapped[datetime] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now())
+
+    request: Mapped["DawahRequest"] = relationship("DawahRequest", back_populates="contact_attempts")

@@ -48,6 +48,14 @@ class OrganizationsController:
             email=payload.org_email,
         )
         db.add(org)
+        db.flush()
+
+        # إرسال إشعار ترحيبي
+        NotificationsController.create_notification(
+            db, user.user_id, NotificationType.status_changed,
+            "أهلاً بك في منصة بلاغ", "تم استلام طلب الانضمام الخاص بجمعيتكم، وهو حالياً قيد المراجعة من قبل الإدارة."
+        )
+
         db.commit()
         db.refresh(org)
         return {"message": OrganizationMessages.REGISTERED, "data": org}

@@ -21,6 +21,8 @@ from app.routers import (
     notifications_router,
     messages_router,
     dashboard_router,
+    dawah_reports_router,
+    track_router,
 )
 
 app = FastAPI(
@@ -60,6 +62,8 @@ app.include_router(dawah_requests_router)
 app.include_router(notifications_router)
 app.include_router(messages_router)
 app.include_router(dashboard_router)
+app.include_router(dawah_reports_router)
+app.include_router(track_router)
 
 
 @app.get("/", tags=["Health"])

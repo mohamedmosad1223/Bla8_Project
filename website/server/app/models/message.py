@@ -10,7 +10,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     message_id:        Mapped[int]         = mapped_column(sa.BigInteger, primary_key=True, autoincrement=True)
-    request_id:        Mapped[int]         = mapped_column(sa.BigInteger, sa.ForeignKey("dawah_requests.request_id"), nullable=False)
+    request_id:        Mapped[int|None]    = mapped_column(sa.BigInteger, sa.ForeignKey("dawah_requests.request_id"), nullable=True)
     sender_id:         Mapped[int]         = mapped_column(sa.BigInteger, sa.ForeignKey("users.user_id"), nullable=False)
     receiver_id:       Mapped[int]         = mapped_column(sa.BigInteger, sa.ForeignKey("users.user_id"), nullable=False)
     message_text:      Mapped[str|None]    = mapped_column(sa.Text)
@@ -22,6 +22,8 @@ class Message(Base):
 
     __table_args__ = (
         sa.Index("idx_messages_request", "request_id"),
+        sa.Index("idx_messages_sender", "sender_id"),
+        sa.Index("idx_messages_receiver", "receiver_id"),
     )
 
     request: Mapped["DawahRequest"] = relationship("DawahRequest", back_populates="messages")

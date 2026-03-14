@@ -257,10 +257,22 @@ class DawahRequestCreate(BaseModel):
     @model_validator(mode="after")
     def check_consistency(self) -> "DawahRequestCreate":
         if self.communication_channel == CommunicationChannel.whatsapp and self.invited_phone:
-            # توليد deep_link تلقائياً لو مش موجود
             if not self.deep_link:
                 clean = re.sub(r"[\s\-\(\)]", "", self.invited_phone or "")
                 self.deep_link = f"https://wa.me/{clean}"
+        
+        # v4: Deep link is mandatory for social channels except WhatsApp/Phone
+        social_channels = [
+            CommunicationChannel.messenger, 
+            CommunicationChannel.telegram, 
+            CommunicationChannel.other
+        ]
+        if self.communication_channel in social_channels and not self.deep_link:
+            raise ValueError(f"رابط التواصل مطلوب لقناة {self.communication_channel.value}")
+            
+        if self.communication_channel in [CommunicationChannel.whatsapp, CommunicationChannel.phone] and not self.invited_phone:
+            raise ValueError(f"رقم الهاتف مطلوب لقناة {self.communication_channel.value}")
+
         return self
 
 
@@ -308,6 +320,37 @@ class StatusUpdateRequest(BaseModel):
 
 class SubmitterFeedbackRequest(BaseModel):
     feedback: str = Field(..., min_length=5, max_length=2000)
+
+
+# ─── Dawah Reports (Daily Updates) ──────────────────────────────────────────
+
+class DawahReportCreate(BaseModel):
+    request_id:            int
+    communication_type:    Optional[str] = None # e.g. "Platform", "Social Media", "Phone"
+    communication_details: Optional[str] = None # e.g. "Facebook Messenger"
+    content:               str
+
+class DawahReportRead(BaseModel):
+    report_id:             int
+    request_id:            int
+    preacher_id:           int
+    communication_type:    Optional[str] = None
+    communication_details: Optional[str] = None
+    content:               str
+    created_at:            datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Contact Attempts ────────────────────────────────────────────────────────
+
+class ContactAttemptRead(BaseModel):
+    attempt_id: int
+    request_id: int
+    preacher_id: int
+    channel:     CommunicationChannel
+    clicked_at:  datetime
+    model_config = {"from_attributes": True}
 
 
 # ─── Notification ────────────────────────────────────────────────────────────
@@ -608,14 +651,15 @@ class PreacherFilterParams(BaseModel):
 # ─── Messages (Chat) ─────────────────────────────────────────────────────────
 
 class MessageCreate(BaseModel):
-    request_id:   int = Field(..., gt=0)
-    message_text: str = Field(..., min_length=1, max_length=5000)
+    request_id:   Optional[int] = None
+    receiver_id:  Optional[int] = None # Required if request_id is None
+    message_text: str
     message_type: Optional[MessageType] = MessageType.text
-    file_path:    Optional[str] = Field(None, max_length=500)
+    file_path:    Optional[str] = None
 
 class MessageRead(BaseModel):
     message_id:   int
-    request_id:   int
+    request_id:   Optional[int]
     sender_id:    int
     receiver_id:  int
     message_text: Optional[str]

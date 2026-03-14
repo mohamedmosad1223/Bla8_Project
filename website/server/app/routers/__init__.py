@@ -13,6 +13,8 @@ from app.routers.dawah_requests import router as dawah_requests_router
 from app.routers.notifications import router as notifications_router
 from app.routers.messages import router as messages_router
 from app.routers.dashboard import router as dashboard_router
+from app.routers.dawah_reports import router as dawah_reports_router
+from app.routers.track import router as track_router
 
 __all__ = [
     "users_router",
@@ -26,4 +28,6 @@ __all__ = [
     "notifications_router",
     "messages_router",
     "dashboard_router",
+    "dawah_reports_router",
+    "track_router",
 ]

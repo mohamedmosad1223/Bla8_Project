@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
+import sqlalchemy as sa
 
 from app.models.message import Message
 from app.models.dawah_request import DawahRequest
@@ -15,42 +16,71 @@ from app.models.preacher import Preacher
 from app.models.muslim_caller import MuslimCaller
 from app.models.interested_person import InterestedPerson
 from app.controllers.notifications_controller import NotificationsController
+from app.controllers.dawah_reports_controller import DawahReportsController
 from app.schemas.schemas import MessageCreate
 
 class MessagesController:
 
     @staticmethod
     def send_message(db: Session, sender: User, payload: MessageCreate):
-        # 1. Fetch Request
-        request = db.query(DawahRequest).filter(DawahRequest.request_id == payload.request_id).first()
-        if not request:
-            raise HTTPException(status_code=404, detail="الطلب غير موجود")
+        # 1. Determine Context (Request or DM)
+        request = None
+        receiver_id = payload.receiver_id
         
-        if request.status != RequestStatus.in_progress:
-            raise HTTPException(status_code=400, detail="المحادثة متاحة فقط للطلبات 'قيد التنفيذ'")
+        if payload.request_id:
+            request = db.query(DawahRequest).filter(DawahRequest.request_id == payload.request_id).first()
+            if not request:
+                raise HTTPException(status_code=404, detail="الطلب غير موجود")
+            
+            if request.status not in [RequestStatus.in_progress, RequestStatus.under_persuasion]:
+                raise HTTPException(status_code=400, detail="المحادثة متاحة فقط للطلبات النشطة")
 
-        # 2. Determine Receiver and validate participation
-        receiver_id = None
-        
-        # Get preacher user_id
-        preacher = db.query(Preacher).filter(Preacher.preacher_id == request.assigned_preacher_id).first()
-        preacher_user_id = preacher.user_id if preacher else None
+            # v4: Enforce mandatory daily report for preachers in request-based chats
+            if sender.role == UserRole.preacher:
+                 if DawahReportsController.check_report_due(db, payload.request_id):
+                     raise HTTPException(
+                         status_code=400, 
+                         detail="نعتذر، يجب إكمال التقرير اليومي لهذه الحالة أولاً قبل متابعة المراسلة"
+                     )
 
-        # Get submitter user_id
-        submitter_user_id = None
-        if request.submitted_by_caller_id:
-            caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
-            if caller: submitter_user_id = caller.user_id
-        elif request.submitted_by_person_id:
-            person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
-            if person: submitter_user_id = person.user_id
+            # Determine Receiver and validate participation for request context
+            preacher = db.query(Preacher).filter(Preacher.preacher_id == request.assigned_preacher_id).first()
+            preacher_user_id = preacher.user_id if preacher else None
 
-        if sender.user_id == preacher_user_id:
-            receiver_id = submitter_user_id
-        elif sender.user_id == submitter_user_id:
-            receiver_id = preacher_user_id
+            submitter_user_id = None
+            if request.submitted_by_caller_id:
+                caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
+                if caller: submitter_user_id = caller.user_id
+            elif request.submitted_by_person_id:
+                person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
+                if person: submitter_user_id = person.user_id
+
+            if sender.user_id == preacher_user_id:
+                receiver_id = submitter_user_id
+            elif sender.user_id == submitter_user_id:
+                receiver_id = preacher_user_id
+            else:
+                raise HTTPException(status_code=403, detail="ليس لديك صلاحية لإرسال رسائل في هذا الطلب")
         else:
-            raise HTTPException(status_code=403, detail="ليس لديك صلاحية لإرسال رسائل في هذا الطلب")
+            # Direct Message Context
+            if not receiver_id:
+                raise HTTPException(status_code=400, detail="يجب تحديد المستلم للمراسلة المباشرة")
+            
+            # Validation: Organizations can only message their own preachers
+            if sender.role == UserRole.organization:
+                preacher = db.query(Preacher).filter(Preacher.user_id == receiver_id).first()
+                if not preacher or preacher.org_id != sender.organization.org_id:
+                    raise HTTPException(status_code=403, detail="لا يمكنك مراسلة داعية لا ينتمي لجمعيتك")
+            elif sender.role == UserRole.preacher:
+                receiver_user = db.query(User).filter(User.user_id == receiver_id).first()
+                if receiver_user and receiver_user.role == UserRole.organization:
+                    if sender.preacher.org_id != receiver_user.organization.org_id:
+                        raise HTTPException(status_code=403, detail="لا يمكنك مراسلة جمعية أخرى غير التي تنتمي إليها")
+                else:
+                    # For now, only Org-Preacher DM is supported as requested
+                    raise HTTPException(status_code=403, detail="المراسلة المباشرة متاحة حالياً بين الداعية وجمعيته فقط")
+            else:
+                raise HTTPException(status_code=403, detail="نوع حسابك لا يدعم المراسلة المباشرة")
 
         if not receiver_id:
             raise HTTPException(status_code=400, detail="لا يوجد مستلم لهذه الرسالة")
@@ -69,39 +99,65 @@ class MessagesController:
         db.refresh(new_msg)
 
         # 4. Notify Receiver
+        notification_title = "رسالة جديدة"
+        notification_body = ""
+        notification_related_id = None
+
+        if request:
+            notification_body = f"لديك رسالة جديدة بخصوص الطلب #{request.request_id}"
+            notification_related_id = request.request_id
+        else:
+            # For DMs, we need to identify the sender for the notification body
+            sender_user = db.query(User).filter(User.user_id == sender.user_id).first()
+            sender_name = sender_user.full_name if sender_user and sender_user.full_name else "مستخدم"
+            notification_body = f"لديك رسالة مباشرة جديدة من {sender_name}"
+            notification_related_id = sender.user_id # Or receiver_id, depending on how notifications are linked to DMs.
+
         NotificationsController.create_notification(
             db, receiver_id, NotificationType.new_message,
-            "رسالة جديدة", f"لديك رسالة جديدة بخصوص الطلب #{request.request_id}",
-            related_id=request.request_id
+            notification_title, notification_body,
+            related_id=notification_related_id
         )
 
         return {"message": "تم إرسال الرسالة بنجاح", "data": new_msg}
 
     @staticmethod
-    def get_chat_history(db: Session, user_id: int, request_id: int):
-        # Verify participation
-        request = db.query(DawahRequest).filter(DawahRequest.request_id == request_id).first()
-        if not request:
-            raise HTTPException(status_code=404, detail="الطلب غير موجود")
+    def get_chat_history(db: Session, user_id: int, request_id: int = None, other_user_id: int = None):
+        """جلب تاريخ المحادثة سواء كانت لطلب معين أو مباشرة بين مستخدمين"""
+        if request_id:
+            # Verify participation in request context
+            request = db.query(DawahRequest).filter(DawahRequest.request_id == request_id).first()
+            if not request:
+                raise HTTPException(status_code=404, detail="الطلب غير موجود")
 
-        # Get preacher user_id
-        preacher = db.query(Preacher).filter(Preacher.preacher_id == request.assigned_preacher_id).first()
-        preacher_user_id = preacher.user_id if preacher else None
+            # Get preacher user_id
+            preacher = db.query(Preacher).filter(Preacher.preacher_id == request.assigned_preacher_id).first()
+            preacher_user_id = preacher.user_id if preacher else None
 
-        # Get submitter user_id
-        submitter_user_id = None
-        if request.submitted_by_caller_id:
-            caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
-            if caller: submitter_user_id = caller.user_id
-        elif request.submitted_by_person_id:
-            person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
-            if person: submitter_user_id = person.user_id
+            # Get submitter user_id
+            submitter_user_id = None
+            if request.submitted_by_caller_id:
+                caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
+                if caller: submitter_user_id = caller.user_id
+            elif request.submitted_by_person_id:
+                person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
+                if person: submitter_user_id = person.user_id
 
-        if user_id not in [preacher_user_id, submitter_user_id]:
-             raise HTTPException(status_code=403, detail="ليس لديك صلاحية لعرض هذه المحادثة")
+            if user_id not in [preacher_user_id, submitter_user_id]:
+                 raise HTTPException(status_code=403, detail="ليس لديك صلاحية لعرض هذه المحادثة")
 
-        # Fetch messages
-        messages = db.query(Message).filter(Message.request_id == request_id).order_by(Message.created_at.asc()).all()
+            messages = db.query(Message).filter(Message.request_id == request_id).order_by(Message.created_at.asc()).all()
+        elif other_user_id:
+            # Direct Message History
+            messages = db.query(Message).filter(
+                Message.request_id == None,
+                or_(
+                    (Message.sender_id == user_id) & (Message.receiver_id == other_user_id),
+                    (Message.sender_id == other_user_id) & (Message.receiver_id == user_id)
+                )
+            ).order_by(Message.created_at.asc()).all()
+        else:
+            raise HTTPException(status_code=400, detail="يجب تحديد طلب أو مستخدم لجلب المحادثة")
 
         # Mark as read
         unread_msgs = [m for m in messages if m.receiver_id == user_id and not m.is_read]
@@ -111,7 +167,6 @@ class MessagesController:
         if unread_msgs:
             db.commit()
 
-        # تحويل الأوبجكتات للـ Schema عشان تظهر في الـ JSON
         from app.schemas.schemas import MessageRead
         serialized_messages = [MessageRead.model_validate(m).model_dump() for m in messages]
 
@@ -119,67 +174,101 @@ class MessagesController:
 
     @staticmethod
     def get_my_chats_preview(db: Session, user_id: int, role: UserRole):
-        """Get summary of all active chats for the current user"""
-        
-        # 1. Base query for requests
-        query = db.query(DawahRequest)
-        
-        if role == UserRole.preacher:
-            preacher = db.query(Preacher).filter(Preacher.user_id == user_id).first()
-            if not preacher: return {"data": []}
-            query = query.filter(DawahRequest.assigned_preacher_id == preacher.preacher_id)
-        elif role in [UserRole.muslim_caller, UserRole.interested]:
-            caller = db.query(MuslimCaller).filter(MuslimCaller.user_id == user_id).first()
-            person = db.query(InterestedPerson).filter(InterestedPerson.user_id == user_id).first()
-            
-            if caller:
-                query = query.filter(DawahRequest.submitted_by_caller_id == caller.caller_id)
-            elif person:
-                query = query.filter(DawahRequest.submitted_by_person_id == person.person_id)
-            else:
-                return {"data": []}
-        else:
-            raise HTTPException(status_code=403, detail="هذه الخاصية غير متاحة لنوع حسابك")
-
-        requests = query.filter(DawahRequest.status == RequestStatus.in_progress).all()
+        """صندوق الوارد الموحد: يعرض محادثات الطلبات والمحادثات المباشرة"""
         
         previews = []
-        for r in requests:
-            # Last message
-            last_msg = db.query(Message).filter(Message.request_id == r.request_id).order_by(Message.created_at.desc()).first()
+        
+        # 1. جلب محادثات الطلبات النشطة
+        if role in [UserRole.preacher, UserRole.muslim_caller, UserRole.interested]:
+            query = db.query(DawahRequest)
+            if role == UserRole.preacher:
+                preacher = db.query(Preacher).filter(Preacher.user_id == user_id).first()
+                if preacher: query = query.filter(DawahRequest.assigned_preacher_id == preacher.preacher_id)
+            elif role == UserRole.muslim_caller:
+                caller = db.query(MuslimCaller).filter(MuslimCaller.user_id == user_id).first()
+                if caller: query = query.filter(DawahRequest.submitted_by_caller_id == caller.caller_id)
+            elif role == UserRole.interested:
+                person = db.query(InterestedPerson).filter(InterestedPerson.user_id == user_id).first()
+                if person: query = query.filter(DawahRequest.submitted_by_person_id == person.person_id)
+
+            active_requests = query.filter(DawahRequest.status.in_([RequestStatus.in_progress, RequestStatus.under_persuasion])).all()
             
-            # Unread count
+            for r in active_requests:
+                last_msg = db.query(Message).filter(Message.request_id == r.request_id).order_by(Message.created_at.desc()).first()
+                unread_count = db.query(Message).filter(Message.request_id == r.request_id, Message.receiver_id == user_id, Message.is_read == False).count()
+                
+                other_name = "مجهول"
+                if role == UserRole.preacher:
+                    if r.submitted_by_caller_id:
+                        c = db.query(MuslimCaller).filter(MuslimCaller.caller_id == r.submitted_by_caller_id).first()
+                        if c: other_name = c.full_name
+                    elif r.submitted_by_person_id:
+                        p = db.query(InterestedPerson).filter(InterestedPerson.person_id == r.submitted_by_person_id).first()
+                        if p: other_name = f"{p.first_name} {p.last_name}"
+                else:
+                    pre = db.query(Preacher).filter(Preacher.preacher_id == r.assigned_preacher_id).first()
+                    if pre: other_name = pre.full_name
+
+                previews.append({
+                    "request_id": r.request_id,
+                    "other_user_id": None, # Related to request
+                    "other_party_name": f"{other_name} (طلب #{r.request_id})",
+                    "last_message": last_msg.message_text if last_msg else "لا توجد رسائل بعد",
+                    "last_message_at": last_msg.created_at if last_msg else r.accepted_at,
+                    "unread_count": unread_count,
+                    "is_direct": False
+                })
+
+        # 2. جلب المحادثات المباشرة (DMs)
+        # نحدد جميع المستخدمين الذين تواصل معهم المستخدم الحالي بعيداً عن الطلبات
+        dm_partners = db.query(
+            func.distinct(
+                sa.case(
+                    (Message.sender_id == user_id, Message.receiver_id),
+                    else_=Message.sender_id
+                )
+            )
+        ).filter(
+            Message.request_id == None,
+            or_(Message.sender_id == user_id, Message.receiver_id == user_id)
+        ).all()
+
+        for (partner_id,) in dm_partners:
+            # Last message in this DM
+            last_msg = db.query(Message).filter(
+                Message.request_id == None,
+                or_(
+                    (Message.sender_id == user_id) & (Message.receiver_id == partner_id),
+                    (Message.sender_id == partner_id) & (Message.receiver_id == user_id)
+                )
+            ).order_by(Message.created_at.desc()).first()
+            
             unread_count = db.query(Message).filter(
-                Message.request_id == r.request_id,
+                Message.request_id == None,
+                Message.sender_id == partner_id,
                 Message.receiver_id == user_id,
                 Message.is_read == False
             ).count()
 
-            # Determine "Other Party" name
-            other_name = "مجهول"
-            if role == UserRole.preacher:
-                # Other party is the submitter
-                if r.submitted_by_caller_id:
-                    c = db.query(MuslimCaller).filter(MuslimCaller.caller_id == r.submitted_by_caller_id).first()
-                    if c: other_name = c.full_name
-                elif r.submitted_by_person_id:
-                    p = db.query(InterestedPerson).filter(InterestedPerson.person_id == r.submitted_by_person_id).first()
-                    if p: other_name = f"{p.first_name} {p.last_name}"
-            else:
-                # Other party is the preacher
-                pre = db.query(Preacher).filter(Preacher.preacher_id == r.assigned_preacher_id).first()
-                if pre: other_name = pre.full_name
+            # Partner Name
+            partner_user = db.query(User).filter(User.user_id == partner_id).first()
+            partner_name = "مستخدم"
+            if partner_user.role == UserRole.organization:
+                partner_name = f"مشرف جمعية {partner_user.organization.organization_name}"
+            elif partner_user.role == UserRole.preacher:
+                partner_name = partner_user.preacher.full_name
 
             previews.append({
-                "request_id": r.request_id,
-                "other_party_name": other_name,
-                "last_message": last_msg.message_text if last_msg else "لا توجد رسائل بعد",
-                "last_message_at": last_msg.created_at if last_msg else r.accepted_at,
+                "request_id": None,
+                "other_user_id": partner_id,
+                "other_party_name": partner_name,
+                "last_message": last_msg.message_text if last_msg else "",
+                "last_message_at": last_msg.created_at if last_msg else None,
                 "unread_count": unread_count,
-                "status": r.status
+                "is_direct": True
             })
 
-        # Sort by last message date
+        # Final Sort
         previews.sort(key=lambda x: x["last_message_at"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
 
         return {"message": "تم جلب قائمة المحادثات بنجاح", "data": previews}

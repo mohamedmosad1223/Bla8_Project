@@ -6,12 +6,13 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.models.dawah_request import DawahRequest, RequestStatusHistory
-from app.models.enums import RequestStatus, RequestType, UserRole
+from app.models.dawah_request import DawahRequest, RequestStatusHistory, ContactAttempt
+from app.models.enums import RequestStatus, RequestType, UserRole, CommunicationChannel
 from app.schemas import DawahRequestCreate, StatusUpdateRequest
 from app.models.user import User
 from app.models.preacher import Preacher
 from app.controllers.notifications_controller import NotificationsController
+from app.controllers.dawah_reports_controller import DawahReportsController
 from app.models.enums import NotificationType
 
 class DawahRequestsController:
@@ -69,6 +70,18 @@ class DawahRequestsController:
         if request.status != RequestStatus.pending:
             raise HTTPException(status_code=400, detail="هذا الطلب تم قبوله بالفعل أو لم يعد متاحاً")
         
+        # v4: Check workload limit (Max 2 active requests)
+        active_count = db.query(DawahRequest).filter(
+            DawahRequest.assigned_preacher_id == preacher_id,
+            DawahRequest.status.in_([RequestStatus.in_progress, RequestStatus.under_persuasion])
+        ).count()
+        
+        if active_count >= 2:
+            raise HTTPException(
+                status_code=400, 
+                detail="يجب إنهاء أو كتابة تقرير عن الطلبات الحالية أولاً (الحد الأقصى هو طلبين نشطين)"
+            )
+        
         request.assigned_preacher_id = preacher_id
         request.status = RequestStatus.in_progress
         request.accepted_at = datetime.now(timezone.utc)
@@ -125,6 +138,17 @@ class DawahRequestsController:
         if not request:
             raise HTTPException(status_code=404, detail="الطلب غير موجود أو غير مسند إليك")
         
+        # v4: Enforce mandatory daily report for non-terminal updates too
+        # If it's a terminal status, the feedback check below handles it.
+        # If it's just a note or status change to/from in_progress/under_persuasion, check 24h report.
+        terminal_statuses = [RequestStatus.converted, RequestStatus.rejected, RequestStatus.no_response]
+        if payload.new_status not in terminal_statuses:
+            if DawahReportsController.check_report_due(db, request_id):
+                raise HTTPException(
+                    status_code=400, 
+                    detail="نعتذر، يجب إكمال التقرير اليومي لهذه الحالة أولاً قبل إجراء أي تحديث"
+                )
+
         old_status = request.status
         if payload.new_status:
             request.status = payload.new_status
@@ -141,6 +165,12 @@ class DawahRequestsController:
         if payload.note:
             request.notes = payload.note
             
+        # v4: Enforce report/feedback when closing a request
+        terminal_statuses = [RequestStatus.converted, RequestStatus.rejected, RequestStatus.no_response]
+        if request.status in terminal_statuses:
+            if not request.preacher_feedback and not payload.preacher_feedback:
+                raise HTTPException(status_code=400, detail="يجب كتابة التقرير النهائي في خانة الملاحظات قبل إغلاق الطلب")
+
         # إضافة سجل للتاريخ حتى لو لم تتغير الحالة ولكن تمت إضافة ملاحظة
         history = RequestStatusHistory(
             request_id=request.request_id,
@@ -255,3 +285,46 @@ class DawahRequestsController:
         if not request:
             raise HTTPException(status_code=404, detail="الطلب غير موجود")
         return {"message": "تم جلب بيانات الطلب", "data": request}
+
+    @staticmethod
+    def track_link_click(db: Session, request_id: int, preacher_id: int, channel: CommunicationChannel = None):
+        """تسجيل نقرة التواصل وتحويل الحالة لـ 'under_persuasion'. لو الـ channel غير معطى، نستخدم المخزن في الطلب."""
+        request = db.query(DawahRequest).filter(
+            DawahRequest.request_id == request_id,
+            DawahRequest.assigned_preacher_id == preacher_id
+        ).first()
+
+        if not request:
+            raise HTTPException(status_code=404, detail="الطلب غير موجود أو غير مسند إليك")
+
+        if channel is None:
+            channel = request.communication_channel
+            
+        if channel is None:
+             raise HTTPException(status_code=400, detail="لم يتم تحديد وسيلة التواصل لهذا الطلب")
+
+        # Log attempt
+        attempt = ContactAttempt(
+            request_id=request_id,
+            preacher_id=preacher_id,
+            channel=channel
+        )
+        db.add(attempt)
+
+        # Transition status if not already terminal
+        # "تحويل حالة الطلب لقيد الإقناع مثلا"
+        if request.status == RequestStatus.in_progress:
+            old_status = request.status
+            request.status = RequestStatus.under_persuasion
+            
+            history = RequestStatusHistory(
+                request_id=request_id,
+                old_status=old_status,
+                new_status=RequestStatus.under_persuasion,
+                note=f"بدأ التواصل عبر {channel.value} - تحويل لقيد الإقناع"
+            )
+            db.add(history)
+
+        db.commit()
+        db.refresh(request)
+        return {"message": "تم تسجيل محاولة الاتصال", "data": request}

@@ -54,6 +54,7 @@ class RequestType(str, enum.Enum):
 class RequestStatus(str, enum.Enum):
     pending = "pending"
     in_progress = "in_progress"
+    under_persuasion = "under_persuasion"
     converted = "converted"
     rejected = "rejected"
     no_response = "no_response"
