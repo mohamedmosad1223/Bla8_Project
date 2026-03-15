@@ -152,3 +152,34 @@
 }
 .mc-btn-submit:hover  { background: #163d70; }
 .mc-btn-submit:active { transform: scale(0.98); }
+
+/* ── Field wrapper ── */
+.mc-field-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Validation Errors ── */
+.mc-error-msg {
+  color: #E53E3E;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding-right: 4px;
+}
+
+.mc-error-center {
+  text-align: center;
+}
+
+/* Red border on inputs/selects with errors */
+.mc-error-border .custom-input,
+.mc-error-border .mc-select {
+  border-color: #E53E3E !important;
+}
+
+.mc-select-wrapper.mc-error-border .mc-select {
+  border-color: #E53E3E !important;
+}
+

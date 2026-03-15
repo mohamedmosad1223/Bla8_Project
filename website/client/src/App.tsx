@@ -20,6 +20,7 @@ import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
 import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
 import Conversations from './pages/Conversations/Conversations';
 import MuslimCallerDashboard from './pages/MuslimCallerDashboard/MuslimCallerDashboard';
+import MuslimCallerSubmissions from './pages/MuslimCallerSubmissions/MuslimCallerSubmissions';
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
@@ -55,6 +56,7 @@ function App() {
           <Route path="/requests/new" element={<NewRequests />} />
           <Route path="/requests/current" element={<CurrentRequests />} />
           <Route path="/conversations" element={<Conversations />} />
+          <Route path="/submissions" element={<MuslimCallerSubmissions />} />
 
         </Route>
       </Routes>

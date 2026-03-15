@@ -83,7 +83,7 @@ const Sidebar = () => {
           {/* Muslim Caller-only */}
           {userRole === 'muslim_caller' && (
             <li className="nav-item">
-              <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+              <NavLink to="/submissions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <FileText size={20} className="nav-icon" />
                 التقديمات
               </NavLink>
