@@ -19,18 +19,21 @@
   align-items: center;
   background-color: var(--bg-color);
   border-radius: 8px;
-  padding: 8px 16px;
 }
 
 .search-icon {
+  position: absolute;
+  right: 14px;
   color: var(--text-gray);
-  margin-left: 12px;
+  pointer-events: none;
 }
 
 .search-input {
   border: none;
   background: transparent;
   width: 100%;
+  padding: 10px 16px;
+  padding-right: 44px;
   font-family: inherit;
   font-size: 1rem;
   color: var(--text-dark);

@@ -38,7 +38,7 @@ const RegistrationSelection = () => {
           </button>
           
           <button 
-            className={`option-card ${selectedRole === 'muslim' ? 'selected' : selectedRole === null ? 'default-selected' : ''}`}
+            className={`option-card ${selectedRole === 'muslim' ? 'selected' : ''}`}
             onClick={() => setSelectedRole('muslim')}
           >
             مسلم يدعو الناس<br/>الي الاسلام
