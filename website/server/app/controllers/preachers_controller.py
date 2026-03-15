@@ -108,17 +108,32 @@ class PreachersController:
     @staticmethod
     def list_preachers(
         db: Session, skip: int, limit: int,
-        full_name: Optional[str],
-        type: Optional[PreacherType],
-        preacher_status: Optional[PreacherStatus],
-        gender: Optional[GenderType],
-        approval_status: Optional[ApprovalStatus],
-        nationality_country_id: Optional[int],
-        org_id: Optional[int],
+        search: Optional[str] = None,
+        type: Optional[PreacherType] = None,
+        preacher_status: Optional[PreacherStatus] = None,
+        gender: Optional[GenderType] = None,
+        approval_status: Optional[ApprovalStatus] = None,
+        nationality_country_id: Optional[int] = None,
+        org_id: Optional[int] = None,
+        languages: list[int] = [],
+        joined_after: Optional[datetime] = None,
+        joined_before: Optional[datetime] = None,
+        order_by: str = "latest"
     ):
+        from app.models.preacher import PreacherLanguage
         q = db.query(Preacher)
-        if full_name:
-            q = q.filter(Preacher.full_name.ilike(f"%{full_name}%"))
+        
+        # 1. Search (Name or ID)
+        if search:
+            if search.isdigit():
+                q = q.filter(sa.or_(
+                    Preacher.preacher_id == int(search),
+                    Preacher.full_name.ilike(f"%{search}%")
+                ))
+            else:
+                q = q.filter(Preacher.full_name.ilike(f"%{search}%"))
+        
+        # 2. Filters
         if type:
             q = q.filter(Preacher.type == type)
         if preacher_status:
@@ -132,7 +147,25 @@ class PreachersController:
         if org_id:
             q = q.filter(Preacher.org_id == org_id)
 
-        preachers = q.order_by(Preacher.created_at.desc()).offset(skip).limit(limit).all()
+        # 3. Languages (Multi-select)
+        if languages:
+            q = q.join(PreacherLanguage).filter(PreacherLanguage.language_id.in_(languages))
+            # Optional: Ensure it has ALL selected languages? Usually, IN is enough for "any of"
+            # If "all of" is needed: q = q.group_by(Preacher.preacher_id).having(func.count(PreacherLanguage.language_id) == len(languages))
+
+        # 4. Date Range
+        if joined_after:
+            q = q.filter(Preacher.created_at >= joined_after)
+        if joined_before:
+            q = q.filter(Preacher.created_at <= joined_before)
+
+        # 5. Sorting
+        if order_by == "oldest":
+            q = q.order_by(Preacher.created_at.asc())
+        else:
+            q = q.order_by(Preacher.created_at.desc())
+
+        preachers = q.offset(skip).limit(limit).all()
         return {"message": PreacherMessages.LISTED, "data": preachers}
 
     @staticmethod

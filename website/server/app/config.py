@@ -35,6 +35,12 @@ class Settings:
     ALGORITHM:      str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
 
+    # SMTP Settings
+    SMTP_SERVER:   str = _get("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT:     int = int(_get("SMTP_PORT", "587"))
+    SMTP_USERNAME: str = _get("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = _get("SMTP_PASSWORD", "")
+
 
 settings = Settings()
 

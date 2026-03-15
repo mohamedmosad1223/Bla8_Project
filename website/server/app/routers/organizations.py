@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from datetime import date
 from pydantic import EmailStr
+from datetime import datetime
+
 
 from app.database import get_db
 from app.schemas import OrganizationUpdate, OrganizationRegister
@@ -50,10 +53,19 @@ def list_organizations(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     approval: str | None = Query(None, description="Filter by approval_status"),
+    search: Optional[str] = Query(None, description="اسم الجمعية أو الرقم التعريفى"),
+    created_after: Optional[datetime] = Query(None),
+    created_before: Optional[datetime] = Query(None),
+    order_by: str = Query("latest", regex="^(latest|oldest)$"),
     db: Session = Depends(get_db),
 ):
     """قائمة كل الجمعيات"""
-    return OrganizationsController.list_organizations(db, skip, limit, approval)
+    return OrganizationsController.list_organizations(
+        db=db, skip=skip, limit=limit, 
+        approval=approval, search=search,
+        created_after=created_after, created_before=created_before,
+        order_by=order_by
+    )
 
 @router.get("/{org_id}")
 def get_organization(org_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

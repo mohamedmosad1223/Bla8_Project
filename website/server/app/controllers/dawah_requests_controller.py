@@ -86,6 +86,10 @@ class DawahRequestsController:
         request.status = RequestStatus.in_progress
         request.accepted_at = datetime.now(timezone.utc)
         
+        # New: Set alert/reclaim timers
+        request.alert_42h_sent_at = None
+        request.auto_reclaim_at   = request.accepted_at + timedelta(hours=72)
+        
         history = RequestStatusHistory(
             request_id=request.request_id,
             old_status=RequestStatus.pending,

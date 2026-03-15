@@ -2,6 +2,7 @@
 Organizations Controller — Business logic for Organization CRUD operations.
 """
 
+from typing import Optional, List, Any
 import hashlib
 from datetime import datetime, timezone
 from fastapi import HTTPException
@@ -61,11 +62,43 @@ class OrganizationsController:
         return {"message": OrganizationMessages.REGISTERED, "data": org}
 
     @staticmethod
-    def list_organizations(db: Session, skip: int, limit: int, approval: str | None):
+    def list_organizations(
+        db: Session, skip: int, limit: int, 
+        approval: str | None = None,
+        search: Optional[str] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+        order_by: str = "latest"
+    ):
         q = db.query(Organization)
+        
+        # 1. Search (Name/ID)
+        if search:
+            if search.isdigit():
+                 q = q.filter(sa.or_(
+                     Organization.org_id == int(search),
+                     Organization.organization_name.ilike(f"%{search}%")
+                 ))
+            else:
+                q = q.filter(Organization.organization_name.ilike(f"%{search}%"))
+
+        # 2. Approval Filter
         if approval:
             q = q.filter(Organization.approval_status == approval)
-        orgs = q.order_by(Organization.created_at.desc()).offset(skip).limit(limit).all()
+        
+        # 3. Date Range
+        if created_after:
+            q = q.filter(Organization.created_at >= created_after)
+        if created_before:
+            q = q.filter(Organization.created_at <= created_before)
+
+        # 4. Sorting
+        if order_by == "oldest":
+            q = q.order_by(Organization.created_at.asc())
+        else:
+            q = q.order_by(Organization.created_at.desc())
+
+        orgs = q.offset(skip).limit(limit).all()
         return {"message": OrganizationMessages.LISTED, "data": orgs}
 
     @staticmethod

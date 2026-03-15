@@ -137,7 +137,7 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 ---
 
 ## 7. Mandatory Daily Report (Constraint)
-- **Wait/Simulate 24h** or try to send a message without a report.
+- **Wait/Simulate 42h** or try to send a message without a report.
 - **Submit Report**: `POST /api/dawah-reports/`
   ```json
   {
@@ -162,21 +162,21 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 
 ---
 
-## 9. Help Center (Static & System Settings)
-- **Endpoint**: `GET /api/settings/help-center`
+---
+
+## 9. Help Center & FAQs
+- **Endpoint**: `GET /api/help/`
 - **Method**: `GET`
-- **Goal**: Fetch dynamic App Settings used for the "مركز المساعدة" screen like WhatsApp phone, Working Hours, and Customer Service URLs.
+- **Goal**: Fetch the official FAQs (Who are we, Goals, etc.) seeded in the database.
 - **Expected Response**:
   ```json
-  {
-    "message": "تم جلب بيانات مركز المساعدة المحدثة",
-    "data": {
-      "faq_url": "https://example.com/faq",
-      "customer_service_url": "https://example.com/support",
-      "phone": "+20 123 232 323",
-      "working_hours": "من السبت الى الخميس الساعة 08 صباحا الى 05 مساء"
+  [
+    {
+      "faq_id": 1,
+      "question": "من نحن؟",
+      "answer": "منصة بلاغ هي منصة دعوية..."
     }
-  }
+  ]
   ```
 
 ---
@@ -185,23 +185,39 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 - **Forgot Password**: `POST /api/auth/forgot-password`
   - **Body**: `{"email": "caller1@example.com"}` (Generates 6-digit OTP).
 - **Verify OTP**: `POST /api/auth/verify-otp`
-  - **Body**: `{"email": "caller1@example.com", "otp": "YOUR_OTP"}`
 - **Reset Password**: `POST /api/auth/reset-password`
-  - **Body**: `{"email": "caller1@example.com", "otp": "YOUR_OTP", "new_password": "New!Password123", "new_password_confirm": "New!Password123"}`
-- **Change Password (Inside App)**: `POST /api/auth/change-password`
-  - **Auth**: Requires Bearer Token.
-  - **Body**: `{"old_password": "OldPassword123", "new_password": "New!Password123", "new_password_confirm": "New!Password123"}`
 
 ---
 
-## 11. Main Overview Dashboard (New Frontend UI)
-- **Endpoint**: `GET /api/dashboard/main`
-- **Method**: `GET`
-- **Auth**: Not strictly required for the mocked endpoints, but in production, requires a Bearer Token.
-- **Goal**: Fetch aggregated metrics, charts (Line, Pie, Bar, Funnel) and recent activity feed for the main Dashboard UI.
-- **Action**: Open Postman, set method to `GET`, enter URL `http://127.0.0.1:8000/api/dashboard/main`, and click Send.
-- **Expected Data**: You will receive a rich JSON containing:
-  - `total_invited`, `active_duah`, `invitations_this_week`, `successful_conversions`, `pending_followups` (Stat Cards)
-  - `invitations_over_time`, `nationalities_distribution`, `invitations_by_duah`, `funnel_chart` (Charts)
-  - `recent_activities` (Activity Feed)
+## 11. Admin Dashboard (Platform Overview)
+- **Endpoint**: `GET /api/dashboard/admin`
+- **Goal**: Fetch real-time aggregated metrics and recent activity.
+
+---
+
+## 12. Admin Extended Profile & Security
+### 12.1 Profile Management
+- **Get My Profile**: `GET /api/admins/me`
+- **Update Profile**: `PATCH /api/admins/me` (Body: `form-data`)
+  - Fields: `full_name`, `email`, `phone`, `profile_picture` (file).
+- **Sync Languages**: `PATCH /api/admins/me/languages`
+  - Payload: `{"language_ids": [1, 2, 3]}`
+
+### 12.2 Security Extensions
+- **Change Password (Old Pass)**: `POST /api/admins/me/change-password`
+  - Body: `{"old_password": "Password123", "new_password": "New!Password"}`
+- **Change Password (OTP Fallback)**: `POST /api/admins/me/change-password`
+  - Body: `{"otp": "123456", "new_password": "New!Password"}`
+- **Delete Account**: `POST /api/admins/me/delete-account`
+  - Body: `{"password": "Password123"}` (Soft-delete/Suspension).
+
+---
+
+## 13. Advanced Platform Management (Admins Only)
+- **Filtered Organizations**: `GET /api/admins/management/organizations`
+  - **Query Params**: `search=اسم`, `approval_status=approved`, `order_by=latest`
+- **Direct Org Registration**: `POST /api/admins/management/organizations`
+  - **Body**: Same as regular register but bypasses approval.
+- **Filtered Preachers**: `GET /api/admins/management/preachers`
+  - **Query Params**: `search=ID`, `type=official`, `languages=1,2`, `order_by=oldest`
 

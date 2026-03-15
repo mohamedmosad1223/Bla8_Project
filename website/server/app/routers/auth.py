@@ -13,6 +13,7 @@ from app.models.enums import UserRole, AccountStatus
 from app.auth import verify_password, create_access_token, get_current_user
 from app.limiter import limiter
 from app.config import settings
+from app.utils.email_service import EmailService
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -116,11 +117,10 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
     user.reset_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
     db.commit()
 
-    # Stub sending email
-    send_email_stub(
+    # Send actual email
+    EmailService.send_otp_email(
         to_email=user.email,
-        subject="رمز إعادة تعيين كلمة المرور - منصة بلاغ",
-        body=f"رمز التأكيد الخاص بك هو: {otp}\nصالح لمدة 15 دقيقة."
+        otp=otp
     )
 
     return {"message": "تم إرسال رمز التأكيد إلى البريد الإلكتروني (إن وجد)."}

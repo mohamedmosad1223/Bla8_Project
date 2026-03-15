@@ -1,10 +1,8 @@
-"""
-Preachers Router — Routes delegate to PreachersController.
-"""
-
-from typing import Optional
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from typing import Optional, List
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
+from datetime import datetime
+from pydantic import EmailStr
 
 from app.database import get_db
 from app.models.enums import PreacherType, PreacherStatus, GenderType, ApprovalStatus, UserRole
@@ -18,11 +16,6 @@ router = APIRouter(
     prefix="/api/preachers",
     tags=["Preachers"]
 )
-
-
-from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
-from typing import List, Optional
-from pydantic import EmailStr
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_preacher(
@@ -65,13 +58,17 @@ def register_preacher(
 def list_preachers(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    full_name: Optional[str] = Query(None, description="بحث بالاسم"),
+    search: Optional[str] = Query(None, description="بحث بالاسم أو الرقم التعريفى"),
     type: Optional[PreacherType] = Query(None),
     preacher_status: Optional[PreacherStatus] = Query(None, alias="status"),
     gender: Optional[GenderType] = Query(None),
     approval_status: Optional[ApprovalStatus] = Query(None),
     nationality_country_id: Optional[int] = Query(None),
     org_id: Optional[int] = Query(None, description="Filter by organization"),
+    languages: List[int] = Query([], description="قائمة معرفات اللغات (فلترة متعددة)"),
+    joined_after: Optional[datetime] = Query(None),
+    joined_before: Optional[datetime] = Query(None),
+    order_by: str = Query("latest", regex="^(latest|oldest)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -82,9 +79,16 @@ def list_preachers(
         org_id = current_user.organization.org_id
 
     return PreachersController.list_preachers(
-        db, skip, limit, full_name, type,
-        preacher_status, gender, approval_status,
-        nationality_country_id, org_id,
+        db=db, skip=skip, limit=limit, 
+        search=search, type=type,
+        preacher_status=preacher_status, gender=gender, 
+        approval_status=approval_status,
+        nationality_country_id=nationality_country_id, 
+        org_id=org_id,
+        languages=languages,
+        joined_after=joined_after,
+        joined_before=joined_before,
+        order_by=order_by
     )
 
 
