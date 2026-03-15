@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Users, FileText, Activity, User, LogOut, MessageCircle } from 'lucide-react';
+import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
@@ -25,12 +25,14 @@ const Sidebar = () => {
       <nav className="sidebar-nav">
         <ul className="nav-list">
           {/* Common */}
-          <li className="nav-item">
-            <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
-              <Home size={20} className="nav-icon" />
-              الرئيسية
-            </NavLink>
-          </li>
+          {userRole !== 'non_muslim' && (
+            <li className="nav-item">
+              <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+                <Home size={20} className="nav-icon" />
+                الرئيسية
+              </NavLink>
+            </li>
+          )}
 
           {/* Association-only */}
           {isAssociation && (
@@ -88,6 +90,24 @@ const Sidebar = () => {
                 التقديمات
               </NavLink>
             </li>
+          )}
+
+          {/* Non-Muslim only */}
+          {userRole === 'non_muslim' && (
+            <>
+              <li className="nav-item">
+                <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+                  <MessageCircle size={20} className="nav-icon" />
+                  الرسائل
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/library" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <BookOpen size={20} className="nav-icon" />
+                  المكتبة
+                </NavLink>
+              </li>
+            </>
           )}
         </ul>
       </nav>

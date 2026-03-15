@@ -1,0 +1,326 @@
+/* ─── NonMuslimDashboard.css ───────────────────────────── */
+
+.nm-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: calc(100vh - 100px); /* Account for header/layout */
+  background: var(--bg-color, #f7f8fa);
+  position: relative;
+  font-family: inherit;
+}
+
+.nm-chat-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* ── Bot Avatar styling ── */
+.nm-bot-container {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.nm-bot-avatar-bg {
+  width: 220px;
+  height: 220px;
+  background-color: #1e5387; /* Dark blue background */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.nm-bot-icon {
+  margin-top: -10px; /* Slight adjustment to match the feel of the 3D bot */
+}
+
+.nm-online-dot {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  background-color: #22c55e; /* Green online dot */
+  border-radius: 50%;
+  border: 4px solid #fff;
+  z-index: 2;
+}
+
+/* ── Greeting Text ── */
+.nm-greeting-message {
+  padding: 0 1.5rem;
+}
+
+.nm-greeting-message p {
+  color: #4a5568;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── FAB (Floating Action Button) ── */
+.nm-fab {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem; /* Positioned at bottom right internally */
+  width: 64px;
+  height: 64px;
+  background-color: #1e5387;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(30, 83, 135, 0.4);
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  z-index: 10;
+}
+
+.nm-fab:hover {
+  background-color: #163d6b;
+  transform: scale(1.05);
+}
+
+.nm-fab:active {
+  transform: scale(0.95);
+}
+
+/* ── Chat Window Placeholder UI ── */
+.nm-chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: calc(100vh - 100px);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+.nm-chat-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #1e5387;
+  color: white;
+  gap: 1rem;
+}
+
+.nm-back-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.nm-back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nm-header-bot-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.nm-header-avatar {
+  background-color: white;
+  border-radius: 50%;
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nm-chat-messages {
+  flex: 1;
+  padding: 1.5rem;
+  background-color: #f7f8fa;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.nm-message {
+  max-width: 80%;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.nm-bot-message {
+  background-color: white;
+  color: #2d3748;
+  align-self: flex-start;
+  border-bottom-right-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.nm-user-message {
+  background-color: #1e5387;
+  color: white;
+  align-self: flex-end;
+  border-bottom-left-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.nm-chat-input-area {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: white;
+  border-top: 1px solid #e2e8f0;
+  gap: 0.75rem;
+}
+
+.nm-chat-input {
+  flex: 1;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  outline: none;
+  background-color: #f7f8fa;
+  font-family: inherit;
+}
+
+.nm-chat-input:focus {
+  border-color: #1e5387;
+  background-color: white;
+}
+
+.nm-send-btn {
+  background-color: #1e5387;
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.nm-send-btn:hover:not(:disabled) {
+  background-color: #163d6b;
+}
+
+.nm-send-btn:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* ── History View Styling ── */
+.nm-history-area {
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.nm-history-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e5387;
+  margin-bottom: 0.5rem;
+  text-align: right;
+}
+
+.nm-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.nm-session-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid #edf2f7;
+}
+
+.nm-session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: #1e5387;
+}
+
+.nm-session-icon {
+  width: 48px;
+  height: 48px;
+  background: #f0f7ff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nm-session-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.nm-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nm-session-name {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 1.05rem;
+}
+
+.nm-session-time {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+}
+
+.nm-session-last-msg {
+  font-size: 0.9rem;
+  color: #718096;
+  white-space: nowrap;
+  overflow: hidden;
+  text-anchor: right;
+  text-overflow: ellipsis;
+  margin: 0;
+}

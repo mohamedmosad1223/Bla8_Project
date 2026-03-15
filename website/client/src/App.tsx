@@ -21,11 +21,14 @@ import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
 import Conversations from './pages/Conversations/Conversations';
 import MuslimCallerDashboard from './pages/MuslimCallerDashboard/MuslimCallerDashboard';
 import MuslimCallerSubmissions from './pages/MuslimCallerSubmissions/MuslimCallerSubmissions';
+import NonMuslimDashboard from './pages/NonMuslimDashboard/NonMuslimDashboard';
+import Library from './pages/Library/Library';
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
   if (role === 'preacher') return <PreacherDashboard />;
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
+  if (role === 'non_muslim') return <NonMuslimDashboard />;
   return <Dashboard />;
 };
 
@@ -57,6 +60,7 @@ function App() {
           <Route path="/requests/current" element={<CurrentRequests />} />
           <Route path="/conversations" element={<Conversations />} />
           <Route path="/submissions" element={<MuslimCallerSubmissions />} />
+          <Route path="/library" element={<Library />} />
 
         </Route>
       </Routes>

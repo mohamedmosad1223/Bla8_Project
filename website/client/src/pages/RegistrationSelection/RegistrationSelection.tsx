@@ -10,6 +10,8 @@ const RegistrationSelection = () => {
   const handleConfirm = () => {
     if (selectedRole === 'muslim') {
       navigate('/login?role=muslim_caller');
+    } else if (selectedRole === 'non-muslim') {
+      navigate('/login?role=non_muslim');
     } else {
       navigate('/register');
     }
