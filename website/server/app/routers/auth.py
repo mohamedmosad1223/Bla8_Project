@@ -85,3 +85,85 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
         },
         "profile": profile_data
     }
+
+
+import random
+from app.schemas import (
+    ForgotPasswordRequest, ValidateOTPRequest, ResetPasswordRequest, ChangePasswordRequest
+)
+from app.auth import get_password_hash
+
+# Note: In a real system, you'd integrate with an email provider (like SendGrid/SMTP) here.
+def send_email_stub(to_email: str, subject: str, body: str):
+    print(f"--- EMAIL TO: {to_email} ---")
+    print(f"Subject: {subject}")
+    print(body)
+    print("----------------------------")
+
+@router.post("/forgot-password")
+@limiter.limit("3/minute")
+def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """طلب إعادة تعيين كلمة المرور - يرسل رمز OTP للبريد"""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        # Don't reveal if user exists or not, just return "success" message.
+        return {"message": "إذا كان البريد الإكتروني موجوداً ستصلك رسالة تحتوي على رمز التأكيد."}
+
+    # Generate a 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    user.reset_otp = otp
+    from datetime import datetime, timedelta, timezone
+    user.reset_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    db.commit()
+
+    # Stub sending email
+    send_email_stub(
+        to_email=user.email,
+        subject="رمز إعادة تعيين كلمة المرور - منصة بلاغ",
+        body=f"رمز التأكيد الخاص بك هو: {otp}\nصالح لمدة 15 دقيقة."
+    )
+
+    return {"message": "تم إرسال رمز التأكيد إلى البريد الإلكتروني (إن وجد)."}
+
+@router.post("/verify-otp")
+def verify_otp(payload: ValidateOTPRequest, db: Session = Depends(get_db)):
+    """التحقق من صحة كود الـ OTP"""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or user.reset_otp != payload.otp:
+        raise HTTPException(status_code=400, detail="الرمز غير صحيح أو البريد الإلكتروني غير صحيح.")
+    
+    from datetime import datetime, timezone
+    if user.reset_otp_expires_at and user.reset_otp_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="انتهت صلاحية الرمز، يرجى طلب رمز جديد.")
+
+    return {"message": "الرمز صحيح. يمكنك الآن تعيين كلمة مرور جديدة."}
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """إعادة تعيين كلمة المرور باستخدام الـ OTP"""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or user.reset_otp != payload.otp:
+        raise HTTPException(status_code=400, detail="الرمز غير صحيح.")
+    
+    from datetime import datetime, timezone
+    if user.reset_otp_expires_at and user.reset_otp_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="انتهت صلاحية الرمز.")
+
+    # Update password and clear OTP
+    user.password_hash = get_password_hash(payload.new_password)
+    user.reset_otp = None
+    user.reset_otp_expires_at = None
+    db.commit()
+
+    return {"message": "تم تغيير كلمة المرور بنجاح."}
+
+@router.post("/change-password")
+def change_password(payload: ChangePasswordRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """تغيير كلمة المرور من داخل الإعدادات"""
+    if not verify_password(payload.old_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="كلمة المرور الحالية غير صحيحة.")
+
+    current_user.password_hash = get_password_hash(payload.new_password)
+    db.commit()
+
+    return {"message": "تم تغيير كلمة المرور بنجاح."}

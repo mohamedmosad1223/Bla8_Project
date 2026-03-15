@@ -62,6 +62,32 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 
 ---
 
+## 3.1 Muslim Caller Dashboard (Track My Requests)
+- **Endpoint**: `GET /api/dawah-requests/my-submissions`
+- **Method**: `GET`
+- **Goal**: Allow the caller to view all their submitted cases along with their current statuses, preacher name, and submission/update dates.
+- **Expected Data**:
+  ```json
+  {
+    "message": "تم جلب طلباتك التي سجلتها",
+    "data": [
+      {
+        "request_id": 1,
+        "status": "pending",
+        "request_type": "invited",
+        "invited_name": "John Doe",
+        "preacher_name": "قيد الانتظار",
+        "submission_date": "2023-01-22T07:00:00Z",
+        "updated_at": "2023-01-22T08:00:00Z",
+        "accepted_at": null,
+        "submitter_feedback": null
+      }
+    ]
+  }
+  ```
+
+---
+
 ## 4. Register & Approve an Organization
 - **Endpoint**: `POST /api/organizations/register`
 - **Method**: `POST` (Body: `form-data`)
@@ -133,3 +159,49 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
   }
   ```
 - **Note**: You CANNOT close the request without `preacher_feedback`.
+
+---
+
+## 9. Help Center (Static & System Settings)
+- **Endpoint**: `GET /api/settings/help-center`
+- **Method**: `GET`
+- **Goal**: Fetch dynamic App Settings used for the "مركز المساعدة" screen like WhatsApp phone, Working Hours, and Customer Service URLs.
+- **Expected Response**:
+  ```json
+  {
+    "message": "تم جلب بيانات مركز المساعدة المحدثة",
+    "data": {
+      "faq_url": "https://example.com/faq",
+      "customer_service_url": "https://example.com/support",
+      "phone": "+20 123 232 323",
+      "working_hours": "من السبت الى الخميس الساعة 08 صباحا الى 05 مساء"
+    }
+  }
+  ```
+
+---
+
+## 10. Authentication (Password Reset & Change)
+- **Forgot Password**: `POST /api/auth/forgot-password`
+  - **Body**: `{"email": "caller1@example.com"}` (Generates 6-digit OTP).
+- **Verify OTP**: `POST /api/auth/verify-otp`
+  - **Body**: `{"email": "caller1@example.com", "otp": "YOUR_OTP"}`
+- **Reset Password**: `POST /api/auth/reset-password`
+  - **Body**: `{"email": "caller1@example.com", "otp": "YOUR_OTP", "new_password": "New!Password123", "new_password_confirm": "New!Password123"}`
+- **Change Password (Inside App)**: `POST /api/auth/change-password`
+  - **Auth**: Requires Bearer Token.
+  - **Body**: `{"old_password": "OldPassword123", "new_password": "New!Password123", "new_password_confirm": "New!Password123"}`
+
+---
+
+## 11. Main Overview Dashboard (New Frontend UI)
+- **Endpoint**: `GET /api/dashboard/main`
+- **Method**: `GET`
+- **Auth**: Not strictly required for the mocked endpoints, but in production, requires a Bearer Token.
+- **Goal**: Fetch aggregated metrics, charts (Line, Pie, Bar, Funnel) and recent activity feed for the main Dashboard UI.
+- **Action**: Open Postman, set method to `GET`, enter URL `http://127.0.0.1:8000/api/dashboard/main`, and click Send.
+- **Expected Data**: You will receive a rich JSON containing:
+  - `total_invited`, `active_duah`, `invitations_this_week`, `successful_conversions`, `pending_followups` (Stat Cards)
+  - `invitations_over_time`, `nationalities_distribution`, `invitations_by_duah`, `funnel_chart` (Charts)
+  - `recent_activities` (Activity Feed)
+

@@ -13,6 +13,8 @@ from app.schemas.schemas import (
     StatusUpdateRequest,
     SubmitterFeedbackRequest,
     NotificationRead,
+    ForgotPasswordRequest, ValidateOTPRequest, ResetPasswordRequest, ChangePasswordRequest,
+    PreacherDashboardRead, OrganizationDashboardRead, MainDashboardRead, RecentActivityRead,
 )
 
 __all__ = [
@@ -30,4 +32,6 @@ __all__ = [
     "StatusUpdateRequest",
     "SubmitterFeedbackRequest",
     "NotificationRead",
+    "ForgotPasswordRequest", "ValidateOTPRequest", "ResetPasswordRequest", "ChangePasswordRequest",
+    "PreacherDashboardRead", "OrganizationDashboardRead", "MainDashboardRead", "RecentActivityRead",
 ]

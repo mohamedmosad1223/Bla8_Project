@@ -15,6 +15,7 @@ from app.routers.messages import router as messages_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.dawah_reports import router as dawah_reports_router
 from app.routers.track import router as track_router
+from app.routers.settings import router as settings_router
 
 __all__ = [
     "users_router",
@@ -30,4 +31,5 @@ __all__ = [
     "dashboard_router",
     "dawah_reports_router",
     "track_router",
+    "settings_router",
 ]

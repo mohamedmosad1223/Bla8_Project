@@ -91,6 +91,58 @@ class UserRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ValidateOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=4, max_length=10)
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=4, max_length=10)
+    new_password: str = Field(..., min_length=8)
+    new_password_confirm: str = Field(..., min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
+        return v
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "ResetPasswordRequest":
+        if self.new_password != self.new_password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str = Field(..., min_length=8)
+    new_password_confirm: str = Field(..., min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
+        return v
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "ChangePasswordRequest":
+        if self.new_password != self.new_password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
+
+
 # ─── Admin ───────────────────────────────────────────────────────────────────
 
 class AdminCreate(BaseModel):
@@ -579,6 +631,7 @@ class MuslimCallerRegister(BaseModel):
     """Register a new MuslimCaller: creates User + MuslimCaller profile atomically."""
     email:                  EmailStr
     password:               str            = Field(..., min_length=8, max_length=72)
+    password_confirm:       str            = Field(..., min_length=8, max_length=72)
     full_name:              str            = Field(..., min_length=2, max_length=255)
     phone:                  Optional[str]  = Field(None, max_length=30)
     nationality_country_id: Optional[int]  = Field(None, gt=0)
@@ -596,6 +649,12 @@ class MuslimCallerRegister(BaseModel):
     @field_validator("phone")
     @classmethod
     def phone_valid(cls, v): return validate_phone(v)
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "MuslimCallerRegister":
+        if self.password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
 
 
 class InterestedPersonRegister(BaseModel):
@@ -726,4 +785,33 @@ class OrganizationDashboardRead(BaseModel):
     requests_distribution: list[ChartDataPoint] # donut chart
     conversion_trends: list[ChartDataPoint] # grouped bar chart
     
+    model_config = {"from_attributes": True}
+
+
+class RecentActivityRead(BaseModel):
+    id: int
+    name: str    # e.g., "John Doe" or "Mohammed Al-Daee"
+    action: str  # e.g., "تمت إضافة شخص مدعو جديد", "متابعة مكتملة", "إشهار إسلام"
+    time: str    # "منذ ساعتين", "منذ يوم" (can just send ISO timestamp and FE formats it)
+    timestamp: datetime
+    model_config = {"from_attributes": True}
+
+class MainDashboardRead(BaseModel):
+    """البيانات الخاصة بالصفحة الرئيسية (الداشبورد العام)"""
+    # Overview Cards
+    total_invited: StatCard
+    active_duah: StatCard
+    invitations_this_week: StatCard
+    successful_conversions: StatCard
+    pending_followups: StatCard
+
+    # Charts
+    invitations_over_time: list[ChartDataPoint] # Line Chart
+    nationalities_distribution: list[ChartDataPoint] # Pie Chart (Alternative to Religion if not added)
+    invitations_by_duah: list[ChartDataPoint] # Bar Chart
+    funnel_chart: list[ChartDataPoint] # Funnel (Total -> Assigned -> Follow-up -> Converted)
+
+    # Recent Activity
+    recent_activities: list[RecentActivityRead]
+
     model_config = {"from_attributes": True}

@@ -8,9 +8,15 @@ from app.models.preacher import Preacher
 from app.models.enums import UserRole
 from app.controllers.preacher_dashboard_controller import PreacherDashboardController
 from app.controllers.organization_dashboard_controller import OrganizationDashboardController
-from app.schemas.schemas import PreacherDashboardRead, OrganizationDashboardRead
+from app.controllers.main_dashboard_controller import MainDashboardController
+from app.schemas.schemas import PreacherDashboardRead, OrganizationDashboardRead, MainDashboardRead
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
+
+@router.get("/main", response_model=MainDashboardRead)
+def get_main_dashboard(db: Session = Depends(get_db)):
+    """جلب بيانات الداشبورد الرئيسية للمنصة (إحصائيات عامة، رسوم بيانية، ونشاط حديث)"""
+    return MainDashboardController.get_main_dashboard(db)
 
 @router.get("/preacher", response_model=PreacherDashboardRead)
 def get_preacher_dashboard_self(
