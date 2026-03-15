@@ -18,6 +18,12 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Clear any stale role when login page loads
+  React.useEffect(() => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userData');
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -27,11 +33,13 @@ const Login: React.FC = () => {
       setError(null);
       // const response = await authService.login(email, password);
       
-      // Optionally store generic user data
+      // Save role from URL param (e.g. ?role=muslim_caller)
+      const savedRole = role || 'admin';
       localStorage.setItem('userData', JSON.stringify({ name: 'Test User', email }));
-      localStorage.setItem('userRole', role || 'admin');
+      localStorage.setItem('userRole', savedRole);
       
-      navigate('/dashboard');
+      // Full reload so RoleDashboard reads fresh localStorage
+      window.location.href = '/dashboard';
     } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.response?.data?.detail || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {

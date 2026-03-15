@@ -19,10 +19,13 @@ import NewRequests from './pages/NewRequests/NewRequests';
 import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
 import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
 import Conversations from './pages/Conversations/Conversations';
+import MuslimCallerDashboard from './pages/MuslimCallerDashboard/MuslimCallerDashboard';
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
-  return role === 'preacher' ? <PreacherDashboard /> : <Dashboard />;
+  if (role === 'preacher') return <PreacherDashboard />;
+  if (role === 'muslim_caller') return <MuslimCallerDashboard />;
+  return <Dashboard />;
 };
 
 

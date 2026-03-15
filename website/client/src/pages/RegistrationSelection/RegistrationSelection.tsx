@@ -8,8 +8,11 @@ const RegistrationSelection = () => {
   const navigate = useNavigate();
 
   const handleConfirm = () => {
-    // Navigate to login regardless of role for now, as per standard flow
-    navigate('/login');
+    if (selectedRole === 'muslim') {
+      navigate('/login?role=muslim_caller');
+    } else {
+      navigate('/register');
+    }
   };
 
   return (
