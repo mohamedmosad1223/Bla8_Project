@@ -163,13 +163,10 @@
 }
 
 .option-card.selected {
-  border-color: var(--border-gold);
+  border-color: var(--primary-gold);
   border-width: 2px;
-  background-color: rgba(219, 168, 65, 0.05);
-}
-
-.option-card.default-selected {
-  border-color: var(--border-gold);
+  background-color: var(--primary-gold);
+  color: #FFFFFF;
 }
 
 .confirm-btn {
