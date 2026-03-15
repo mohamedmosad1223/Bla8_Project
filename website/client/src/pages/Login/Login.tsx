@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
 import Checkbox from '../../components/common/Checkbox/Checkbox';
-import { authService } from '../../services/authService';
+// import { authService } from '../../services/authService';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -25,11 +25,11 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.login(email, password);
+      // const response = await authService.login(email, password);
       
       // Optionally store generic user data
-      localStorage.setItem('userData', JSON.stringify(response.user));
-      localStorage.setItem('userRole', response.user.role || 'admin');
+      localStorage.setItem('userData', JSON.stringify({ name: 'Test User', email }));
+      localStorage.setItem('userRole', role || 'admin');
       
       navigate('/dashboard');
     } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any

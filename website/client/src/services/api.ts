@@ -6,6 +6,19 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true, // IMPORTANT: Backend uses HttpOnly cookies (access_token)
+  // Mock adapter to disable backend calls temporarily
+  adapter: (config) => {
+    console.log('Mocking request to:', config.url);
+    return new Promise((resolve) => {
+      resolve({
+        data: [], // Returning empty array as default mock data
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config
+      });
+    });
+  }
 });
 
 // Add a response interceptor to handle global errors (like 401 Unauthorized)
