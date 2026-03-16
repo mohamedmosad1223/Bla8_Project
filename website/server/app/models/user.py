@@ -19,6 +19,7 @@ class User(Base):
     last_login:    Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
     reset_otp:     Mapped[str|None]      = mapped_column(sa.String(10))
     reset_otp_expires_at: Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
+    app_language:  Mapped[str]           = mapped_column(sa.String(10), nullable=False, default="ar")
     created_at:    Mapped[datetime]      = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now())
     updated_at:    Mapped[datetime]      = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now())
     deleted_at:    Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))

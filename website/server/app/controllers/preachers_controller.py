@@ -98,8 +98,14 @@ class PreachersController:
         db.flush()
 
         # إضافة اللغات
-        for lang_id in payload.languages:
-            db.add(PreacherLanguage(preacher_id=preacher.preacher_id, language_id=lang_id))
+        if payload.languages:
+            from app.models.reference import Language
+            valid_lang_count = db.query(Language).filter(Language.language_id.in_(payload.languages)).count()
+            if valid_lang_count != len(set(payload.languages)):
+                raise HTTPException(status_code=400, detail="بعض اللغات المختارة غير موجودة في النظام")
+                
+            for lang_id in payload.languages:
+                db.add(PreacherLanguage(preacher_id=preacher.preacher_id, language_id=lang_id))
 
         db.commit()
         db.refresh(preacher)

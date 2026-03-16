@@ -221,3 +221,46 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 - **Filtered Preachers**: `GET /api/admins/management/preachers`
   - **Query Params**: `search=ID`, `type=official`, `languages=1,2`, `order_by=oldest`
 
+---
+
+## 14. Universal Profile & Settings (All Roles)
+- **Base Endpoint**: `/api/profile`
+- **Goal**: Unified management for Admin, Preacher, Org, Muslim Caller, and Interested Persons.
+
+### 14.1 Profile Management
+- **Get My Profile**: `GET /api/profile/me`
+- **Update Profile**: `PATCH /api/profile/me` (Body: `form-data`)
+  - Fields: `full_name`, `email`, `phone`, `profile_picture` (file).
+
+### 14.2 Account Security
+- **Change Password**: `POST /api/profile/change-password`
+  - Body: `{"old_password": "...", "new_password": "...", "password_confirm": "..."}`
+- **Delete My Account**: `POST /api/profile/delete-account`
+  - Body: `{"password": "..."}` (Soft-delete/Suspension).
+
+### 14.3 Reference & Support
+- **List App Languages**: `GET /api/profile/languages` (Available UI languages).
+- **Update App Language**: `PATCH /api/profile/app-language`
+  - Body: `{"language_code": "ar"}` (Sets application UI language).
+- **Update Spoken Languages**: `PATCH /api/profile/spoken-languages`
+  - Body: `{"language_ids": [1, 2]}` (For Preachers/Admins).
+- **FAQs**: `GET /api/profile/faqs`
+- **Contact Info**: `GET /api/profile/contact` (Call us, Working hours).
+- **Platform Policies**: `GET /api/profile/policies` (Privacy, Terms).
+
+---
+
+## 15. Chat & AI Features
+### 15.1 AI Support (Non-Muslims/Interested Persons)
+- **Get AI Memory/History**: `GET /api/chat/ai/history`
+  - Returns `welcome_message` and full message `history`.
+- **Send Message to AI**: `POST /api/chat/ai/send`
+  - Body: `{"content": "I want to know more about Islam"}`
+  - Returns user message and a placeholder AI response.
+
+### 15.2 Preacher Conversations
+- **List Preacher Chats**: `GET /api/chat/preachers`
+  - Returns all active chats (from requests or DMs) with preachers.
+- **Open Specific Chat**:
+  - For Request chats: Use `GET /api/messages/chat-history/{request_id}`
+  - For Direct chats: Use `GET /api/messages/chat-history?other_user_id={preacher_user_id}`

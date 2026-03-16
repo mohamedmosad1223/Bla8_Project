@@ -108,8 +108,18 @@ class MessagesController:
             notification_related_id = request.request_id
         else:
             # For DMs, we need to identify the sender for the notification body
-            sender_user = db.query(User).filter(User.user_id == sender.user_id).first()
-            sender_name = sender_user.full_name if sender_user and sender_user.full_name else "مستخدم"
+            sender_name = "مستخدم"
+            if sender.role == UserRole.admin and sender.admin:
+                sender_name = sender.admin.full_name
+            elif sender.role == UserRole.organization and sender.organization:
+                sender_name = sender.organization.organization_name
+            elif sender.role == UserRole.preacher and sender.preacher:
+                sender_name = sender.preacher.full_name
+            elif sender.role == UserRole.muslim_caller and sender.muslim_caller:
+                sender_name = sender.muslim_caller.full_name
+            elif sender.role == UserRole.interested and sender.interested_person:
+                sender_name = f"{sender.interested_person.first_name} {sender.interested_person.last_name}"
+            
             notification_body = f"لديك رسالة مباشرة جديدة من {sender_name}"
             notification_related_id = sender.user_id # Or receiver_id, depending on how notifications are linked to DMs.
 
@@ -150,7 +160,7 @@ class MessagesController:
         elif other_user_id:
             # Direct Message History
             messages = db.query(Message).filter(
-                Message.request_id == None,
+                Message.request_id.is_(None),
                 or_(
                     (Message.sender_id == user_id) & (Message.receiver_id == other_user_id),
                     (Message.sender_id == other_user_id) & (Message.receiver_id == user_id)

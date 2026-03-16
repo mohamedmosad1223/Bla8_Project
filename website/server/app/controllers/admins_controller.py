@@ -148,6 +148,13 @@ class AdminsController:
         if not admin:
             raise HTTPException(status_code=404, detail="الملف الشخصي غير موجود")
 
+        # Validate language IDs
+        if payload.language_ids:
+            from app.models.reference import Language
+            valid_lang_count = db.query(Language).filter(Language.language_id.in_(payload.language_ids)).count()
+            if valid_lang_count != len(set(payload.language_ids)):
+                raise HTTPException(status_code=400, detail="بعض اللغات المختارة غير موجودة في النظام")
+
         # Clear existing
         db.query(AdminLanguage).filter(AdminLanguage.admin_id == admin.admin_id).delete()
         

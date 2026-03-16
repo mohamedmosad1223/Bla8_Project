@@ -906,8 +906,15 @@ class ResetPasswordRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     old_password: Optional[str] = None
-    new_password: str = Field(..., min_length=6)
-    otp:          Optional[str] = None # For fallback
+    new_password: str = Field(..., min_length=8)
+    password_confirm: Optional[str] = None
+    otp:          Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_password_confirm(self) -> "ChangePasswordRequest":
+        if self.password_confirm and self.new_password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
 
 class AdminLanguageUpdate(BaseModel):
     language_ids: list[int]
@@ -932,3 +939,63 @@ class AdminProfileUpdate(BaseModel):
     def phone_valid(cls, v): 
         if v: return validate_phone(v)
         return v
+# ─── Universal Profile & Settings ──────────────────────────────────────────
+
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    email:     Optional[EmailStr] = None
+    phone:     Optional[str] = None
+    app_language: Optional[str] = Field(None, min_length=2, max_length=10)
+    # Profile picture is handled via UploadFile in multipart/form-data
+
+    @field_validator("phone")
+    @classmethod
+    def phone_valid(cls, v):
+        return validate_phone(v)
+
+class ProfileRead(BaseModel):
+    user_id: int
+    email: EmailStr
+    role: UserRole
+    status: AccountStatus
+    full_name: str
+    phone: Optional[str]
+    profile_picture: Optional[str]
+    app_language: str
+    created_at: datetime
+    # Support for role-specific extra data
+    extra_data: Optional[dict] = None
+    model_config = {"from_attributes": True}
+
+class AppLanguageUpdate(BaseModel):
+    language_code: str = Field(..., min_length=2, max_length=10)
+
+class ProfileLanguageUpdate(BaseModel):
+    language_ids: List[int] = Field(..., min_items=1)
+
+class HelpCenterResponse(BaseModel):
+    contact_info: dict
+    faqs: List[FAQRead]
+
+class PolicyRead(BaseModel):
+    key: str
+    value: str
+    description: Optional[str]
+
+class AccountDeletionRequest(BaseModel):
+    password: str = Field(..., min_length=8)
+
+# ─── Chat & AI ────────────────────────────────────────────────────────────
+
+class AIChatMessageCreate(BaseModel):
+    content: str = Field(..., min_length=1)
+
+class AIChatMessageRead(BaseModel):
+    role: str
+    content: str
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+class AIChatHistoryResponse(BaseModel):
+    history: List[AIChatMessageRead]
+    welcome_message: str
