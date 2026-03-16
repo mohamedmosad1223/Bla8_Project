@@ -23,16 +23,39 @@
 
 ## 🛡️ Admins
 - `POST /api/admins/register` — تسجيل أدمن جديد.
+- `GET /api/admins/me` — جلب الملف الشخصي للأدمن الحالي (الاسم، الإيميل، الهاتف، الصورة، اللغات).
+- `PATCH /api/admins/me` — تحديث الملف الشخصي والصورة الشخصية (Multipart).
+- `POST /api/admins/me/change-password` — تغيير كلمة المرور (كلمة قديمة أو OTP).
+- `PATCH /api/admins/me/languages` — تحديث لغات التواصل للأدمن.
+- `POST /api/admins/me/delete-account` — حذف الحساب نهائياً (Soft Delete).
+- `GET /api/admins/` — قائمة الأدمنز.
+...
+---
+
+## ℹ️ Help Center (مركز المساعدة)
+- `GET /api/help/` — جلب الأسئلة الشائعة والمعلومات التعريفية بالمنصة.
+
+---
 - `GET /api/admins/` — قائمة الأدمنز.
 - `GET /api/admins/{admin_id}` — بيانات أدمن معين.
 - `PATCH /api/admins/{admin_id}` — تحديث بيانات أدمن.
 - `DELETE /api/admins/{admin_id}` — حذف أدمن.
+
+### 🏢 Management (إدارة المؤسسات والدعاة - للأدمن)
+- `GET /api/admins/management/organizations` — قائمة الجمعيات مع إحصائيات كاملة.
+- `GET /api/admins/management/organizations/{org_id}` — تفاصيل الجمعية ورسوم بيانية.
+- `POST /api/admins/management/organizations` — إضافة جمعية مباشرة (مفعلة).
+- `PATCH /api/admins/management/organizations/{org_id}/status` — تفعيل/تعطيل الجمعية.
+- `GET /api/admins/management/preachers` — قائمة كل الدعاة مع إحصائيات الأداء.
+- `GET /api/admins/management/preachers/{preacher_id}` — تفاصيل الداعية ورسوم بيانية.
+- `PATCH /api/admins/management/preachers/{preacher_id}/status` — تفعيل/تعطيل الداعية.
 
 ---
 
 ## 🏢 Organizations (الجمعيات)
 - `POST /api/organizations/register` — تسجيل جمعية جديدة (تبدأ بـ pending).
 - `GET /api/organizations/` — قائمة الجمعيات.
+    - فلاتر: `search` (الاسم/ID)، `approval` (حالة الموافقة)، `created_after/before` (تاريخ الإنشاء)، `order_by` (latest/oldest).
 - `GET /api/organizations/{org_id}` — بيانات جمعية معينة.
 - `PATCH /api/organizations/{org_id}` — تحديث بيانات جمعية.
 - `DELETE /api/organizations/{org_id}` — حذف جمعية.
@@ -41,7 +64,8 @@
 
 ## 🕌 Preachers (الدعاة)
 - `POST /api/preachers/register` — تسجيل داعية (متطوع أو رسمي).
-- `GET /api/preachers/` — قائمة الدعاة (مع فلترة متقدمة).
+- `GET /api/preachers/` — قائمة الدعاة مع فلترة متقدمة.
+    - فلاتر: `search` (الاسم/ID)، `type` (رسمي/متطوع)، `status` (مفعل/غير مفعل)، `languages` (قائمة معرفات)، `joined_after/before` (تاريخ الانضمام)، `order_by` (latest/oldest).
 - `GET /api/preachers/{preacher_id}` — بيانات داعية معين.
 - `PATCH /api/preachers/{preacher_id}` — تحديث بيانات داعية.
 - `DELETE /api/preachers/{preacher_id}` — حذف داعية.
@@ -101,6 +125,7 @@
 ---
 
 ## 📊 Dashboard
+- `GET /api/dashboard/admin`: جلب إحصائيات لوحة التحكم الرئيسية للأدمن (إحصائيات عامة، أفضل الدعاة، الجمعيات، إلخ).
 - `GET /api/dashboard/preacher`: جلب إحصائيات لوحة التحكم للداعية (لنفسه).
 - `GET /api/dashboard/preacher/{preacher_id}`: جلب إحصائيات لوحة التحكم لداعية معين (خاص بالجمعية أو الأدمن).
 - `GET /api/dashboard/organization`: جلب إحصائيات لوحة التحكم الشاملة للجمعية (إجمالي الدعاة، المحادثات، إلخ).

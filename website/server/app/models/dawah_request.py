@@ -48,7 +48,7 @@ class DawahRequest(Base):
     governorate:           Mapped[str|None] = mapped_column(sa.String(150))
 
     # ── v3: نظام الاسترداد (48h + 72h) ──────────────────────
-    alert_48h_sent_at: Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
+    alert_42h_sent_at: Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
     auto_reclaim_at:   Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))  # = accepted_at + 72h
     reclaimed_at:      Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))  # وقت السحب الفعلي
 

@@ -2,7 +2,7 @@
 Dawah Requests Controller — Business logic for dawah requests.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -86,6 +86,10 @@ class DawahRequestsController:
         request.status = RequestStatus.in_progress
         request.accepted_at = datetime.now(timezone.utc)
         
+        # New: Set alert/reclaim timers
+        request.alert_42h_sent_at = None
+        request.auto_reclaim_at   = request.accepted_at + timedelta(hours=72)
+        
         history = RequestStatusHistory(
             request_id=request.request_id,
             old_status=RequestStatus.pending,
@@ -164,6 +168,29 @@ class DawahRequestsController:
                 
         if payload.note:
             request.notes = payload.note
+            
+        if request.status == RequestStatus.converted and old_status != RequestStatus.converted:
+            submitter_user_id = None
+            if request.submitted_by_caller_id:
+                from app.models.muslim_caller import MuslimCaller
+                caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
+                if caller: submitter_user_id = caller.user_id
+            elif request.submitted_by_person_id:
+                from app.models.interested_person import InterestedPerson
+                person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
+                if person: submitter_user_id = person.user_id
+                
+            if submitter_user_id:
+                invited_name = f"{request.invited_first_name or ''} {request.invited_last_name or ''}".strip()
+                name_display = f"المدعو '{invited_name}'" if invited_name else "الحالة"
+                body = (f"بشائر الخير! {name_display} نطق الشهادة بفضل الله ثم بجهدك.\n"
+                        f"نسأل الله أن يجعله في ميزان حسناتك، استمر في طريق الدعوة المبارك! 🌟🕌")
+                
+                NotificationsController.create_notification(
+                    db, submitter_user_id, NotificationType.status_changed,
+                    "الحمد لله على نعمة الإسلام! 🕋✨", 
+                    body
+                )
             
         # v4: Enforce report/feedback when closing a request
         terminal_statuses = [RequestStatus.converted, RequestStatus.rejected, RequestStatus.no_response]
@@ -263,16 +290,22 @@ class DawahRequestsController:
         # استخدام selectinload لضمان جلب البيانات حتى لو كان الاستعلام معقداً
         requests = q.options(selectinload(DawahRequest.preacher)).order_by(DawahRequest.created_at.desc()).offset(skip).limit(limit).all()
         
-        # تحويل البيانات لشكل غني (Rich Data) للمرسل
+        # تحويل البيانات لشكل غني (Rich Data) للمرسل لتتوافق مع شاشة الطلبات
         rich_data = []
         for r in requests:
+            first_name = r.invited_first_name or ""
+            last_name = r.invited_last_name or ""
+            full_name = f"{first_name} {last_name}".strip()
+            
             item = {
                 "request_id": r.request_id,
                 "status": r.status,
                 "request_type": r.request_type,
+                "invited_name": full_name or "غير محدد",
                 "preacher_name": r.preacher.full_name if (hasattr(r, 'preacher') and r.preacher) else "قيد الانتظار",
+                "submission_date": r.submission_date,
+                "updated_at": r.updated_at,
                 "accepted_at": r.accepted_at,
-                "created_at": r.created_at,
                 "submitter_feedback": r.submitter_feedback 
             }
             rich_data.append(item)

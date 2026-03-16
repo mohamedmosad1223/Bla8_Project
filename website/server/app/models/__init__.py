@@ -15,10 +15,12 @@ from app.models.dawah_request import (  # noqa: F401
     DawahReport, ContactAttempt
 )
 from app.models.message import Message  # noqa: F401
+from app.models.ai_chat import AIChatMessage  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.report_metric import ReportMetric  # noqa: F401
 from app.models.reference import Language, Country  # noqa: F401
+from app.models.setting import SystemSetting  # noqa: F401
 
 __all__ = [
     "User", "Admin", "Organization",
@@ -26,6 +28,6 @@ __all__ = [
     "MuslimCaller", "InterestedPerson",
     "DawahRequest", "RequestDocument", "RequestStatusHistory",
     "DawahReport", "ContactAttempt",
-    "Message", "Notification", "AuditLog", "ReportMetric",
-    "Language", "Country",
+    "Message", "AIChatMessage", "Notification", "AuditLog", "ReportMetric",
+    "Language", "Country", "SystemSetting",
 ]

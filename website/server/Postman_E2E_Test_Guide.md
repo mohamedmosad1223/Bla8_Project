@@ -62,6 +62,32 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 
 ---
 
+## 3.1 Muslim Caller Dashboard (Track My Requests)
+- **Endpoint**: `GET /api/dawah-requests/my-submissions`
+- **Method**: `GET`
+- **Goal**: Allow the caller to view all their submitted cases along with their current statuses, preacher name, and submission/update dates.
+- **Expected Data**:
+  ```json
+  {
+    "message": "تم جلب طلباتك التي سجلتها",
+    "data": [
+      {
+        "request_id": 1,
+        "status": "pending",
+        "request_type": "invited",
+        "invited_name": "John Doe",
+        "preacher_name": "قيد الانتظار",
+        "submission_date": "2023-01-22T07:00:00Z",
+        "updated_at": "2023-01-22T08:00:00Z",
+        "accepted_at": null,
+        "submitter_feedback": null
+      }
+    ]
+  }
+  ```
+
+---
+
 ## 4. Register & Approve an Organization
 - **Endpoint**: `POST /api/organizations/register`
 - **Method**: `POST` (Body: `form-data`)
@@ -111,7 +137,7 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
 ---
 
 ## 7. Mandatory Daily Report (Constraint)
-- **Wait/Simulate 24h** or try to send a message without a report.
+- **Wait/Simulate 42h** or try to send a message without a report.
 - **Submit Report**: `POST /api/dawah-reports/`
   ```json
   {
@@ -133,3 +159,108 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
   }
   ```
 - **Note**: You CANNOT close the request without `preacher_feedback`.
+
+---
+
+---
+
+## 9. Help Center & FAQs
+- **Endpoint**: `GET /api/help/`
+- **Method**: `GET`
+- **Goal**: Fetch the official FAQs (Who are we, Goals, etc.) seeded in the database.
+- **Expected Response**:
+  ```json
+  [
+    {
+      "faq_id": 1,
+      "question": "من نحن؟",
+      "answer": "منصة بلاغ هي منصة دعوية..."
+    }
+  ]
+  ```
+
+---
+
+## 10. Authentication (Password Reset & Change)
+- **Forgot Password**: `POST /api/auth/forgot-password`
+  - **Body**: `{"email": "caller1@example.com"}` (Generates 6-digit OTP).
+- **Verify OTP**: `POST /api/auth/verify-otp`
+- **Reset Password**: `POST /api/auth/reset-password`
+
+---
+
+## 11. Admin Dashboard (Platform Overview)
+- **Endpoint**: `GET /api/dashboard/admin`
+- **Goal**: Fetch real-time aggregated metrics and recent activity.
+
+---
+
+## 12. Admin Extended Profile & Security
+### 12.1 Profile Management
+- **Get My Profile**: `GET /api/admins/me`
+- **Update Profile**: `PATCH /api/admins/me` (Body: `form-data`)
+  - Fields: `full_name`, `email`, `phone`, `profile_picture` (file).
+- **Sync Languages**: `PATCH /api/admins/me/languages`
+  - Payload: `{"language_ids": [1, 2, 3]}`
+
+### 12.2 Security Extensions
+- **Change Password (Old Pass)**: `POST /api/admins/me/change-password`
+  - Body: `{"old_password": "Password123", "new_password": "New!Password"}`
+- **Change Password (OTP Fallback)**: `POST /api/admins/me/change-password`
+  - Body: `{"otp": "123456", "new_password": "New!Password"}`
+- **Delete Account**: `POST /api/admins/me/delete-account`
+  - Body: `{"password": "Password123"}` (Soft-delete/Suspension).
+
+---
+
+## 13. Advanced Platform Management (Admins Only)
+- **Filtered Organizations**: `GET /api/admins/management/organizations`
+  - **Query Params**: `search=اسم`, `approval_status=approved`, `order_by=latest`
+- **Direct Org Registration**: `POST /api/admins/management/organizations`
+  - **Body**: Same as regular register but bypasses approval.
+- **Filtered Preachers**: `GET /api/admins/management/preachers`
+  - **Query Params**: `search=ID`, `type=official`, `languages=1,2`, `order_by=oldest`
+
+---
+
+## 14. Universal Profile & Settings (All Roles)
+- **Base Endpoint**: `/api/profile`
+- **Goal**: Unified management for Admin, Preacher, Org, Muslim Caller, and Interested Persons.
+
+### 14.1 Profile Management
+- **Get My Profile**: `GET /api/profile/me`
+- **Update Profile**: `PATCH /api/profile/me` (Body: `form-data`)
+  - Fields: `full_name`, `email`, `phone`, `profile_picture` (file).
+
+### 14.2 Account Security
+- **Change Password**: `POST /api/profile/change-password`
+  - Body: `{"old_password": "...", "new_password": "...", "password_confirm": "..."}`
+- **Delete My Account**: `POST /api/profile/delete-account`
+  - Body: `{"password": "..."}` (Soft-delete/Suspension).
+
+### 14.3 Reference & Support
+- **List App Languages**: `GET /api/profile/languages` (Available UI languages).
+- **Update App Language**: `PATCH /api/profile/app-language`
+  - Body: `{"language_code": "ar"}` (Sets application UI language).
+- **Update Spoken Languages**: `PATCH /api/profile/spoken-languages`
+  - Body: `{"language_ids": [1, 2]}` (For Preachers/Admins).
+- **FAQs**: `GET /api/profile/faqs`
+- **Contact Info**: `GET /api/profile/contact` (Call us, Working hours).
+- **Platform Policies**: `GET /api/profile/policies` (Privacy, Terms).
+
+---
+
+## 15. Chat & AI Features
+### 15.1 AI Support (Non-Muslims/Interested Persons)
+- **Get AI Memory/History**: `GET /api/chat/ai/history`
+  - Returns `welcome_message` and full message `history`.
+- **Send Message to AI**: `POST /api/chat/ai/send`
+  - Body: `{"content": "I want to know more about Islam"}`
+  - Returns user message and a placeholder AI response.
+
+### 15.2 Preacher Conversations
+- **List Preacher Chats**: `GET /api/chat/preachers`
+  - Returns all active chats (from requests or DMs) with preachers.
+- **Open Specific Chat**:
+  - For Request chats: Use `GET /api/messages/chat-history/{request_id}`
+  - For Direct chats: Use `GET /api/messages/chat-history?other_user_id={preacher_user_id}`

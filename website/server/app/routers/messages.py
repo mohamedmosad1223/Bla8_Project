@@ -18,8 +18,13 @@ def send_message(payload: MessageCreate, db: Session = Depends(get_db), current_
 
 @router.get("/chat-history/{request_id}", response_model=None)
 def get_chat_history(request_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """جلب سجل الرسائل لطلب معين"""
-    return MessagesController.get_chat_history(db, current_user.user_id, request_id)
+    """جلب سجل الرسائل لطلب معين (بين الداعية والمدعو)"""
+    return MessagesController.get_chat_history(db, current_user.user_id, request_id=request_id)
+
+@router.get("/dm-history/{other_user_id}", response_model=None)
+def get_dm_history(other_user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """جلب سجل الرسائل المباشرة (مثلاً بين الجمعية والداعية)"""
+    return MessagesController.get_chat_history(db, current_user.user_id, other_user_id=other_user_id)
 
 @router.get("/my-chats", response_model=None)
 def get_my_chats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

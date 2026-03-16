@@ -91,6 +91,9 @@ class UserRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# Note: Password/OTP requests moved to security section for better organization
+
+
 # ─── Admin ───────────────────────────────────────────────────────────────────
 
 class AdminCreate(BaseModel):
@@ -516,17 +519,6 @@ class OrganizationRegister(BaseModel):
         if self.password != self.password_confirm:
             raise ValueError("كلمتا المرور غير متطابقتين")
         return self
-    @classmethod
-    def password_strength(cls, v: str) -> str:
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
-        if not re.search(r"[0-9]", v):
-            raise ValueError("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
-        return v
-
-    @field_validator("phone")
-    @classmethod
-    def phone_valid(cls, v): return validate_phone(v)
 
 
 class PreacherRegister(BaseModel):
@@ -579,6 +571,7 @@ class MuslimCallerRegister(BaseModel):
     """Register a new MuslimCaller: creates User + MuslimCaller profile atomically."""
     email:                  EmailStr
     password:               str            = Field(..., min_length=8, max_length=72)
+    password_confirm:       str            = Field(..., min_length=8, max_length=72)
     full_name:              str            = Field(..., min_length=2, max_length=255)
     phone:                  Optional[str]  = Field(None, max_length=30)
     nationality_country_id: Optional[int]  = Field(None, gt=0)
@@ -596,6 +589,12 @@ class MuslimCallerRegister(BaseModel):
     @field_validator("phone")
     @classmethod
     def phone_valid(cls, v): return validate_phone(v)
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "MuslimCallerRegister":
+        if self.password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
 
 
 class InterestedPersonRegister(BaseModel):
@@ -629,22 +628,38 @@ class InterestedPersonRegister(BaseModel):
 # ─── Preacher Filter (Query params) ──────────────────────────────────────────
 
 class PreacherFilterParams(BaseModel):
-    """Query parameters for preacher search — used by organization dashboard"""
-    full_name:     Optional[str]           = None
+    """Query parameters for preacher search"""
+    search:        Optional[str]           = None # Name or ID
     type:          Optional[PreacherType]  = None
     status:        Optional[PreacherStatus]= None
     gender:        Optional[GenderType]    = None
     approval_status: Optional[ApprovalStatus] = None
     nationality_country_id: Optional[int]  = None
-    language_id:   Optional[int]           = None
-    joined_after:  Optional[date]          = None
-    joined_before: Optional[date]          = None
+    languages:     list[int]               = Field(default_factory=list) # Multi-select
+    joined_after:  Optional[datetime]      = None
+    joined_before: Optional[datetime]      = None
+    order_by:      Optional[str]           = "latest" # latest, oldest
 
     @model_validator(mode="after")
     def check_date_range(self) -> "PreacherFilterParams":
         if self.joined_after and self.joined_before:
             if self.joined_after > self.joined_before:
                 raise ValueError("joined_after يجب أن يكون قبل joined_before")
+        return self
+
+class OrganizationFilterParams(BaseModel):
+    """Query parameters for organization search"""
+    search:          Optional[str]          = None
+    approval_status: Optional[ApprovalStatus]= None
+    created_after:  Optional[datetime]      = None
+    created_before: Optional[datetime]      = None
+    order_by:        Optional[str]          = "latest" # latest, oldest
+
+    @model_validator(mode="after")
+    def check_date_range(self) -> "OrganizationFilterParams":
+        if self.created_after and self.created_before:
+            if self.created_after > self.created_before:
+                raise ValueError("created_after يجب أن يكون قبل created_before")
         return self
 
 
@@ -726,4 +741,261 @@ class OrganizationDashboardRead(BaseModel):
     requests_distribution: list[ChartDataPoint] # donut chart
     conversion_trends: list[ChartDataPoint] # grouped bar chart
     
+class RecentActivityRead(BaseModel):
+    id: int
+    name: str
+    action: str
+    time: str
+    timestamp: datetime
     model_config = {"from_attributes": True}
+
+class TopPreacherRead(BaseModel):
+    preacher_id: int
+    full_name: str
+    organization_name: Optional[str]
+    success_rate: float
+
+class OrgStatRead(BaseModel):
+    org_id: int
+    organization_name: str
+    preachers_count: int
+
+class PreacherPresenceRead(BaseModel):
+    online: int
+    busy: int
+    offline: int
+
+class MainDashboardRead(BaseModel):
+    """البيانات الخاصة بالصفحة الرئيسية (داشبورد الأدمن)"""
+    # Top Stats (Row 1)
+    total_organizations: StatCard
+    total_preachers: StatCard
+    total_individuals: StatCard
+    
+    # Top Stats (Row 2)
+    total_cases: StatCard
+    total_converted: StatCard
+    total_rejected: StatCard
+
+    # Tables
+    top_preachers: list[TopPreacherRead]
+    organization_stats: list[OrgStatRead]
+
+    # Charts & Distribution
+    nationalities_distribution: list[ChartDataPoint]
+    preacher_presence: PreacherPresenceRead
+
+    # Recent Activity
+    recent_activities: list[RecentActivityRead]
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Admin Management Schemas ──────────────────────────────────────────────
+
+class AdminOrganizationListRead(BaseModel):
+    org_id: int
+    organization_name: str
+    manager_name: str
+    preachers_count: int
+    total_requests: int
+    converted_count: int
+    under_persuasion_count: int
+    rejected_count: int
+    created_at: datetime
+    status: AccountStatus
+    model_config = {"from_attributes": True}
+
+class AdminOrganizationDetailRead(BaseModel):
+    org_id: int
+    organization_name: str
+    license_number: str
+    phone: str
+    email: str
+    country: str
+    governorate: str
+    created_at: datetime
+    status: AccountStatus
+    manager_name: str
+    
+    # Top Stats
+    stats: list[StatCard]
+    
+    # Charts
+    conversion_trends: list[ChartDataPoint]
+    requests_distribution: list[ChartDataPoint]
+    nationalities_distribution: list[ChartDataPoint]
+    
+    model_config = {"from_attributes": True}
+
+class AdminPreacherListRead(BaseModel):
+    preacher_id: int
+    full_name: str
+    nationality: str
+    organization_name: str
+    total_requests: int
+    created_at: datetime
+    languages: list[str]
+    status: PreacherStatus
+    model_config = {"from_attributes": True}
+
+class AdminPreacherDetailRead(BaseModel):
+    preacher_id: int
+    full_name: str
+    email: str
+    phone: str
+    languages: list[str]
+    nationality: str
+    organization_name: Optional[str]
+    status: PreacherStatus
+    scientific_qualification: str
+    gender: Optional[GenderType]
+    
+    # Stats
+    stats: list[StatCard]
+    
+    # Charts
+    countries_distribution: list[ChartDataPoint]
+    response_speed_chart: list[ChartDataPoint]
+    
+    model_config = {"from_attributes": True}
+
+class AdminUpdateStatusRequest(BaseModel):
+    status: Union[AccountStatus, PreacherStatus]
+
+class AdminProfileRead(BaseModel):
+    user_id:         int
+    email:           EmailStr
+    full_name:       str
+    phone:           Optional[str] = None
+    profile_picture: Optional[str] = None
+    level:           AdminLevel
+    languages:       list[str] = [] # List of language names
+    created_at:      datetime
+    model_config = {"from_attributes": True}
+
+# ─── Security & Authentication ───────────────────────────────────────────────
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ValidateOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=4, max_length=10)
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=4, max_length=10)
+    new_password: str = Field(..., min_length=8)
+    new_password_confirm: str = Field(..., min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
+        return v
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "ResetPasswordRequest":
+        if self.new_password != self.new_password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
+
+class ChangePasswordRequest(BaseModel):
+    old_password: Optional[str] = None
+    new_password: str = Field(..., min_length=8)
+    password_confirm: Optional[str] = None
+    otp:          Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_password_confirm(self) -> "ChangePasswordRequest":
+        if self.password_confirm and self.new_password != self.password_confirm:
+            raise ValueError("كلمتا المرور غير متطابقتين")
+        return self
+
+class AdminLanguageUpdate(BaseModel):
+    language_ids: list[int]
+
+class AdminDeleteAccountRequest(BaseModel):
+    password: str
+
+class FAQRead(BaseModel):
+    faq_id:     int
+    question:   str
+    answer:     str
+    model_config = {"from_attributes": True}
+
+class AdminProfileUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    email:     Optional[EmailStr] = None
+    phone:     Optional[str] = None
+    # profile_picture handled via UploadFile in router if provided
+
+    @field_validator("phone")
+    @classmethod
+    def phone_valid(cls, v): 
+        if v: return validate_phone(v)
+        return v
+# ─── Universal Profile & Settings ──────────────────────────────────────────
+
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    email:     Optional[EmailStr] = None
+    phone:     Optional[str] = None
+    app_language: Optional[str] = Field(None, min_length=2, max_length=10)
+    # Profile picture is handled via UploadFile in multipart/form-data
+
+    @field_validator("phone")
+    @classmethod
+    def phone_valid(cls, v):
+        return validate_phone(v)
+
+class ProfileRead(BaseModel):
+    user_id: int
+    email: EmailStr
+    role: UserRole
+    status: AccountStatus
+    full_name: str
+    phone: Optional[str]
+    profile_picture: Optional[str]
+    app_language: str
+    created_at: datetime
+    # Support for role-specific extra data
+    extra_data: Optional[dict] = None
+    model_config = {"from_attributes": True}
+
+class AppLanguageUpdate(BaseModel):
+    language_code: str = Field(..., min_length=2, max_length=10)
+
+class ProfileLanguageUpdate(BaseModel):
+    language_ids: List[int] = Field(..., min_items=1)
+
+class HelpCenterResponse(BaseModel):
+    contact_info: dict
+    faqs: List[FAQRead]
+
+class PolicyRead(BaseModel):
+    key: str
+    value: str
+    description: Optional[str]
+
+class AccountDeletionRequest(BaseModel):
+    password: str = Field(..., min_length=8)
+
+# ─── Chat & AI ────────────────────────────────────────────────────────────
+
+class AIChatMessageCreate(BaseModel):
+    content: str = Field(..., min_length=1)
+
+class AIChatMessageRead(BaseModel):
+    role: str
+    content: str
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+class AIChatHistoryResponse(BaseModel):
+    history: List[AIChatMessageRead]
+    welcome_message: str
