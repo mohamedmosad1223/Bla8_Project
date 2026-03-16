@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, KeyRound, ChevronRight, Phone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
 import { interestedPersonService } from '../../services/interestedPersonService';
@@ -8,6 +8,9 @@ import './Register.css';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const role = new URLSearchParams(location.search).get('role');
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -54,7 +57,7 @@ const Register: React.FC = () => {
       await interestedPersonService.register(payload);
       
       // On success, redirect to login so they can login and open chat/requests
-      navigate('/login');
+      navigate(role ? `/login?role=${role}` : '/login');
     } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.response?.data?.detail || 'حدث خطأ أثناء التسجيل');
     } finally {
@@ -141,7 +144,7 @@ const Register: React.FC = () => {
           </form>
 
           <p className="bottom-link">
-            لديك حساب بالفعل؟ <a href="/login">تسجيل الدخول</a>
+            لديك حساب بالفعل؟ <Link to={role ? `/login?role=${role}` : '/login'}>تسجيل الدخول</Link>
           </p>
         </div>
       </div>

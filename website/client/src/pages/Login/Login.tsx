@@ -11,7 +11,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = new URLSearchParams(location.search).get('role');
-  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'organization' ? '/partner-register' : '/register';
+  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'organization' ? '/partner-register' : role === 'non_muslim' ? '/register?role=non_muslim' : '/register';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

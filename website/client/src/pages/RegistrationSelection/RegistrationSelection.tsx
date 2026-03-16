@@ -11,7 +11,7 @@ const RegistrationSelection = () => {
     if (selectedRole === 'muslim') {
       navigate('/login?role=muslim_caller');
     } else if (selectedRole === 'non-muslim') {
-      navigate('/login?role=non_muslim');
+      navigate('/language-selection');
     } else {
       navigate('/register');
     }

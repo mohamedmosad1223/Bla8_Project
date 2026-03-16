@@ -107,6 +107,12 @@ const Sidebar = () => {
                   المكتبة
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <MessageCircle size={20} className="nav-icon" />
+                  المحادثات
+                </NavLink>
+              </li>
             </>
           )}
         </ul>

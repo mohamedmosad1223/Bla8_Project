@@ -7,6 +7,8 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ResetActivation from './pages/ResetActivation/ResetActivation';
 import ResetPassword from './pages/ResetPassword/ResetPassword';
 import PreacherAssociationLogin from './pages/PreacherAssociationLogin/PreacherAssociationLogin';
+import LanguageSelection from './pages/LanguageSelection/LanguageSelection';
+import HowToStart from './pages/HowToStart/HowToStart';
 import DashboardLayout from './layouts/DashboardLayout/DashboardLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Notifications from './pages/Notifications/Notifications';
@@ -22,6 +24,7 @@ import Conversations from './pages/Conversations/Conversations';
 import MuslimCallerDashboard from './pages/MuslimCallerDashboard/MuslimCallerDashboard';
 import MuslimCallerSubmissions from './pages/MuslimCallerSubmissions/MuslimCallerSubmissions';
 import NonMuslimDashboard from './pages/NonMuslimDashboard/NonMuslimDashboard';
+import NonMuslimConversation from './pages/NonMuslimConversation/NonMuslimConversation';
 import Library from './pages/Library/Library';
 
 const RoleDashboard = () => {
@@ -30,6 +33,12 @@ const RoleDashboard = () => {
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
   if (role === 'non_muslim') return <NonMuslimDashboard />;
   return <Dashboard />;
+};
+
+const RoleConversations = () => {
+  const role = localStorage.getItem('userRole') || 'organization';
+  if (role === 'non_muslim') return <NonMuslimConversation />;
+  return <Conversations />;
 };
 
 
@@ -47,6 +56,12 @@ function App() {
         <Route path="/preacher-association-login" element={<PreacherAssociationLogin />} />
         <Route path="/partner-register" element={<PartnerRegister />} />
         <Route path="/preacher-register" element={<PreacherRegister />} />
+        <Route path="/language-selection" element={<LanguageSelection />} />
+        <Route path="/how-to-start" element={<HowToStart />} />
+        
+        {/* Standalone Non-Muslim Routes */}
+        <Route path="/guest/chat" element={<NonMuslimDashboard />} />
+        <Route path="/guest/library" element={<Library />} />
 
         {/* Dashboard Routes wrapper */}
         <Route element={<DashboardLayout />}>
@@ -58,7 +73,7 @@ function App() {
           {/* Add other dashboard routes here later, e.g., /requests */}
           <Route path="/requests/new" element={<NewRequests />} />
           <Route path="/requests/current" element={<CurrentRequests />} />
-          <Route path="/conversations" element={<Conversations />} />
+          <Route path="/conversations" element={<RoleConversations />} />
           <Route path="/submissions" element={<MuslimCallerSubmissions />} />
           <Route path="/library" element={<Library />} />
 
