@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi import APIRouter, Depends, Query, status, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas import MuslimCallerUpdate, MuslimCallerRegister
 from app.controllers.muslim_callers_controller import MuslimCallersController
+from app.controllers.profiles_controller import ProfilesController
 from app.auth import get_current_user, check_role
 from app.models.user import User
 from app.models.enums import UserRole
@@ -50,3 +51,9 @@ def update_muslim_caller(caller_id: int, payload: MuslimCallerUpdate, db: Sessio
 def delete_muslim_caller(caller_id: int, db: Session = Depends(get_db)):
     """حذف مسلم داعي — يحذف البروفايل ويعمل soft-delete للمستخدم"""
     return MuslimCallersController.delete_caller(db, caller_id)
+
+@router.post("/logout")
+def logout_caller(response: Response):
+    """تسجيل خروج المسلم الداعي ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()

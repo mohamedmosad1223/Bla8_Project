@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -72,3 +72,9 @@ def get_platform_policies(db: Session = Depends(get_db)):
 def delete_my_account(payload: AccountDeletionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """تعطيل الحساب نهائياً (Soft Delete)"""
     return ProfilesController.delete_account(db, current_user, payload)
+
+@router.post("/logout")
+def logout_user(response: Response):
+    """تسجيل الخروج ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi import APIRouter, Depends, Query, status, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas import InterestedPersonUpdate, InterestedPersonRegister
 from app.controllers.interested_persons_controller import InterestedPersonsController
+from app.controllers.profiles_controller import ProfilesController
 from app.auth import get_current_user, check_role
 from app.models.user import User
 from app.models.enums import UserRole
@@ -51,3 +52,9 @@ def update_interested_person(person_id: int, payload: InterestedPersonUpdate, db
 def delete_interested_person(person_id: int, db: Session = Depends(get_db)):
     """حذف شخص مهتم — يحذف البروفايل ويعمل soft-delete للمستخدم"""
     return InterestedPersonsController.delete_person(db, person_id)
+
+@router.post("/logout")
+def logout_interested(response: Response):
+    """تسجيل خروج المهتم ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()

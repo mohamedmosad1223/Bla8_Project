@@ -129,6 +129,11 @@
 - `GET /api/dashboard/preacher`: جلب إحصائيات لوحة التحكم للداعية (لنفسه).
 - `GET /api/dashboard/preacher/{preacher_id}`: جلب إحصائيات لوحة التحكم لداعية معين (خاص بالجمعية أو الأدمن).
 - `GET /api/dashboard/organization`: جلب إحصائيات لوحة التحكم الشاملة للجمعية (إجمالي الدعاة، المحادثات، إلخ).
+- `GET /api/minister/dashboard`: جلب إحصائيات لوحة التحكم الخاصة بوزير الأوقاف (إحصائيات عليا، توزيع المحافظات، إلخ).
+- `GET /api/minister/organizations`: عرض قائمة الجمعيات مع إحصائيات الأداء (لوزير الأوقاف).
+- `GET /api/minister/organizations/{org_id}`: تفاصيل جمعية معينة (بيانات التواصل وإحصائيات الأداء).
+- `GET /api/minister/organizations/{org_id}/preachers`: جلب قائمة دعاة جمعية معينة مع فلاتر (البحث، الجنسية، اللغة، الحالة، التاريخ).
+- `PATCH /api/minister/preachers/{preacher_id}/toggle-status`: تفعيل أو إيقاف حساب داعية معين.
 
 ---
 

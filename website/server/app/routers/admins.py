@@ -2,7 +2,7 @@
 Admins Router — Routes delegate to AdminsController.
 """
 
-from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -17,6 +17,7 @@ from app.schemas import (
 )
 from app.controllers.admins_controller import AdminsController
 from app.controllers.admin_management_controller import AdminManagementController
+from app.controllers.profiles_controller import ProfilesController
 from app.auth import check_role, get_current_user
 from app.models.enums import UserRole, ApprovalStatus, PreacherType, PreacherStatus
 from app.models.user import User
@@ -65,6 +66,12 @@ def update_self_languages(payload: AdminLanguageUpdate, db: Session = Depends(ge
 def delete_self_account(payload: AdminDeleteAccountRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """حذف الحساب (تعطيل نهائي) بعد التأكد من الباسورد"""
     return AdminsController.delete_self_account(db, current_user, payload)
+
+@router.post("/logout")
+def logout_admin(response: Response):
+    """تسجيل خروج الأدمن ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, dependencies=[Depends(check_role([UserRole.admin]))])
 def register_admin(payload: AdminRegister, db: Session = Depends(get_db)):

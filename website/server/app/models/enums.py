@@ -12,6 +12,7 @@ class UserRole(str, enum.Enum):
     preacher = "preacher"
     muslim_caller = "muslim_caller"
     interested = "interested"
+    minister = "minister"
 
 
 class AccountStatus(str, enum.Enum):
