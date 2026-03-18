@@ -28,7 +28,7 @@ const Header = () => {
         
         <div className="profile-section">
           <div className="profile-info">
-            <span className="profile-name">اسم المشرف</span>
+            <span className="profile-name">محمد</span>
             <span className="profile-role">جمعية رسالة الإسلامية</span>
           </div>
           <div className="profile-avatar">

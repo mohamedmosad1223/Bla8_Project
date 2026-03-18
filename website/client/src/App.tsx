@@ -21,17 +21,26 @@ import NewRequests from './pages/NewRequests/NewRequests';
 import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
 import PreacherDashboard from './pages/PreacherDashboard/PreacherDashboard';
 import Conversations from './pages/Conversations/Conversations';
+import PreacherReports from './pages/PreacherReports/PreacherReports';
 import MuslimCallerDashboard from './pages/MuslimCallerDashboard/MuslimCallerDashboard';
 import MuslimCallerSubmissions from './pages/MuslimCallerSubmissions/MuslimCallerSubmissions';
 import NonMuslimDashboard from './pages/NonMuslimDashboard/NonMuslimDashboard';
 import NonMuslimConversation from './pages/NonMuslimConversation/NonMuslimConversation';
 import Library from './pages/Library/Library';
+import AwqafDashboard from './pages/AwqafDashboard/AwqafDashboard';
+import AwqafAssociations from './pages/AwqafAssociations/AwqafAssociations';
+import AwqafAssociationDetails from './pages/AwqafAssociationDetails/AwqafAssociationDetails';
+import AwqafAssociationReports from './pages/AwqafAssociationReports/AwqafAssociationReports';
+import AwqafPreacherDetails from './pages/AwqafPreacherDetails/AwqafPreacherDetails';
+import AwqafPreacherPerformance from './pages/AwqafPreacherPerformance/AwqafPreacherPerformance';
+import AwqafReportsAnalytics from './pages/AwqafReportsAnalytics/AwqafReportsAnalytics';
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
   if (role === 'preacher') return <PreacherDashboard />;
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
   if (role === 'non_muslim') return <NonMuslimDashboard />;
+  if (role === 'awqaf_manager') return <AwqafDashboard />;
   return <Dashboard />;
 };
 
@@ -74,8 +83,16 @@ function App() {
           <Route path="/requests/new" element={<NewRequests />} />
           <Route path="/requests/current" element={<CurrentRequests />} />
           <Route path="/conversations" element={<RoleConversations />} />
+          <Route path="/reports" element={<PreacherReports />} />
           <Route path="/submissions" element={<MuslimCallerSubmissions />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/awqaf-dashboard" element={<AwqafDashboard />} />
+          <Route path="/awqaf/associations" element={<AwqafAssociations />} />
+          <Route path="/awqaf/associations/:id/details" element={<AwqafAssociationDetails />} />
+          <Route path="/awqaf/associations/:id/reports" element={<AwqafAssociationReports />} />
+          <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<AwqafPreacherDetails />} />
+          <Route path="/awqaf/preacher-performance" element={<AwqafPreacherPerformance />} />
+          <Route path="/awqaf/reports" element={<AwqafReportsAnalytics />} />
 
         </Route>
       </Routes>

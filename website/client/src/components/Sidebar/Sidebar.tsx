@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen } from 'lucide-react';
+import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen, BarChart2, Bot, ClipboardList } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
@@ -7,6 +7,7 @@ const Sidebar = () => {
   const userRole = localStorage.getItem('userRole') || 'organization';
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
+  const isAwqafManager = userRole === 'awqaf_manager';
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
@@ -55,6 +56,12 @@ const Sidebar = () => {
                   طلبات الدعوة الجديدة
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <MessageCircle size={20} className="nav-icon" />
+                  المحادثات
+                </NavLink>
+              </li>
             </>
           )}
 
@@ -77,6 +84,43 @@ const Sidebar = () => {
                 <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <MessageCircle size={20} className="nav-icon" />
                   المحادثات
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <ClipboardList size={20} className="nav-icon" />
+                  التقارير
+                </NavLink>
+              </li>
+            </>
+          )}
+
+
+          {/* Awqaf Manager nav items */}
+          {isAwqafManager && (
+            <>
+              <li className="nav-item">
+                <NavLink to="/awqaf/associations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Users size={20} className="nav-icon" />
+                  الجمعيات
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/awqaf/preacher-performance" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Activity size={20} className="nav-icon" />
+                  أداء الدعاة
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/awqaf/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <BarChart2 size={20} className="nav-icon" />
+                  التقارير و التحليلات
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/ai" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Bot size={20} className="nav-icon" />
+                  الذكاء الاصطناعي
                 </NavLink>
               </li>
             </>

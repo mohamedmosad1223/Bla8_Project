@@ -1,14 +1,36 @@
 .nationalities-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
+}
+
+/* Map image */
+.map-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.map-image {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Governorates list */
+.gov-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .nationality-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .nat-header {
@@ -17,27 +39,14 @@
   align-items: center;
 }
 
-.nat-name-flag {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .nat-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: var(--text-dark);
 }
 
-.nat-flag {
-  width: 20px;
-  height: 15px;
-  border-radius: 2px;
-  object-fit: cover;
-}
-
 .nat-count {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-gray);
 }
 
@@ -47,7 +56,6 @@
   background-color: var(--bg-color);
   border-radius: 3px;
   overflow: hidden;
-  /* Add subtle border/shadow for better blending if needed */
 }
 
 .progress-bar-fill {

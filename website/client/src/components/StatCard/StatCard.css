@@ -11,18 +11,10 @@
 
 .stat-card-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
 }
-
-/* Because RTL, the icon wrapper is on the left and stats are on the right by default if we just use space-between. 
-   Wait, the design has the icon on the right and text on the left? No, let's check the design image.
-   Ah! The text is on the right, icon on the left.
-   So flex-direction row in RTL means: item 1 (icon wrapper) is on the right, item 2 (stats) is on the left.
-   Wait, the image: "اجمالي عدد الدعاة" is on the right, icon is on the left.
-   So I should reverse the order in HTML or flex, or just rely on RTL space-between.
-   In RTL, first child is on the Right. Second child is on the Left. 
-   Let's ensure the text is right-aligned and icon left-aligned. */
 
 .stat-icon-wrapper {
   width: 48px;
@@ -31,15 +23,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Icon on left side */
-  order: 2;
 }
 
 .stat-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* Text on right side */
-  order: 1;
+  align-items: flex-start;
+  text-align: right;
+  gap: 4px;
 }
 
 .stat-title {
@@ -57,7 +48,7 @@
 
 .stat-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   gap: 8px;
   font-size: 0.8rem;

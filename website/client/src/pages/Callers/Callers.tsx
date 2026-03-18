@@ -1,12 +1,40 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check } from 'lucide-react';
+import { Plus, Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Edit, Eye, MessageCircle } from 'lucide-react';
 import './Callers.css';
+
+interface Preacher {
+  id: number;
+  code: string;
+  name: string;
+  nationality: string;
+  joinDate: string;
+  language: string;
+  active: boolean;
+}
+
+const mockPreachers: Preacher[] = [
+  { id: 1, code: '123456', name: 'جون سميث',   nationality: 'فرنسا',          joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 2, code: '123456', name: 'جون سميث',   nationality: 'انجلترا',        joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 3, code: '123456', name: 'جون سميث',   nationality: 'البرتغال',       joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 4, code: '123456', name: 'جون سميث',   nationality: 'المانيا',         joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 5, code: '123456', name: 'جون سميث',   nationality: 'بلجيكا',         joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 6, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 7, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 8, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 9, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 10, code: '123456', name: 'جون سميث',  nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+];
 
 const Callers = () => {
   const navigate = useNavigate();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [preachers, setPreachers] = useState(mockPreachers);
+
+  const toggleActive = (id: number) => {
+    setPreachers(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+  };
   
   // Filter states
   const [filterLanguages, setFilterLanguages] = useState<string[]>(['الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية']);
@@ -271,29 +299,52 @@ const Callers = () => {
 
       <div className="callers-content-wrapper">
         <div className="callers-content">
-          <div className="empty-state">
-            <div className="empty-state-icon">
-              {/* Custom Users Group Icon matching design */}
-              <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Central figure (blue) */}
-                <circle cx="50" cy="35" r="14" stroke="#166088" strokeWidth="4" />
-                <path d="M30 65C30 55 38 48 50 48C62 48 70 55 70 65V70H30V65Z" stroke="#166088" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                {/* Left figure (gold) */}
-                <circle cx="25" cy="45" r="9" stroke="#DBA841" strokeWidth="4" />
-                <path d="M12 68C12 60 17 55 25 55H30V65H15V68H12Z" fill="#DBA841" />
-                <path d="M10 68C12 55 18 53 28 53" stroke="#DBA841" strokeWidth="4" strokeLinecap="round" fill="none"/>
-                <path d="M10 68V70H12V68Z" fill="#166088"/> 
-                <path d="M25 55C18 55 12 59 12 66V70" stroke="#DBA841" strokeWidth="4" strokeLinecap="round" fill="none"/>
-                {/* Right figure (gold) */}
-                <circle cx="75" cy="45" r="9" stroke="#DBA841" strokeWidth="4" />
-                <path d="M75 55C82 55 88 59 88 66V70" stroke="#DBA841" strokeWidth="4" strokeLinecap="round" fill="none"/>
-              </svg>
-            </div>
-            <h2 className="empty-state-title">لا يوجد دعاة في الوقت الحالي</h2>
-            <p className="empty-state-description">
-              تابعونا! لا توجد دعاة حتى الآن. سنُعلمكم فور توفر شيء مهم لمشاركته.
-            </p>
-          </div>
+          <table className="callers-table">
+            <thead>
+              <tr>
+                <th>رقم</th>
+                <th>اسم الداعية</th>
+                <th>الجنسية</th>
+                <th>تاريخ الانضمام</th>
+                <th>اللغة</th>
+                <th>مفعل / غير مفعل</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {preachers.map((preacher) => (
+                <tr key={preacher.id}>
+                  <td>{preacher.code}</td>
+                  <td>{preacher.name}</td>
+                  <td>{preacher.nationality}</td>
+                  <td>{preacher.joinDate}</td>
+                  <td>{preacher.language}</td>
+                  <td>
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={preacher.active} onChange={() => toggleActive(preacher.id)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <div className="actions-cell">
+                      <button className="action-icon-btn chat-icon" title="محادثة" onClick={() => navigate('/conversations')}>
+                        <MessageCircle size={16} />
+                      </button>
+                      <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/awqaf/associations/1/preachers/${preacher.id}`)}>
+                        <Eye size={16} />
+                      </button>
+                      <button className="action-icon-btn edit-icon" title="تعديل" onClick={() => alert(`تعديل بيانات ${preacher.name}`)}>
+                        <Edit size={16} />
+                      </button>
+                      <button className="action-icon-btn delete-icon" title="حذف" onClick={() => alert(`حذف الداعية ${preacher.name}`)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

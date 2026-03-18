@@ -59,6 +59,7 @@
 }
 
 .search-input-wrapper-outlined .search-icon {
+  position: static;
   color: var(--text-gray);
   margin-left: 12px; /* RTL */
 }
@@ -108,12 +109,121 @@
   border-radius: 12px;
   border: 1px solid var(--border-gray);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  overflow-x: auto;
+}
+
+/* ── Data Table ── */
+.callers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.callers-table thead {
+  background-color: #FAFAFA;
+  border-bottom: 1px solid var(--border-gray);
+}
+
+.callers-table th {
+  padding: 14px 16px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--text-gray);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.callers-table td {
+  padding: 14px 16px;
+  text-align: right;
+  color: var(--text-dark);
+  border-bottom: 1px solid var(--border-gray);
+  white-space: nowrap;
+}
+
+.callers-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.callers-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* ── Toggle Switch ── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background-color: #D1D5DB;
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #10B981;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* ── Action Icon Buttons ── */
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
-  min-height: 500px;
+  transition: all 0.2s;
+  color: #6B7280;
 }
+
+.action-icon-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.action-icon-btn.delete-icon { color: #EF4444; }
+.action-icon-btn.delete-icon:hover { background-color: #FEF2F2; }
+.action-icon-btn.edit-icon { color: #6B7280; }
+.action-icon-btn.edit-icon:hover { background-color: #F3F4F6; }
+.action-icon-btn.view-icon { color: #6B7280; }
+.action-icon-btn.view-icon:hover { background-color: #F3F4F6; }
+.action-icon-btn.chat-icon { color: #3B82F6; }
+.action-icon-btn.chat-icon:hover { background-color: #EFF6FF; }
 
 /* empty state inherited from Notifications.css basically, could be made common but kept here for isolation */
 .empty-state {
