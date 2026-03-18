@@ -8,10 +8,8 @@
 /* Header Area */
 .nreq-header-area {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column;
+  gap: 32px;
 }
 
 .page-title {
@@ -23,8 +21,16 @@
 
 .nreq-actions {
   display: flex;
-  gap: 12px;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.filters-and-sort-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 /* Table Design */

@@ -1,16 +1,17 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen } from 'lucide-react';
+import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen, Building2 } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('userRole') || 'organization';
+  const userRole = localStorage.getItem('userRole') || 'admin';
+  const isAdmin = userRole === 'admin';
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
-    navigate('/');
+    navigate('/login');
   };
 
   return (
@@ -24,25 +25,36 @@ const Sidebar = () => {
 
       <nav className="sidebar-nav">
         <ul className="nav-list">
-          {/* Common */}
-          {userRole !== 'non_muslim' && (
-            <li className="nav-item">
-              <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
-                <Home size={20} className="nav-icon" />
-                الرئيسية
-              </NavLink>
-            </li>
-          )}
-
-          {/* Association-only */}
-          {isAssociation && (
+          {/* Admin or Association */}
+          {(isAdmin || isAssociation) && (
             <>
               <li className="nav-item">
-                <NavLink to="/callers" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <Users size={20} className="nav-icon" />
-                  دعاة الجمعية
+                <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+                  <Home size={20} className="nav-icon" />
+                  الرئيسية
                 </NavLink>
               </li>
+              {isAdmin && (
+                <li className="nav-item">
+                  <NavLink to="/organizations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                    <Building2 size={20} className="nav-icon" />
+                    الجمعيات
+                  </NavLink>
+                </li>
+              )}
+              <li className="nav-item">
+                  <NavLink to="/callers" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                    <Users size={20} className="nav-icon" />
+                    {isAdmin ? 'دعاة الجمعيات' : 'دعاة الجمعية'}
+                  </NavLink>
+              </li>
+            </>
+          )}
+
+
+          {/* Association Specific (Non-Admin) */}
+          {isAssociation && !isAdmin && (
+            <>
               <li className="nav-item">
                 <NavLink to="/requests/current" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <Activity size={20} className="nav-icon" />
@@ -96,21 +108,15 @@ const Sidebar = () => {
           {userRole === 'non_muslim' && (
             <>
               <li className="nav-item">
-                <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+                <NavLink to="/guest/chat" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <MessageCircle size={20} className="nav-icon" />
-                  الرسائل
+                  المحادثة
                 </NavLink>
               </li>
               <li className="nav-item">
-                <NavLink to="/library" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <NavLink to="/guest/library" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <BookOpen size={20} className="nav-icon" />
                   المكتبة
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <MessageCircle size={20} className="nav-icon" />
-                  المحادثات
                 </NavLink>
               </li>
             </>

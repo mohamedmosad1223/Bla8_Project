@@ -1,0 +1,176 @@
+.presence-premium-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
+.initial-opacity {
+  opacity: 0;
+}
+
+.presence-chart-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 20px;
+}
+
+/* Stable Center Label Layout */
+.gauge-premium-center {
+  position: absolute;
+  top: 48%; /* Slightly adjusted for optical centering in 270deg arc */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.live-pill-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f0fdf4;
+  padding: 6px 14px;
+  border-radius: 50px;
+  border: 1px solid #dcfce7;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.live-dot-pulse {
+  width: 10px;
+  height: 10px;
+  background-color: #10B981;
+  border-radius: 50%;
+  position: relative;
+}
+
+.live-dot-pulse::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: inherit;
+  animation: liveRing 2s infinite ease-out;
+}
+
+@keyframes liveRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+.live-pill-text {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #065f46;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gauge-stats-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.gauge-big-number {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #111827;
+  letter-spacing: -2px;
+}
+
+.gauge-subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Premium Legend Cards */
+.presence-grid-legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.premium-legend-card {
+  background-color: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.animate-ready .premium-legend-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.premium-legend-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border-color: #e2e8f0;
+}
+
+.card-top-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-color-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.card-title-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.card-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.card-main-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.card-percent-chip {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #64748b;
+  background-color: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+@media (max-width: 1200px) {
+  .presence-grid-legend {
+    grid-template-columns: 1fr;
+  }
+}

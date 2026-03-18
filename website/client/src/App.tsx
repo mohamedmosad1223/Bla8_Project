@@ -26,6 +26,12 @@ import MuslimCallerSubmissions from './pages/MuslimCallerSubmissions/MuslimCalle
 import NonMuslimDashboard from './pages/NonMuslimDashboard/NonMuslimDashboard';
 import NonMuslimConversation from './pages/NonMuslimConversation/NonMuslimConversation';
 import Library from './pages/Library/Library';
+import Organizations from './pages/Organizations/Organizations';
+import AddOrganization from './pages/Organizations/AddOrganization';
+import OrganizationDetails from './pages/Organizations/OrganizationDetails';
+import PreacherDetails from './pages/Organizations/PreacherDetails';
+import EditOrganization from './pages/Organizations/EditOrganization';
+
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
@@ -68,6 +74,11 @@ function App() {
           <Route path="/dashboard" element={<RoleDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/callers" element={<Callers />} />
+          <Route path="/organizations" element={<Organizations />} />
+          <Route path="/organizations/:id" element={<OrganizationDetails />} />
+          <Route path="/organizations/edit/:id" element={<EditOrganization />} />
+          <Route path="/preachers/:id" element={<PreacherDetails />} />
+          <Route path="/organizations/add" element={<AddOrganization />} />
           <Route path="/callers/add" element={<AddCaller />} />
           <Route path="/profile" element={<Profile />} />
           {/* Add other dashboard routes here later, e.g., /requests */}

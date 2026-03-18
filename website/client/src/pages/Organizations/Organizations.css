@@ -1,29 +1,19 @@
-.callers-page {
+.organizations-page {
   display: flex;
   flex-direction: column;
   gap: 24px;
   height: 100%;
+  padding: 24px;
+  background-color: var(--bg-color);
 }
 
-.callers-header-area {
+.organizations-header-area {
   display: flex;
   flex-direction: column;
-  gap: 32px; /* Increased spacing as per screenshot */
+  gap: 24px;
 }
 
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text-dark);
-  margin: 0;
-  text-align: right;
-}
-
-.callers-header-area .page-title {
-  margin-bottom: 0;
-}
-
-.callers-actions {
+.organizations-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -31,6 +21,7 @@
   gap: 16px;
 }
 
+/* Reusing standard classes from the site's design system */
 .btn-primary {
   background-color: var(--primary-gold);
   color: white;
@@ -41,6 +32,9 @@
   gap: 8px;
   font-weight: 700;
   font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
   box-shadow: 0 4px 6px -1px rgba(219, 168, 65, 0.2);
 }
 
@@ -52,15 +46,7 @@
 .search-filter-group {
   display: flex;
   align-items: center;
-  gap: 20px;
-  width: 100%;
-  justify-content: space-between; /* Search on right, Filter/Sort on left in RTL */
-}
-
-.filters-and-sort-left {
-  display: flex;
-  align-items: center;
-  gap: 16px; /* Reduced gap as requested */
+  gap: 16px;
 }
 
 .search-input-wrapper-outlined {
@@ -68,24 +54,22 @@
   display: flex;
   align-items: center;
   background-color: white;
-  border: 1px solid #f1f5f9; /* Much lighter border */
-  border-radius: 10px;
+  border: 1px solid var(--border-gray);
+  border-radius: 8px;
   padding: 0 16px;
-  width: 100%;
-  max-width: 380px; /* Slimmer search as per screenshot */
+  width: 320px;
   height: 44px;
   gap: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .search-input-wrapper-outlined:focus-within {
   border-color: var(--primary-gold);
-  box-shadow: 0 0 0 3px rgba(219, 168, 65, 0.05);
+  box-shadow: 0 0 0 3px rgba(219, 168, 65, 0.1);
 }
 
-.search-input-wrapper-outlined .search-icon {
-  color: #94a3b8;
+.search-icon {
+  color: var(--text-gray);
   flex-shrink: 0;
 }
 
@@ -95,14 +79,9 @@
   width: 100%;
   height: 100%;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--text-dark);
   outline: none;
-  text-align: right; /* Ensure text is right aligned */
-}
-
-.search-input-outlined::placeholder {
-  color: var(--text-gray);
 }
 
 .btn-icon-text {
@@ -115,64 +94,22 @@
   font-weight: 600;
   font-size: 0.95rem;
   padding: 8px;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
-.btn-icon-text:hover {
-  color: var(--primary-blue);
+.btn-icon-text:hover,
+.btn-icon-text.active {
+  color: var(--primary-gold);
 }
 
-.callers-content-wrapper {
+.filter-sort-group {
   display: flex;
-  gap: 24px;
-  flex: 1;
-  position: relative;
-  align-items: flex-start;
-  width: 100%;
+  gap: 8px;
 }
 
-.callers-content {
-  flex: 1;
-  background-color: white;
-  border-radius: 12px;
-  border: 1px solid var(--border-gray);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  min-height: 500px;
-}
-
-/* empty state inherited from Notifications.css basically, could be made common but kept here for isolation */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  max-width: 500px;
-}
-
-.empty-state-icon {
-  margin-bottom: 24px;
-}
-
-.empty-state-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text-dark);
-  margin-bottom: 12px;
-}
-
-.empty-state-description {
-  font-size: 1rem;
-  color: var(--text-gray);
-  line-height: 1.6;
-}
-
-/* -----------------------------
-   Table Styles
-   ----------------------------- */
-.callers-content-table {
+/* Table Card Layout */
+.organizations-content {
   background-color: white;
   border-radius: 12px;
   border: 1px solid var(--border-gray);
@@ -265,11 +202,11 @@
   transition: .4s;
 }
 
-input:checked + .slider {
+input:checked+.slider {
   background-color: #10b981;
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
   transform: translateX(20px);
 }
 
@@ -299,32 +236,32 @@ input:checked + .slider:before {
   justify-content: center;
 }
 
-.action-icon-btn.delete { color: #ef4444; }
-.action-icon-btn.delete:hover { background-color: #fef2f2; }
-.action-icon-btn.view { color: var(--text-gray); }
-.action-icon-btn.view:hover { background-color: #f1f5f9; }
-
-.pixel-perfect-footer {
-  margin-top: 32px;
-  text-align: center;
-  font-size: 0.85rem;
-  color: #94a3b8;
-  font-weight: 500;
+.action-icon-btn.delete {
+  color: #ef4444;
 }
 
-/* -----------------------------
-   Filter and Sort Dropdowns/Panels
-   ----------------------------- */
+.action-icon-btn.delete:hover {
+  background-color: #fef2f2;
+}
 
-/* Sort Dropdown */
-.sort-container {
+.action-icon-btn.view {
+  color: var(--text-gray);
+}
+
+.action-icon-btn.view:hover {
+  background-color: #f1f5f9;
+}
+
+/* Dropdowns & Filter Panel */
+.sort-container,
+.filter-popup-container {
   position: relative;
 }
 
 .sort-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0; /* Align left edge with button left edge (RTL right-side equivalent) */
+  left: 0;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -341,7 +278,6 @@ input:checked + .slider:before {
   font-weight: 700;
   color: var(--text-dark);
   border-bottom: 1px solid var(--border-gray);
-  display: none; /* Hide title if not explicitly needed, or keep for spacing */
 }
 
 .sort-option {
@@ -350,7 +286,7 @@ input:checked + .slider:before {
   background: white;
   border: none;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-dark);
   cursor: pointer;
   transition: background-color 0.2s;
@@ -358,18 +294,6 @@ input:checked + .slider:before {
 
 .sort-option:hover {
   background-color: var(--bg-color);
-}
-
-.btn-icon-text.active {
-  color: var(--primary-blue);
-  background-color: var(--bg-color);
-  border-radius: 6px;
-}
-
-/* Filter Panel Overlay */
-.filter-popup-container {
-  position: relative;
-  display: flex;
 }
 
 .filter-panel {
@@ -382,7 +306,6 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  flex-shrink: 0;
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
@@ -424,31 +347,34 @@ input:checked + .slider:before {
   gap: 16px;
 }
 
-/* Filter Search */
 .filter-search {
   position: relative;
   display: flex;
   align-items: center;
+  gap: 10px;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-gray);
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 40px;
 }
 
 .filter-search-input {
+  border: none;
+  background: transparent;
   width: 100%;
-  padding: 10px 14px 10px 36px;
-  padding-right: 36px;
-  padding-left: 14px;
-  border: 1px solid var(--border-gray);
-  border-radius: 8px;
+  height: 100%;
   font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text-dark);
   outline: none;
 }
 
 .filter-search-icon {
-  position: absolute;
-  right: 12px;
   color: var(--text-gray);
+  flex-shrink: 0;
 }
 
-/* Accordions */
 .filter-accordion {
   border-bottom: 1px solid var(--border-gray);
   padding-bottom: 16px;
@@ -475,12 +401,7 @@ input:checked + .slider:before {
   gap: 8px;
 }
 
-.text-gray {
-  color: var(--text-gray);
-}
-
-/* Custom Inputs inside Filter */
-.filter-date-input, .filter-select {
+.filter-date-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -491,9 +412,10 @@ input:checked + .slider:before {
   font-size: 0.85rem;
   background-color: white;
   cursor: pointer;
+  position: relative;
 }
 
-.filter-date-input.active-outline, .filter-select.active-outline {
+.filter-date-input.active-outline {
   border-color: var(--primary-gold);
 }
 
@@ -501,13 +423,11 @@ input:checked + .slider:before {
   border: none;
   background: transparent;
   width: 100%;
-  margin-right: 8px; /* RTL space for icon */
   outline: none;
   color: var(--text-dark);
   font-family: inherit;
 }
 
-/* Hide default browser calendar icon if possible, relying on our custom lucide icon */
 .custom-date-picker::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0;
@@ -518,119 +438,13 @@ input:checked + .slider:before {
   height: 100%;
 }
 
-.relative-date-input {
-  position: relative;
-}
-
-.filter-date-input input:disabled {
-  color: var(--text-gray);
-}
-
-/* Submenus (Radio / Checkbox lists) */
-.filter-submenu-list {
-  display: flex;
-  flex-direction: column;
-  background-color: white;
-  border-radius: 6px;
-}
-
-.filter-submenu-list.bordered-list {
-  border: 1px solid var(--border-gray);
-  padding: 4px 0;
-}
-
-.submenu-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  color: var(--text-dark);
-  cursor: pointer;
-  background: transparent;
-  transition: background-color 0.2s;
-}
-
-.submenu-item:hover {
-  background-color: var(--bg-color);
-}
-
-.radio-custom {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1px solid var(--border-gray);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: white;
-  position: relative;
-}
-
-.radio-custom.checked {
-  border-color: #DBA841; /* Gold */
-}
-
-.radio-custom.checked::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  background-color: #DBA841;
-  border-radius: 50%;
-  position: absolute;
-}
-
-
-.filter-tags-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.filter-tag {
-  background-color: var(--bg-color);
-  border: 1px solid var(--border-gray);
-  color: var(--text-dark);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.filter-tag button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--text-gray);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.mt-2 {
-  margin-top: 8px;
-}
-
-.check-align-left {
-  margin-right: auto; /* Push checkbox to the far left in RTL */
-}
-
-/* Status selection */
-.filter-status-header {
-  border-bottom: 1px solid var(--border-gray);
-  padding-bottom: 16px;
-  margin-bottom: 16px;
-}
-
 .status-content {
   gap: 12px;
 }
 
 .status-option {
   display: flex;
-  justify-content: flex-start; /* Start from right in RTL */
+  justify-content: flex-start;
   align-items: center;
   padding: 10px 16px;
   border-radius: 8px;
@@ -643,22 +457,19 @@ input:checked + .slider:before {
 }
 
 .status-option span {
-  flex: 1; /* take up remaining space so checking aligns strictly */
+  flex: 1;
 }
 
-/* Green Status */
 .status-option.active-status {
-  color: #10B981; /* Green text */
-  background-color: #F0FDF4; /* light green bg */
+  color: #10B981;
+  background-color: #F0FDF4;
 }
 
-/* Red Status */
 .status-option.inactive-status {
-  color: #EF4444; /* Red text */
-  background-color: #FEF2F2; /* light red bg */
+  color: #EF4444;
+  background-color: #FEF2F2;
 }
 
-/* Reset default custom checkmarks for filter lists to be empty rounded squares */
 .checkbox-custom {
   width: 20px;
   height: 20px;
@@ -672,25 +483,30 @@ input:checked + .slider:before {
   flex-shrink: 0;
 }
 
-.checkbox-custom.checked {
-  background-color: #DBA841; /* Gold */
-  border-color: #DBA841;
-  color: white;
-}
-
 .checkbox-custom.checked-gold {
-  background-color: #DBA841; /* Gold Checkbox! */
-  border-color: #dba841;
+  background-color: var(--primary-gold);
+  border-color: var(--primary-gold);
   color: white;
 }
 
-.filter-accordion-content .submenu-item {
-  padding: 10px 16px;
-  gap: 12px;
-  justify-content: flex-start; /* Align text start (right) */
+.text-gray {
+  color: var(--text-gray);
 }
 
-.filter-accordion-content .submenu-item span {
-  flex: 1; /* Allows the checkmark to push left */
+.transition-transform {
+  transition: transform 0.2s;
 }
 
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.pixel-perfect-footer {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  font-size: 10px;
+  color: #9ca3af;
+  opacity: 0.5;
+  pointer-events: none;
+}

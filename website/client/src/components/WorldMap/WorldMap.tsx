@@ -1,25 +1,15 @@
 import { useState, useEffect } from 'react';
-import './NationalitiesChart.css';
-
-interface NationalityData {
-  label: string;
-  value: number;
-  color?: string;
-}
-
-interface NationalitiesChartProps {
-  data?: NationalityData[];
-}
+import './WorldMap.css';
 
 const highlights = [
-  { id: 'usa', color: '#F97316', top: '35%', left: '18%', label: 'الولايات المتحدة الأمريكية', value: '72,000' },
+  { id: 'usa', color: '#EF4444', top: '35%', left: '18%', label: 'الولايات المتحدة الأمريكية', value: '72,000' },
   { id: 'brazil', color: '#EF4444', top: '70%', left: '33%', label: 'البرازيل', value: '15,000' },
   { id: 'nigeria', color: '#3B82F6', top: '58%', left: '50%', label: 'نيجيريا', value: '42,000' },
   { id: 'china', color: '#8B5CF6', top: '42%', left: '80%', label: 'الصين', value: '120,000' },
   { id: 'indonesia', color: '#10B981', top: '75%', left: '86%', label: 'إندونيسيا', value: '95,000' },
 ];
 
-const NationalitiesChart = ({ data }: NationalitiesChartProps) => {
+const WorldMap = () => {
   const [isReady, setIsReady] = useState(false);
   const [hoveredDot, setHoveredDot] = useState<number | null>(null);
 
@@ -28,22 +18,14 @@ const NationalitiesChart = ({ data }: NationalitiesChartProps) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const displayData: NationalityData[] = data && data.length > 0 ? data : [
-    { label: 'الولايات المتحدة الأمريكية', value: 72000, color: '#EF4444' },
-    { label: 'المملكة المتحدة', value: 50000, color: '#3B82F6' }
-  ];
-
-  const maxVal = Math.max(...displayData.map(d => d.value), 1);
-
   return (
-    <div className={`nationalities-chart-wrapper ${isReady ? 'animate-ready' : ''}`}>
+    <div className={`world-map-component ${isReady ? 'animate-ready' : ''}`}>
       <div className="map-outer-container">
         <div className="map-inner-wrapper">
           <img 
             src="/world_map.png" 
             alt="World Map" 
             className="map-image-main"
-            onLoad={() => console.log('Map Loaded')}
             onError={(e) => { e.currentTarget.src = 'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/img/section/world.png'; }}
           />
           <div className="map-dots-overlay">
@@ -75,39 +57,15 @@ const NationalitiesChart = ({ data }: NationalitiesChartProps) => {
                     <span className="tooltip-label">{h.label}</span>
                     <span className="tooltip-value">{h.value} شخص</span>
                   </div>
-                  <div className="tooltip-arrow" style={{ borderTopColor: 'rgba(255, 255, 255, 0.9)' }}></div>
+                  <div className="tooltip-arrow"></div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      <div className="nationalities-stats-list">
-        {displayData.map((item, index) => (
-          <div 
-            key={index} 
-            className="nat-stat-item" 
-            style={{ animationDelay: `${index * 0.1 + 0.6}s` }}
-          >
-            <div className="nat-stat-info">
-              <span className="nat-stat-name">{item.label}</span>
-              <span className="nat-stat-count">{item.value.toLocaleString()} شخص</span>
-            </div>
-            <div className="nat-stat-progress-track">
-              <div 
-                className="nat-stat-progress-fill" 
-                style={{ 
-                  width: isReady ? `${(item.value / maxVal) * 100}%` : '0%',
-                  backgroundColor: item.color || '#DBA841'
-                }}
-              ></div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
 
-export default NationalitiesChart;
+export default WorldMap;
