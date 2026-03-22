@@ -1077,3 +1077,141 @@
   transition: opacity 0.2s;
 }
 .umodal-btn-done:hover { opacity: 0.9; }
+
+/* ─── Report Reminder Banner ─── */
+.creq-report-reminder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: #92400e;
+  direction: rtl;
+  animation: creq-fadeIn 0.3s ease;
+}
+
+.creq-reminder-icon {
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.creq-report-reminder span {
+  flex: 1;
+}
+
+.creq-reminder-link {
+  background: none;
+  border: none;
+  color: #d97706;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+
+.creq-reminder-link:hover {
+  color: #b45309;
+}
+
+.creq-reminder-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  margin-right: auto;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.creq-reminder-close:hover {
+  color: #374151;
+}
+
+/* ─── Reports Section (org supervisor view) ─── */
+.creq-reports-section {
+  direction: rtl;
+  margin-top: 0;
+}
+
+.creq-reports-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.creq-reports-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--creq-text-main);
+}
+
+.creq-reports-count {
+  background: #f1f5f9;
+  color: var(--creq-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.creq-reports-empty {
+  color: var(--creq-text-muted);
+  font-size: 0.9rem;
+  padding: 20px 0;
+}
+
+.creq-reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.creq-report-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  direction: rtl;
+}
+
+.creq-report-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.creq-report-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 3px 12px;
+  border-radius: 20px;
+}
+
+.creq-report-date {
+  font-size: 0.78rem;
+  color: var(--creq-text-muted);
+}
+
+.creq-report-content {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--creq-text-main);
+  margin: 0;
+}
+

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter as FilterIcon, Eye, ChevronLeft, ChevronDown, X, Check, Copy } from 'lucide-react';
+import { Search, Filter as FilterIcon, Eye, ChevronLeft, ChevronDown, X, Check, Copy, ClipboardList, Globe, Monitor, AlertCircle } from 'lucide-react';
 import './CurrentRequests.css';
 
 // -------------------------
@@ -166,7 +166,27 @@ const DetailField = ({ label, icon, children }: { label: string; icon: React.Rea
 // -------------------------
 const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => void }) => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showReportReminder, setShowReportReminder] = useState(false);
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('userRole');
+
+  // Mock reports data — replace with GET /api/dawah-reports/{detail.id}
+  const mockReports = [
+    {
+      report_id: 1,
+      communication_type: 'External',
+      communication_details: 'واتساب',
+      content: 'تمت جلسة نقاش حول أسس الإسلام ومقارنة الأديان. أبدى الشخص اهتماماً بالغاً وطلب مزيداً من المصادر.',
+      created_at: '2026-03-15T10:30:00',
+    },
+    {
+      report_id: 2,
+      communication_type: 'Platform',
+      communication_details: null,
+      content: 'تم إرسال مقاطع مرئية تعريفية بالإسلام عبر المنصة. الشخص يتفاعل بإيجابية.',
+      created_at: '2026-03-17T14:00:00',
+    },
+  ];
 
   return (
     <div className="creq-detail-page" dir="rtl">
@@ -181,7 +201,7 @@ const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => v
         </div>
         
         <div className="creq-detail-actions">
-          {localStorage.getItem('userRole') === 'preacher' && (<>
+          {userRole === 'preacher' && (<>
             <button className="creq-dtl-btn creq-btn-refresh" onClick={() => setShowUpdateModal(true)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-5.23l.11-.14"/></svg>
               تحديث الحالة
@@ -193,6 +213,15 @@ const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => v
           </>)}
         </div>
       </div>
+
+      {/* Report Reminder Banner (preacher only, shown after status update) */}
+      {showReportReminder && userRole === 'preacher' && (
+        <div className="creq-report-reminder">
+          <AlertCircle size={18} className="creq-reminder-icon" />
+          <span>تم تحديث الحالة! يرجى تعبئة <button className="creq-reminder-link" onClick={() => navigate('/reports')}>تقرير النشاط</button> الخاص بهذا الطلب.</span>
+          <button className="creq-reminder-close" onClick={() => setShowReportReminder(false)}><X size={16} /></button>
+        </div>
+      )}
 
     <div className="creq-detail-card">
 
@@ -279,18 +308,53 @@ const DetailView = ({ detail, onBack }: { detail: RequestDetail; onBack: () => v
         <p className="creq-text-body">{detail.callerNote}</p>
       </div>
 
+      {/* ── Reports Section (visible to org supervisor) ── */}
+      {(userRole === 'organization' || userRole === 'admin') && (
+        <>
+          <div className="creq-text-section-divider" />
+          <div className="creq-reports-section">
+            <div className="creq-reports-header">
+              <ClipboardList size={18} className="creq-icon-gold" />
+              <span className="creq-reports-title">تقارير النشاط</span>
+              <span className="creq-reports-count">{mockReports.length} تقارير</span>
+            </div>
+            {mockReports.length === 0 ? (
+              <p className="creq-reports-empty">لا توجد تقارير مسجلة حتى الآن.</p>
+            ) : (
+              <div className="creq-reports-list">
+                {mockReports.map((r) => (
+                  <div key={r.report_id} className="creq-report-card">
+                    <div className="creq-report-card-header">
+                      <span className="creq-report-source">
+                        {r.communication_type === 'Platform'
+                          ? <><Monitor size={14} /> داخل المنصة</>
+                          : <><Globe size={14} /> {r.communication_details}</>}
+                      </span>
+                      <span className="creq-report-date">
+                        {new Date(r.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="creq-report-content">{r.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
     </div>
-    
-    {showUpdateModal && <UpdateStatusModal onClose={() => setShowUpdateModal(false)} />}
+
+    {showUpdateModal && <UpdateStatusModal onClose={() => setShowUpdateModal(false)} onSaved={() => { setShowUpdateModal(false); setShowReportReminder(true); }} />}
   </div>
-);
+  );
 }
 
 
 // -------------------------
 // Update Status Modal
 // -------------------------
-const UpdateStatusModal = ({ onClose }: { onClose: () => void }) => {
+const UpdateStatusModal = ({ onClose, onSaved }: { onClose: () => void; onSaved?: () => void }) => {
   const [selected, setSelected] = useState<'Islam' | 'Reject'>('Islam');
   const [note, setNote] = useState('');
   const [success, setSuccess] = useState(false);
@@ -312,7 +376,7 @@ const UpdateStatusModal = ({ onClose }: { onClose: () => void }) => {
             </div>
             <h2 className="umodal-success-title">تم تحديث الحالة!</h2>
             <p className="umodal-success-sub">تم تحديث الحالة بنجاح</p>
-            <button className="umodal-btn-done" onClick={onClose}>تم</button>
+            <button className="umodal-btn-done" onClick={() => { onSaved?.(); onClose(); }}>تم</button>
           </div>
         </div>
       </div>

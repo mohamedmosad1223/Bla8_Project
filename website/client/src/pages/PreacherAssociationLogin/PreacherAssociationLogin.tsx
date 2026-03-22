@@ -7,6 +7,7 @@ import './PreacherAssociationLogin.css';
 import preacherIcon from '../../assets/muslim 2.png';
 import associationIcon from '../../assets/mosque 1.png';
 import adminIcon from '../../assets/admin 1.png';
+import awqafIcon from '../../assets/awqaf_manager.png';
 
 const PreacherAssociationLogin: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -18,6 +19,8 @@ const PreacherAssociationLogin: React.FC = () => {
       navigate('/login');
     } else if (role === 'preacher') {
       navigate('/login?role=preacher');
+    } else if (role === 'awqaf_manager') {
+      navigate('/login?role=awqaf_manager');
     } else {
       // organization
       navigate('/login?role=organization');
@@ -69,6 +72,16 @@ const PreacherAssociationLogin: React.FC = () => {
                   <img src={adminIcon} alt="Admin" />
                </div>
                <span>الأدمن</span>
+            </button>
+
+            <button 
+              className={`pa-option-card ${selectedRole === 'awqaf_manager' ? 'selected' : ''}`}
+              onClick={() => handleRoleSelect('awqaf_manager')}
+            >
+               <div className="pa-option-icon">
+                  <img src={awqafIcon} alt="Awqaf Manager" />
+               </div>
+               <span>مدير الأوقاف</span>
             </button>
           </div>
 

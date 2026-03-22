@@ -1,107 +1,39 @@
-import { useState, useEffect } from 'react';
 import './NationalitiesChart.css';
 
-interface NationalityData {
-  label: string;
-  value: number;
-  color?: string;
-}
-
-interface NationalitiesChartProps {
-  data?: NationalityData[];
-}
-
-const highlights = [
-  { id: 'usa', color: '#F97316', top: '35%', left: '18%', label: 'الولايات المتحدة الأمريكية', value: '72,000' },
-  { id: 'brazil', color: '#EF4444', top: '70%', left: '33%', label: 'البرازيل', value: '15,000' },
-  { id: 'nigeria', color: '#3B82F6', top: '58%', left: '50%', label: 'نيجيريا', value: '42,000' },
-  { id: 'china', color: '#8B5CF6', top: '42%', left: '80%', label: 'الصين', value: '120,000' },
-  { id: 'indonesia', color: '#10B981', top: '75%', left: '86%', label: 'إندونيسيا', value: '95,000' },
+const nationalities = [
+  { name: 'الولايات المتحدة الأمريكية',  count: '72 الف شخص', percentage: 72,  color: '#E11D48' },
+  { name: 'المملكة المتحدة', count: '50 الف شخص', percentage: 50,  color: '#3B82F6' },
+  { name: 'استراليا', count: '40 الف شخص', percentage: 40,  color: '#F59E0B' },
+  { name: 'امريكا الجنوبية', count: '30 الف شخص', percentage: 30,  color: '#8B5CF6' },
+  { name: 'الاكوادور', count: '20 الف شخص', percentage: 20,  color: '#10B981' },
 ];
 
-const NationalitiesChart = ({ data }: NationalitiesChartProps) => {
-  const [isReady, setIsReady] = useState(false);
-  const [hoveredDot, setHoveredDot] = useState<number | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsReady(true), 200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const displayData: NationalityData[] = data && data.length > 0 ? data : [
-    { label: 'الولايات المتحدة الأمريكية', value: 72000, color: '#EF4444' },
-    { label: 'المملكة المتحدة', value: 50000, color: '#3B82F6' }
-  ];
-
-  const maxVal = Math.max(...displayData.map(d => d.value), 1);
-
+const NationalitiesChart = () => {
   return (
-    <div className={`nationalities-chart-wrapper ${isReady ? 'animate-ready' : ''}`}>
-      <div className="map-outer-container">
-        <div className="map-inner-wrapper">
-          <img 
-            src="/world_map.png" 
-            alt="World Map" 
-            className="map-image-main"
-            onLoad={() => console.log('Map Loaded')}
-            onError={(e) => { e.currentTarget.src = 'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/img/section/world.png'; }}
-          />
-          <div className="map-dots-overlay">
-            {isReady && highlights.map((h, i) => (
-              <div 
-                key={i} 
-                className={`map-dot-centerer ${hoveredDot === i ? 'is-hovered' : ''}`}
-                style={{ 
-                  top: h.top, 
-                  left: h.left,
-                  animationDelay: `${i * 0.15}s`
-                }}
-                onMouseEnter={() => setHoveredDot(i)}
-                onMouseLeave={() => setHoveredDot(null)}
-              >
-                <div 
-                  className="premium-map-dot" 
-                  style={{ 
-                    backgroundColor: h.color,
-                    color: h.color
-                  }}
-                >
-                  <div className="map-pulse-radar"></div>
-                </div>
-                
-                {/* Interactive Tooltip */}
-                <div className={`map-tooltip ${hoveredDot === i ? 'show' : ''}`}>
-                  <div className="tooltip-content">
-                    <span className="tooltip-label">{h.label}</span>
-                    <span className="tooltip-value">{h.value} شخص</span>
-                  </div>
-                  <div className="tooltip-arrow" style={{ borderTopColor: 'rgba(255, 255, 255, 0.9)' }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="nationalities-container">
+      {/* Map Image */}
+      <div className="map-wrapper">
+        <img
+          src="/world 1.png"
+          alt="خريطة الجنسيات"
+          className="map-image"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
       </div>
 
-      <div className="nationalities-stats-list">
-        {displayData.map((item, index) => (
-          <div 
-            key={index} 
-            className="nat-stat-item" 
-            style={{ animationDelay: `${index * 0.1 + 0.6}s` }}
-          >
-            <div className="nat-stat-info">
-              <span className="nat-stat-name">{item.label}</span>
-              <span className="nat-stat-count">{item.value.toLocaleString()} شخص</span>
+      {/* Nationalities list */}
+      <div className="gov-list">
+        {nationalities.map((item, index) => (
+          <div key={index} className="nationality-row">
+            <div className="nat-header">
+              <span className="nat-name">{item.name}</span>
+              <span className="nat-count">{item.count}</span>
             </div>
-            <div className="nat-stat-progress-track">
-              <div 
-                className="nat-stat-progress-fill" 
-                style={{ 
-                  width: isReady ? `${(item.value / maxVal) * 100}%` : '0%',
-                  backgroundColor: item.color || '#DBA841'
-                }}
-              ></div>
+            <div className="progress-bar-bg">
+              <div
+                className="progress-bar-fill"
+                style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+              />
             </div>
           </div>
         ))}
