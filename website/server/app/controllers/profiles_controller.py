@@ -27,7 +27,7 @@ class ProfilesController:
         profile_record = None
         extra_data = {}
         
-        if user.role == UserRole.admin:
+        if user.role in [UserRole.admin, UserRole.minister]:
             profile_record = user.admin
         elif user.role == UserRole.preacher:
             profile_record = user.preacher
@@ -82,7 +82,7 @@ class ProfilesController:
 
         # 2. Get target profile record
         profile_record = None
-        if user.role == UserRole.admin: profile_record = user.admin
+        if user.role in [UserRole.admin, UserRole.minister]: profile_record = user.admin
         elif user.role == UserRole.preacher: profile_record = user.preacher
         elif user.role == UserRole.muslim_caller: profile_record = user.muslim_caller
         elif user.role == UserRole.organization: profile_record = user.organization
@@ -186,3 +186,8 @@ class ProfilesController:
         user.deleted_at = datetime.now(timezone.utc)
         db.commit()
         return {"message": "تم تعطيل الحساب بنجاح. نأسف لمغادرتك."}
+
+    @staticmethod
+    def logout():
+        """Unified logout response"""
+        return {"message": "تم تسجيل الخروج بنجاح. نراك قريباً!"}

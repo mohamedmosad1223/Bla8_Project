@@ -27,6 +27,7 @@ from app.routers import (
     help_router,
     profiles_router,
     chats_router,
+    minister_router,
 )
 
 from contextlib import asynccontextmanager
@@ -84,6 +85,7 @@ app.include_router(settings_router)
 app.include_router(help_router)
 app.include_router(profiles_router)
 app.include_router(chats_router)
+app.include_router(minister_router)
 
 
 @app.get("/", tags=["Health"])

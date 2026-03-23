@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from datetime import date
@@ -9,6 +9,7 @@ from datetime import datetime
 from app.database import get_db
 from app.schemas import OrganizationUpdate, OrganizationRegister
 from app.controllers.organizations_controller import OrganizationsController
+from app.controllers.profiles_controller import ProfilesController
 from app.auth import get_current_user, check_role
 from app.models.user import User
 from app.models.enums import UserRole
@@ -93,3 +94,9 @@ def update_organization(org_id: int, payload: OrganizationUpdate, db: Session = 
 def delete_organization(org_id: int, db: Session = Depends(get_db)):
     """حذف جمعية — يحذف البروفايل ويعمل soft-delete للمستخدم"""
     return OrganizationsController.delete_organization(db, org_id)
+
+@router.post("/logout")
+def logout_organization(response: Response):
+    """تسجيل خروج الجمعية ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()

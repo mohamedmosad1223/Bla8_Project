@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response
 from sqlalchemy.orm import Session
 from datetime import datetime
 from pydantic import EmailStr
@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.enums import PreacherType, PreacherStatus, GenderType, ApprovalStatus, UserRole
 from app.schemas import PreacherUpdate, PreacherRegister
 from app.controllers.preachers_controller import PreachersController
+from app.controllers.profiles_controller import ProfilesController
 from app.auth import check_role, get_optional_current_user, get_current_user
 from app.models.user import User
 from app.models.preacher import Preacher
@@ -156,3 +157,9 @@ def delete_preacher(preacher_id: int, db: Session = Depends(get_db), current_use
             raise HTTPException(status_code=403, detail="لا يمكنك حذف داعية لا ينتمي لجمعيتك")
 
     return PreachersController.delete_preacher(db, preacher_id)
+
+@router.post("/logout")
+def logout_preacher(response: Response):
+    """تسجيل خروج الداعية ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()

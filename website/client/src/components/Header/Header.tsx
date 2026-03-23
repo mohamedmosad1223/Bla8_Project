@@ -1,4 +1,4 @@
-import { Search, Bell } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
 
@@ -7,16 +7,6 @@ const Header = () => {
 
   return (
     <header className="header">
-      <div className="header-search-container">
-        <div className="search-input-wrapper">
-          <Search size={20} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="بحث" 
-            className="search-input"
-          />
-        </div>
-      </div>
       
       <div className="header-actions">
         <button 

@@ -153,7 +153,6 @@ const TableView = ({ requests, onView }: { requests: Request[]; onView: (r: Requ
   </div>
 );
 
-
 // A single labeled field cell
 const DetailField = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
   <div className="creq-dfield">
@@ -494,169 +493,171 @@ const CurrentRequests = () => {
             <h1 className="page-title">طلبات الدعوة الحالية</h1>
             <div className="creq-actions">
               <div className="search-input-wrapper-outlined">
-                <Search size={18} className="search-icon" />
                 <input type="text" placeholder="ابحث" className="search-input-outlined" />
+                <Search size={18} className="search-icon" />
               </div>
 
-              {/* Filter Button & Popup Container */}
-              <div className="creq-filter-container" ref={filterRef}>
-                <button className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
-                  <FilterIcon size={18} />الفلتر
-                </button>
-                
-                {isFilterOpen && (
-                  <div className="creq-filter-panel" dir="rtl">
-                    <div className="creq-filter-panel-header">
-                      <h2 className="creq-filter-title">الفلتر</h2>
-                      <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>تطبيق الفلتر</button>
-                    </div>
-                    <div className="creq-filter-body">
-                      <div className="creq-filter-search">
-                        <Search size={16} className="creq-filter-search-icon" />
-                        <input type="text" placeholder="ابحث ..." className="creq-filter-search-input" />
+              <div className="filters-and-sort-left">
+                {/* Filter Button & Popup Container */}
+                <div className="creq-filter-container" ref={filterRef}>
+                  <button className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                    <FilterIcon size={18} />الفلتر
+                  </button>
+                  
+                  {isFilterOpen && (
+                    <div className="creq-filter-panel" dir="rtl">
+                      <div className="creq-filter-panel-header">
+                        <h2 className="creq-filter-title">الفلتر</h2>
+                        <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>تطبيق الفلتر</button>
                       </div>
-
-                      {/* Date */}
-                      <div className="creq-filter-accordion">
-                        <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('date')}>
-                          <span>تاريخ الارسال</span>
-                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'date' ? 'rotate-180' : ''}`} />
+                      <div className="creq-filter-body">
+                        <div className="creq-filter-search">
+                          <Search size={16} className="creq-filter-search-icon" />
+                          <input type="text" placeholder="ابحث ..." className="creq-filter-search-input" />
                         </div>
-                        {openAccordion === 'date' && (
-                          <div className="creq-filter-accordion-content mt-2">
-                            <div className="creq-filter-date-input creq-active-outline creq-relative-date-input">
-                              <input type="datetime-local" className="custom-date-picker" />
-                            </div>
+
+                        {/* Date */}
+                        <div className="creq-filter-accordion">
+                          <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('date')}>
+                            <span>تاريخ الارسال</span>
+                            <ChevronDown size={16} className={`text-gray ${openAccordion === 'date' ? 'rotate-180' : ''}`} />
                           </div>
-                        )}
-                      </div>
-
-                      {/* Religion */}
-                      <div className="creq-filter-accordion">
-                        <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('religion')}>
-                          <span>الديانة</span>
-                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'religion' ? 'rotate-180' : ''}`} />
+                          {openAccordion === 'date' && (
+                            <div className="creq-filter-accordion-content mt-2">
+                              <div className="creq-filter-date-input creq-active-outline creq-relative-date-input">
+                                <input type="datetime-local" className="custom-date-picker" />
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        {openAccordion === 'religion' && (
+
+                        {/* Religion */}
+                        <div className="creq-filter-accordion">
+                          <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('religion')}>
+                            <span>الديانة</span>
+                            <ChevronDown size={16} className={`text-gray ${openAccordion === 'religion' ? 'rotate-180' : ''}`} />
+                          </div>
+                          {openAccordion === 'religion' && (
+                            <div className="creq-filter-accordion-content mt-2">
+                              <div className="creq-filter-submenu-list creq-bordered-list">
+                                {['مسلم', 'مسيحي', 'يهودي'].map(t => (
+                                  <label key={t} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); setSelectedReligion(t); }}>
+                                    <div className={`creq-checkbox-custom creq-check-align-left ${selectedReligion === t ? 'checked' : ''}`}>
+                                      {selectedReligion === t && <Check size={12} strokeWidth={3} />}
+                                    </div>
+                                    <span>{t}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Nationality */}
+                        <div className="creq-filter-accordion">
+                          <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('nationality')}>
+                            <span>الجنسية</span>
+                            <ChevronDown size={16} className={`text-gray ${openAccordion === 'nationality' ? 'rotate-180' : ''}`} />
+                          </div>
                           <div className="creq-filter-accordion-content mt-2">
-                            <div className="creq-filter-submenu-list creq-bordered-list">
-                              {['مسلم', 'مسيحي', 'يهودي'].map(t => (
-                                <label key={t} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); setSelectedReligion(t); }}>
-                                  <div className={`creq-checkbox-custom creq-check-align-left ${selectedReligion === t ? 'checked' : ''}`}>
-                                    {selectedReligion === t && <Check size={12} strokeWidth={3} />}
+                            <div className="creq-filter-tags-wrapper">
+                              {filterNationalities.map((nat, i) => (
+                                <span key={i} className="creq-filter-tag">
+                                  <span>{nat}</span>
+                                  <button type="button" onClick={() => removeNationality(nat)}><X size={12} /></button>
+                                </span>
+                              ))}
+                            </div>
+                            {openAccordion === 'nationality' && (
+                              <div className="creq-filter-submenu-list creq-bordered-list mt-3">
+                                {availableNationalities.map(nat => {
+                                  const sel = filterNationalities.includes(nat);
+                                  return (
+                                    <label key={nat} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeNationality(nat); } else { addNationality(nat); } }}>
+                                      <div className={`creq-checkbox-custom creq-check-align-left ${sel ? 'checked-gold' : ''}`}>
+                                        {sel && <Check size={12} strokeWidth={3} color="white" />}
+                                      </div>
+                                      <span>{nat}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Language */}
+                        <div className="creq-filter-accordion">
+                          <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('language')}>
+                            <span>اللغة</span>
+                            <ChevronDown size={16} className={`text-gray ${openAccordion === 'language' ? 'rotate-180' : ''}`} />
+                          </div>
+                          <div className="creq-filter-accordion-content mt-2">
+                            <div className="creq-filter-tags-wrapper">
+                              {filterLanguages.map((lang, i) => (
+                                <span key={i} className="creq-filter-tag">
+                                  <span>{lang}</span>
+                                  <button type="button" onClick={() => removeLanguage(lang)}><X size={12} /></button>
+                                </span>
+                              ))}
+                            </div>
+                            {openAccordion === 'language' && (
+                              <div className="creq-filter-submenu-list creq-bordered-list mt-3">
+                                {availableLanguages.map(lang => {
+                                  const sel = filterLanguages.includes(lang);
+                                  return (
+                                    <label key={lang} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeLanguage(lang); } else { addLanguage(lang); } }}>
+                                      <div className={`creq-checkbox-custom creq-check-align-left ${sel ? 'checked-gold' : ''}`}>
+                                        {sel && <Check size={12} strokeWidth={3} color="white" />}
+                                      </div>
+                                      <span>{lang}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div className="creq-filter-accordion creq-no-border">
+                          <div className="creq-filter-accordion-header creq-filter-status-header" onClick={() => toggleAccordion('status')}>
+                            <span>الحالة</span>
+                            <ChevronDown size={16} className={`text-gray ${openAccordion === 'status' ? 'rotate-180' : ''}`} />
+                          </div>
+                          {openAccordion === 'status' && (
+                            <div className="creq-filter-accordion-content creq-status-content mt-2">
+                              {[
+                                { key: 'تم إسلامه', cls: 'status-green' }, 
+                                { key: 'قيد الإقناع', cls: 'status-yellow' }, 
+                                { key: 'رفض الإسلام', cls: 'status-red' }
+                              ].map(({ key, cls }) => (
+                                <label key={key} className={`creq-status-option ${selectedStatus === key ? cls : ''}`} onClick={() => setSelectedStatus(key)}>
+                                  <div className={`creq-checkbox-custom creq-check-align-left ${selectedStatus === key ? 'checked-gold' : ''}`}>
+                                    {selectedStatus === key && <Check size={12} strokeWidth={3} color="white" />}
                                   </div>
-                                  <span>{t}</span>
+                                  <span>{key}</span>
                                 </label>
                               ))}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Nationality */}
-                      <div className="creq-filter-accordion">
-                        <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('nationality')}>
-                          <span>الجنسية</span>
-                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'nationality' ? 'rotate-180' : ''}`} />
-                        </div>
-                        <div className="creq-filter-accordion-content mt-2">
-                          <div className="creq-filter-tags-wrapper">
-                            {filterNationalities.map((nat, i) => (
-                              <span key={i} className="creq-filter-tag">
-                                <span>{nat}</span>
-                                <button type="button" onClick={() => removeNationality(nat)}><X size={12} /></button>
-                              </span>
-                            ))}
-                          </div>
-                          {openAccordion === 'nationality' && (
-                            <div className="creq-filter-submenu-list creq-bordered-list mt-3">
-                              {availableNationalities.map(nat => {
-                                const sel = filterNationalities.includes(nat);
-                                return (
-                                  <label key={nat} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeNationality(nat); } else { addNationality(nat); } }}>
-                                    <div className={`creq-checkbox-custom creq-check-align-left ${sel ? 'checked-gold' : ''}`}>
-                                      {sel && <Check size={12} strokeWidth={3} color="white" />}
-                                    </div>
-                                    <span>{nat}</span>
-                                  </label>
-                                );
-                              })}
-                            </div>
                           )}
                         </div>
-                      </div>
-
-                      {/* Language */}
-                      <div className="creq-filter-accordion">
-                        <div className="creq-filter-accordion-header" onClick={() => toggleAccordion('language')}>
-                          <span>اللغة</span>
-                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'language' ? 'rotate-180' : ''}`} />
-                        </div>
-                        <div className="creq-filter-accordion-content mt-2">
-                          <div className="creq-filter-tags-wrapper">
-                            {filterLanguages.map((lang, i) => (
-                              <span key={i} className="creq-filter-tag">
-                                <span>{lang}</span>
-                                <button type="button" onClick={() => removeLanguage(lang)}><X size={12} /></button>
-                              </span>
-                            ))}
-                          </div>
-                          {openAccordion === 'language' && (
-                            <div className="creq-filter-submenu-list creq-bordered-list mt-3">
-                              {availableLanguages.map(lang => {
-                                const sel = filterLanguages.includes(lang);
-                                return (
-                                  <label key={lang} className="creq-submenu-item" onClick={(e) => { e.preventDefault(); if (sel) { removeLanguage(lang); } else { addLanguage(lang); } }}>
-                                    <div className={`creq-checkbox-custom creq-check-align-left ${sel ? 'checked-gold' : ''}`}>
-                                      {sel && <Check size={12} strokeWidth={3} color="white" />}
-                                    </div>
-                                    <span>{lang}</span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status */}
-                      <div className="creq-filter-accordion creq-no-border">
-                        <div className="creq-filter-accordion-header creq-filter-status-header" onClick={() => toggleAccordion('status')}>
-                          <span>الحالة</span>
-                          <ChevronDown size={16} className={`text-gray ${openAccordion === 'status' ? 'rotate-180' : ''}`} />
-                        </div>
-                        {openAccordion === 'status' && (
-                          <div className="creq-filter-accordion-content creq-status-content mt-2">
-                            {[
-                              { key: 'تم إسلامه', cls: 'status-green' }, 
-                              { key: 'قيد الإقناع', cls: 'status-yellow' }, 
-                              { key: 'رفض الإسلام', cls: 'status-red' }
-                            ].map(({ key, cls }) => (
-                              <label key={key} className={`creq-status-option ${selectedStatus === key ? cls : ''}`} onClick={() => setSelectedStatus(key)}>
-                                <div className={`creq-checkbox-custom creq-check-align-left ${selectedStatus === key ? 'checked-gold' : ''}`}>
-                                  {selectedStatus === key && <Check size={12} strokeWidth={3} color="white" />}
-                                </div>
-                                <span>{key}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
-              <div className="sort-container" ref={sortRef}>
-                <button className={`btn-icon-text ${isSortOpen ? 'active' : ''}`} onClick={() => setIsSortOpen(!isSortOpen)}>
-                  تصنيف <ChevronDown size={14} className="mr-1" />
-                </button>
-                {isSortOpen && (
-                  <div className="sort-dropdown" dir="rtl">
-                    <button className="sort-option">الاحدث</button>
-                    <button className="sort-option">الأقدم</button>
-                  </div>
-                )}
+                <div className="sort-container" ref={sortRef}>
+                  <button className={`btn-icon-text ${isSortOpen ? 'active' : ''}`} onClick={() => setIsSortOpen(!isSortOpen)}>
+                    تصنيف <ChevronDown size={14} className="mr-1" />
+                  </button>
+                  {isSortOpen && (
+                    <div className="sort-dropdown" dir="rtl">
+                      <button className="sort-option">الاحدث</button>
+                      <button className="sort-option">الأقدم</button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

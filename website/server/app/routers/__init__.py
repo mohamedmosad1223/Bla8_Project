@@ -2,6 +2,7 @@
 Aggregates all routers for easy import in main.py.
 """
 
+
 from app.routers.users import router as users_router
 from app.routers.admins import router as admins_router
 from app.routers.organizations import router as organizations_router
@@ -19,6 +20,7 @@ from app.routers.settings import router as settings_router
 from app.routers.help import router as help_router
 from app.routers.profiles import router as profiles_router
 from app.routers.chats import router as chats_router
+from app.routers.minister import router as minister_router
 
 __all__ = [
     "users_router",
@@ -37,5 +39,6 @@ __all__ = [
     "settings_router",
     "help_router",
     "profiles_router",
-    "chats_router"
+    "chats_router",
+    "minister_router"
 ]
