@@ -8,9 +8,7 @@ import {
   FileText, 
   User, 
   CheckCircle, 
-  Eye, 
-  Trash2, 
-  Edit,
+  Eye,
   ChevronLeft,
   Search,
   Filter,
@@ -84,10 +82,6 @@ const AwqafAssociationDetails = () => {
             <div className="data-section">
               <div className="section-header">
                 <h3>بيانات الجمعية</h3>
-                <div className="section-actions">
-                  <button className="icon-btn edit-btn"><Edit size={18} /></button>
-                  <button className="icon-btn delete-btn"><Trash2 size={18} /></button>
-                </div>
               </div>
               <div className="data-grid-layout">
                 <div className="data-item">

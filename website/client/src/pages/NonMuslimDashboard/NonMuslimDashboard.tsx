@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Plus, Send, ArrowRight, MessageCircle, Calendar } from 'lucide-react';
+import { Bot, Plus, Send, MessageCircle, Calendar } from 'lucide-react';
 import './NonMuslimDashboard.css';
 
 interface Message {
@@ -37,7 +37,7 @@ const NonMuslimDashboard: React.FC = () => {
     const newId = Date.now().toString();
     const newSession: ChatSession = {
       id: newId,
-      title: `محادثة جديدة`,
+      title: `محادثة ${sessions.length + 1}`,
       lastMessage: 'أهلاً 👋 أنا مساعدك...',
       timestamp: new Date(),
       messages: [
@@ -78,97 +78,117 @@ const NonMuslimDashboard: React.FC = () => {
     setInputValue('');
   };
 
-  // ── Chat Window View ──
-  if (activeChatId && activeSession) {
-    return (
-      <div className="nm-chat-window" dir="rtl">
-        <div className="nm-chat-header">
-          <button className="nm-back-btn" onClick={() => setActiveChatId(null)}>
-            <ArrowRight size={24} />
-          </button>
-          <div className="nm-header-bot-info">
-            <div className="nm-header-avatar">
-              <Bot size={24} color="#f6ad55" />
-            </div>
-            <span>المساعد الآلي</span>
-          </div>
-        </div>
-        
-        <div className="nm-chat-messages">
-          {activeSession.messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`nm-message ${msg.sender === 'bot' ? 'nm-bot-message' : 'nm-user-message'}`}
-            >
-              {msg.text}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <form className="nm-chat-input-area" onSubmit={handleSend}>
-          <input
-            type="text"
-            placeholder="اكتب رسالتك هنا..."
-            className="nm-chat-input"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
-          <button type="submit" className="nm-send-btn" disabled={!inputValue.trim()}>
-            <Send size={20} />
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  // ── Main/History View ──
   return (
-    <div className="nm-dashboard-container" dir="rtl">
-      {sessions.length === 0 ? (
-        <div className="nm-chat-area">
-          <div className="nm-bot-container">
-            <div className="nm-bot-avatar-bg">
-              <Bot size={80} color="#f6ad55" className="nm-bot-icon" />
-              <div className="nm-online-dot"></div>
-            </div>
+    <div className="nm-page" dir="rtl">
+      {/* ── Right Sidebar: Sessions ── */}
+      <aside className="nm-sidebar">
+        {/* Bot header */}
+        <div className="nm-sidebar-header">
+          <div className="nm-sidebar-avatar">
+            <Bot size={28} color="#f6ad55" />
+            <div className="nm-online-dot" />
           </div>
-          <div className="nm-greeting-message">
-            <p>أهلاً 👋 أنا مساعدك. هل يمكنني طرح بعض الأسئلة للتعرف عليك أكثر؟</p>
+          <div>
+            <h2 className="nm-sidebar-title">المساعد الآلي</h2>
+            <span className="nm-sidebar-status">متاح الآن</span>
           </div>
         </div>
-      ) : (
-        <div className="nm-history-area">
-          <h2 className="nm-history-title">المحادثات السابقة</h2>
-          <div className="nm-sessions-list">
-            {sessions.map(session => (
-              <div 
-                key={session.id} 
-                className="nm-session-card"
+
+        {/* New chat button */}
+        <button className="nm-new-chat-btn" onClick={startNewChat}>
+          <Plus size={18} />
+          محادثة جديدة
+        </button>
+
+        {/* Sessions list */}
+        <div className="nm-sessions-list">
+          {sessions.length === 0 ? (
+            <p className="nm-no-sessions">لا توجد محادثات بعد</p>
+          ) : (
+            sessions.map(session => (
+              <div
+                key={session.id}
+                className={`nm-session-card ${activeChatId === session.id ? 'active' : ''}`}
                 onClick={() => setActiveChatId(session.id)}
               >
                 <div className="nm-session-icon">
-                  <MessageCircle size={24} color="#1e5387" />
+                  <MessageCircle size={20} />
                 </div>
                 <div className="nm-session-content">
                   <div className="nm-session-header">
                     <span className="nm-session-name">{session.title}</span>
                     <span className="nm-session-time">
-                      <Calendar size={12} style={{ marginLeft: '4px' }} />
+                      <Calendar size={10} />
                       {session.timestamp.toLocaleDateString('ar-EG')}
                     </span>
                   </div>
                   <p className="nm-session-last-msg">{session.lastMessage}</p>
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </aside>
 
-      <button className="nm-fab" onClick={startNewChat}>
-        <Plus size={32} color="#fff" />
-      </button>
+      {/* ── Left Panel: Chat ── */}
+      <main className="nm-chat-panel">
+        {activeSession ? (
+          <>
+            {/* Chat header */}
+            <div className="nm-chat-header">
+              <div className="nm-header-avatar">
+                <Bot size={22} color="#f6ad55" />
+              </div>
+              <div className="nm-header-bot-info">
+                <span className="nm-header-name">المساعد الآلي</span>
+                <span className="nm-header-sub">متاح الآن • {activeSession.title}</span>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="nm-chat-messages">
+              {activeSession.messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`nm-message ${msg.sender === 'bot' ? 'nm-bot-message' : 'nm-user-message'}`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <form className="nm-chat-input-area" onSubmit={handleSend}>
+              <MessageCircle size={20} color="#17648B" style={{ flexShrink: 0, opacity: 0.6 }} />
+              <input
+                type="text"
+                placeholder="اكتب رسالتك هنا..."
+                className="nm-chat-input"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+              />
+              <button type="submit" className="nm-send-btn" disabled={!inputValue.trim()}>
+                <Send size={18} />
+              </button>
+            </form>
+          </>
+        ) : (
+          /* Empty state */
+          <div className="nm-empty-state">
+            <div className="nm-empty-avatar">
+              <Bot size={56} color="#f6ad55" />
+              <div className="nm-online-dot" />
+            </div>
+            <h3 className="nm-empty-title">أهلاً بك 👋</h3>
+            <p className="nm-empty-text">اختر محادثة من القائمة أو ابدأ محادثة جديدة</p>
+            <button className="nm-start-btn" onClick={startNewChat}>
+              <Plus size={18} />
+              بدء محادثة جديدة
+            </button>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

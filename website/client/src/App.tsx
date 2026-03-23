@@ -34,6 +34,7 @@ import AwqafAssociationReports from './pages/AwqafAssociationReports/AwqafAssoci
 import AwqafPreacherDetails from './pages/AwqafPreacherDetails/AwqafPreacherDetails';
 import AwqafPreacherPerformance from './pages/AwqafPreacherPerformance/AwqafPreacherPerformance';
 import AwqafReportsAnalytics from './pages/AwqafReportsAnalytics/AwqafReportsAnalytics';
+import AwqafAICenter from './pages/AwqafAICenter/AwqafAICenter';
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminAssociations from './pages/AdminAssociations/AdminAssociations';
 import AdminAddAssociation from './pages/AdminAddAssociation/AdminAddAssociation';
@@ -102,6 +103,7 @@ function App() {
           <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<AwqafPreacherDetails />} />
           <Route path="/awqaf/preacher-performance" element={<AwqafPreacherPerformance />} />
           <Route path="/awqaf/reports" element={<AwqafReportsAnalytics />} />
+          <Route path="/ai" element={<AwqafAICenter />} />
           <Route path="/admin/associations" element={<AdminAssociations />} />
           <Route path="/admin/associations/add" element={<AdminAddAssociation />} />
           <Route path="/admin/associations/:id" element={<AdminAssociationDetails />} />

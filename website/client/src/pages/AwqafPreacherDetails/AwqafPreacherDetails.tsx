@@ -11,13 +11,19 @@ import {
   Mail,
   BookOpen,
   CheckCircle,
-  Edit,
-  Trash2,
 } from 'lucide-react';
 import StatCard from '../../components/StatCard/StatCard';
-import NationalitiesChart from '../../components/NationalitiesChart/NationalitiesChart';
 import ResponseTimeChart from '../../components/ResponseTimeChart/ResponseTimeChart';
 import './AwqafPreacherDetails.css';
+
+const governorates = [
+  { name: 'محافظة العاصمة',    count: '72 الف شخص', percentage: 72, color: '#F59E0B' },
+  { name: 'محافظة الأحمدي',   count: '60 الف شخص', percentage: 60, color: '#EC4899' },
+  { name: 'محافظة الفروانية', count: '50 الف شخص', percentage: 50, color: '#10B981' },
+  { name: 'محافظة حولي',      count: '40 الف شخص', percentage: 40, color: '#6366F1' },
+  { name: 'محافظة الجهراء',   count: '30 الف شخص', percentage: 30, color: '#3B82F6' },
+  { name: 'محافظة مبارك الكبير', count: '20 الف شخص', percentage: 20, color: '#E11D48' },
+];
 
 const mockStats = [
   { id: 1, title: 'اجمالي عدد الطلبات',   value: '100', icon: <FileText size={24} />,  bgColor: '#D1FAE5', color: '#059669', trend: 'up'   as const, trendValue: '+10.5%' },
@@ -42,16 +48,6 @@ const AwqafPreacherDetails = () => {
             <ChevronLeft size={16} />
           </div>
           <h1 className="page-title">عرض تفاصيل الداعية</h1>
-        </div>
-        <div className="preacher-actions">
-          <button className="action-btn edit-action-btn">
-            <Edit size={16} />
-            تعديل البيانات
-          </button>
-          <button className="action-btn delete-action-btn">
-            <Trash2 size={16} />
-            حذف الداعية
-          </button>
         </div>
       </div>
 
@@ -78,7 +74,7 @@ const AwqafPreacherDetails = () => {
               <BookOpen size={16} className="info-icon-sm" />
               <span className="info-label">الديانة</span>
             </div>
-            <span className="info-value">مسيحي</span>
+            <span className="info-value">مسلم</span>
           </div>
           <div className="info-item">
             <div className="info-item-header">
@@ -139,15 +135,32 @@ const AwqafPreacherDetails = () => {
             <ResponseTimeChart />
           </div>
         </div>
-        <div className="chart-card">
+        <div className="chart-card side-map">
           <div className="chart-header">
-            <h3>البلدان</h3>
-            <select className="chart-select">
-              <option>الشهر</option>
-            </select>
+            <h3>توزيع المدعوين بمحافظات الكويت</h3>
           </div>
-          <div className="chart-content">
-            <NationalitiesChart />
+          <div className="chart-content awqaf-map-wrapper">
+            <img
+              src="/image 1.png"
+              alt="خريطة الكويت"
+              className="awqaf-kuwait-map"
+            />
+            <div className="awqaf-gov-list">
+              {governorates.map((gov, idx) => (
+                <div key={idx} className="awqaf-gov-row">
+                  <div className="awqaf-gov-header">
+                    <span className="awqaf-gov-name">{gov.name}</span>
+                    <span className="awqaf-gov-count">{gov.count}</span>
+                  </div>
+                  <div className="awqaf-gov-progress">
+                    <div
+                      className="awqaf-gov-fill"
+                      style={{ width: `${gov.percentage}%`, backgroundColor: gov.color }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -310,6 +310,155 @@
   color: #e53e3e;
 }
 
+/* ── Viewer Modal ── */
+.library-viewer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+}
+
+.library-viewer-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.library-viewer-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.library-viewer-close:hover {
+  background: #F3F4F6;
+}
+
+.library-viewer-title {
+  padding: 20px 20px 20px 60px;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #E5E7EB;
+  text-align: right;
+}
+
+.library-viewer-body {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #F9FAFB;
+  min-height: 400px;
+  overflow: hidden; 
+}
+
+.library-viewer-video {
+  width: 100%;
+  height: 100%;
+  max-height: 75vh;
+  background: black;
+  outline: none;
+}
+
+.library-viewer-pdf {
+  width: 100%;
+  height: 75vh;
+  border: none;
+}
+
+.library-viewer-article-wrapper {
+  width: 100%;
+  height: 75vh;
+  overflow-y: auto;
+  padding: 40px;
+  background: white;
+}
+
+.library-viewer-article-content {
+  max-width: 750px;
+  margin: 0 auto;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: #374151;
+  white-space: pre-wrap;
+  text-align: right;
+  direction: rtl;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.library-viewer-audio-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  width: 100%;
+}
+
+.library-viewer-audio-cover-wrap {
+  width: 250px;
+  height: 250px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.library-viewer-audio-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.library-viewer-audio-author {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 40px;
+}
+
+.library-viewer-audio-player {
+  width: 100%;
+  max-width: 500px;
+  height: 54px;
+}
+
+.library-viewer-empty {
+  color: #6B7280;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
 @media (max-width: 640px) {
   .library-grid {
     grid-template-columns: 1fr;
