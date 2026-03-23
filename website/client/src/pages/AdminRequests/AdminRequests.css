@@ -1,0 +1,369 @@
+/* ═══════════════════════════════════════
+   Admin Requests
+═══════════════════════════════════════ */
+.areq-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Header Area ── */
+.areq-header-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.areq-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark, #1A1A2E);
+}
+
+.areq-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 24px; /* Moving the filter and search further down per user request */
+}
+
+/* ── Search & Filters ── */
+.areq-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 4px 0;
+  width: 250px;
+  margin-left: 16px; /* Extra space between search and filters */
+}
+
+.areq-search-icon {
+  color: #a0aec0;
+}
+
+.areq-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.95rem;
+  color: var(--text-dark, #1A1A2E);
+  text-align: right;
+}
+
+.areq-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dark, #1A1A2E);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.areq-filter-btn:hover {
+  opacity: 0.8;
+}
+
+/* ── Tabs ── */
+.areq-tabs {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1px solid var(--border-gray, #edf2f7);
+  direction: rtl;
+}
+
+.areq-tab-btn {
+  background: none;
+  border: none;
+  padding: 0 0 12px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-gray, #8A8A8A);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.areq-tab-btn:hover {
+  color: var(--text-dark, #1A1A2E);
+}
+
+.areq-tab-btn.active {
+  color: #DBA841; /* The gold/yellow color matching picture */
+}
+
+.areq-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #DBA841;
+}
+
+/* ── Table Design ── */
+.areq-body-wrapper {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  direction: rtl;
+}
+
+.areq-content {
+  flex: 1;
+  min-width: 0; 
+}
+
+.areq-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #edf2f7;
+}
+
+.areq-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.areq-table th {
+  background-color: #f8fafc;
+  padding: 16px;
+  font-weight: 700;
+  color: #4a5568;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #edf2f7;
+  white-space: nowrap;
+}
+
+.sort-arrow {
+  font-size: 0.75rem;
+  color: #cbd5e0;
+  margin-right: 4px;
+}
+
+.areq-table td {
+  padding: 16px;
+  font-size: 0.88rem;
+  color: #2d3748;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.areq-table tr:hover {
+  background-color: #f7fafc;
+}
+
+.areq-date-cell {
+  white-space: pre-line;
+  line-height: 1.4;
+  color: #718096;
+}
+
+/* ── Actions Cell ── */
+.areq-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.areq-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.areq-eye-btn {
+  color: var(--text-gray, #a0aec0);
+}
+.areq-eye-btn:hover {
+  color: var(--primary-blue, #166088);
+  background-color: rgba(22, 96, 136, 0.08);
+}
+
+.areq-accept-btn {
+  color: #10b981; 
+}
+.areq-accept-btn:hover {
+  color: #059669;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.areq-reject-btn {
+  color: #ef4444; 
+}
+.areq-reject-btn:hover {
+  color: #dc2626;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* ── Modals ── */
+.areq-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.areq-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  width: 400px;
+  max-width: 90%;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.areq-modal-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4a5568;
+}
+
+.areq-modal-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 24px;
+}
+
+.areq-modal-icon-wrapper.success {
+  background-color: #0bd16f;
+  color: white;
+}
+
+.areq-modal-icon-wrapper.reject {
+  background-color: #ff0000;
+  color: white;
+  width: 90px;
+  height: 90px;
+}
+
+.areq-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1A1A2E;
+  margin-bottom: 8px;
+}
+
+.areq-modal-subtitle {
+  color: #8A8A8A;
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+}
+
+.areq-modal-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.areq-modal-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.areq-modal-btn.areq-success-btn {
+  background-color: #0bd16f;
+  color: white;
+}
+
+.areq-reject-note-container {
+  text-align: right;
+  margin-bottom: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 16px;
+  direction: rtl;
+}
+
+.areq-reject-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #4B5563;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.areq-reject-textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #1A1A2E;
+  text-align: right;
+  direction: rtl;
+}
+
+.areq-reject-textarea::placeholder {
+  color: #1A1A2E;
+  font-weight: 600;
+}
+
+.areq-modal-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.areq-modal-btn.areq-confirm-btn {
+  background-color: #ff0000;
+  color: white;
+  flex: 1;
+}
+
+.areq-modal-btn.areq-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #fca5a5;
+}
+
+.areq-modal-btn.areq-cancel-btn {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  flex: 1;
+  border: 1px solid #e2e8f0;
+}

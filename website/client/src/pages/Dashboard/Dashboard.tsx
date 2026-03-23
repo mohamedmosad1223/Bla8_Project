@@ -48,8 +48,8 @@ const Dashboard = () => {
 
         {/* Charts Section */}
         <div className="charts-grid">
-          <div className="chart-card">
-            <h3>الجنسيات الاكثر تفاعل</h3>
+          <div className="chart-card awqaf-kuwait-card">
+            <h3 className="awqaf-kuwait-title">توزيع المدعوين بمحافظات الكويت</h3>
             <div className="chart-content">
               <NationalitiesChart />
             </div>

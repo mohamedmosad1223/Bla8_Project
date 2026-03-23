@@ -42,6 +42,10 @@ import AdminAssociationDetails from './pages/AdminAssociationDetails/AdminAssoci
 import AdminEditAssociation from './pages/AdminEditAssociation/AdminEditAssociation';
 import AdminPreacherDetails from './pages/AdminPreacherDetails/AdminPreacherDetails';
 import AdminCallers from './pages/AdminCallers/AdminCallers';
+import AdminRequests from './pages/AdminRequests/AdminRequests';
+import AdminPreacherRequestDetails from './pages/AdminPreacherRequestDetails/AdminPreacherRequestDetails';
+import AdminAssociationRequestDetails from './pages/AdminAssociationRequestDetails/AdminAssociationRequestDetails';
+import AdminChat from './pages/AdminChat/AdminChat';
 
 
 const RoleDashboard = () => {
@@ -110,8 +114,10 @@ function App() {
           <Route path="/admin/associations/:id/edit" element={<AdminEditAssociation />} />
           <Route path="/admin/associations/:id/preachers/:preacherId" element={<AdminPreacherDetails />} />
           <Route path="/admin/callers" element={<AdminCallers />} />
-          <Route path="/admin/callers/:preacherId" element={<AdminPreacherDetails />} />
-
+          <Route path="/admin/requests" element={<AdminRequests />} />
+          <Route path="/admin/requests/preachers/:id" element={<AdminPreacherRequestDetails />} />
+          <Route path="/admin/requests/associations/:id" element={<AdminAssociationRequestDetails />} />
+          <Route path="/admin/chat/:userId?" element={<AdminChat />} />
         </Route>
       </Routes>
     </Router>

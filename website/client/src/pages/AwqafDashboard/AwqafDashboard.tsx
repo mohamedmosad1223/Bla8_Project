@@ -12,14 +12,14 @@ import {
 import './AwqafDashboard.css';
 
 const mockStats = [
-  { id: 1, title: 'اجمالي عدد الدعاة',          value: '133',  icon: <Users size={24} />,        bgColor: '#EDE9FE', color: '#7C3AED' },
-  { id: 2, title: 'اجمالي عدد طلبات الجمعية',   value: '10',   icon: <FileText size={24} />,     bgColor: '#FEF9C3', color: '#CA8A04' },
-  { id: 3, title: 'اجمالي عدد المحادثات',        value: '2350', icon: <MessageCircle size={24} />, bgColor: '#D1FAE5', color: '#059669' },
-  { id: 4, title: 'المجالون للتعليم و المتابعة', value: '89',   icon: <BookOpen size={24} />,     bgColor: '#FEE2E2', color: '#DC2626' },
-  { id: 5, title: 'اجمالي عدد الدعاة',           value: '100',  icon: <Users size={24} />,        bgColor: '#EDE9FE', color: '#7C3AED' },
-  { id: 6, title: 'اجمالي عدد طلبات الجمعية',   value: '100',  icon: <FileText size={24} />,     bgColor: '#FEF9C3', color: '#CA8A04' },
-  { id: 7, title: 'من اسلموا',                   value: '100',  icon: <UserCheck size={24} />,    bgColor: '#D1FAE5', color: '#059669' },
-  { id: 8, title: 'من رفضوا',                    value: '100',  icon: <UserX size={24} />,        bgColor: '#FEE2E2', color: '#DC2626' },
+  { id: 1, title: 'اجمالي عدد الجمعيات', value: '100', icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: '10.5%+' },
+  { id: 2, title: 'عدد المحادثات الجديدة', value: '100', icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 3, title: 'عدد المحادثات المفتوحة', value: '100', icon: <MessageCircle size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 4, title: 'عدد المستفيدين', value: '100', icon: <UserCheck size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 5, title: 'المحالون للتعليم و المتابعة', value: '100', icon: <BookOpen size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: '10.5%+' },
+  { id: 6, title: 'اجمالي عدد المحادثات', value: '100', icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 7, title: 'من اسلموا', value: '100', icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 8, title: 'من رفضوا', value: '100', icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '10.5%-' },
 ];
 
 const AwqafDashboard = () => {
@@ -37,7 +37,10 @@ const AwqafDashboard = () => {
               value={stat.value}
               icon={stat.icon}
               iconBgColor={stat.bgColor}
-              iconColor={stat.color} trend={'up'} trendValue={''}            />
+              iconColor={stat.color}
+              trend={stat.trend as 'up' | 'down'}
+              trendValue={stat.trendValue}
+            />
           ))}
         </div>
 

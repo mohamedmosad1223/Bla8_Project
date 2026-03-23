@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye } from 'lucide-react';
+import { Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye, MessageCircle } from 'lucide-react';
 import './AdminCallers.css';
 
 interface Preacher {
@@ -322,6 +322,14 @@ const AdminCallers = () => {
                     <div className="actions-cell">
                       <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/admin/callers/${preacher.id}`)}>
                         <Eye size={16} />
+                      </button>
+                      <button 
+                        className="action-icon-btn chat-icon" 
+                        title="محادثة" 
+                        onClick={() => navigate(`/admin/chat/${preacher.id}`)}
+                        style={{ color: '#dba841' }}
+                      >
+                        <MessageCircle size={16} />
                       </button>
                       <button className="action-icon-btn delete-icon" title="حذف" onClick={() => setShowDeletePreacherModal(true)}>
                         <Trash2 size={16} />

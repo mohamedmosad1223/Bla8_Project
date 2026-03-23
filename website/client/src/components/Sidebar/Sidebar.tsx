@@ -141,6 +141,18 @@ const Sidebar = () => {
                   دعاة الجمعيات
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink to="/admin/requests" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <ClipboardList size={20} className="nav-icon" />
+                  الطلبات
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/admin/chat" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <MessageCircle size={20} className="nav-icon" />
+                  المحادثة
+                </NavLink>
+              </li>
             </>
           )}
 
