@@ -41,6 +41,9 @@ class Settings:
     SMTP_USERNAME: str = _get("SMTP_USERNAME", "")
     SMTP_PASSWORD: str = _get("SMTP_PASSWORD", "")
 
+    # LLM Settings
+    GROQ_API_KEY: str = _get("GROQ_API_KEY", "")
+
 
 settings = Settings()
 

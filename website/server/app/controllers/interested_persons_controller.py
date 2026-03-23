@@ -71,6 +71,16 @@ class InterestedPersonsController:
         db.add(history)
         db.commit()
         db.refresh(person)
+        
+        # إذا سجل المستخدم وكان له تاريخ كمستخدم زائر في الشات
+        if payload.guest_session_id:
+            from app.models.ai_chat import AIChatMessage
+            updated = db.query(AIChatMessage).filter(
+                AIChatMessage.session_id == payload.guest_session_id
+            ).update({"user_id": user.user_id, "session_id": None}, synchronize_session=False)
+            if updated > 0:
+                db.commit()
+                
         return {"message": InterestedPersonMessages.REGISTERED, "data": person}
 
     @staticmethod

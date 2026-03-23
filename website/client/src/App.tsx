@@ -27,6 +27,14 @@ import MuslimCallerSubmissions from './pages/MuslimCallerSubmissions/MuslimCalle
 import NonMuslimDashboard from './pages/NonMuslimDashboard/NonMuslimDashboard';
 import NonMuslimConversation from './pages/NonMuslimConversation/NonMuslimConversation';
 import Library from './pages/Library/Library';
+<<<<<<< HEAD
+import Organizations from './pages/Organizations/Organizations';
+import AddOrganization from './pages/Organizations/AddOrganization';
+import OrganizationDetails from './pages/Organizations/OrganizationDetails';
+import PreacherDetails from './pages/Organizations/PreacherDetails';
+import EditOrganization from './pages/Organizations/EditOrganization';
+
+=======
 import AwqafDashboard from './pages/AwqafDashboard/AwqafDashboard';
 import AwqafAssociations from './pages/AwqafAssociations/AwqafAssociations';
 import AwqafAssociationDetails from './pages/AwqafAssociationDetails/AwqafAssociationDetails';
@@ -34,6 +42,7 @@ import AwqafAssociationReports from './pages/AwqafAssociationReports/AwqafAssoci
 import AwqafPreacherDetails from './pages/AwqafPreacherDetails/AwqafPreacherDetails';
 import AwqafPreacherPerformance from './pages/AwqafPreacherPerformance/AwqafPreacherPerformance';
 import AwqafReportsAnalytics from './pages/AwqafReportsAnalytics/AwqafReportsAnalytics';
+>>>>>>> 9fcfe69c230e62409e3929bd0123f5e814a4de55
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
@@ -67,7 +76,7 @@ function App() {
         <Route path="/preacher-register" element={<PreacherRegister />} />
         <Route path="/language-selection" element={<LanguageSelection />} />
         <Route path="/how-to-start" element={<HowToStart />} />
-        
+
         {/* Standalone Non-Muslim Routes */}
         <Route path="/guest/chat" element={<NonMuslimDashboard />} />
         <Route path="/guest/library" element={<Library />} />
@@ -77,6 +86,11 @@ function App() {
           <Route path="/dashboard" element={<RoleDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/callers" element={<Callers />} />
+          <Route path="/organizations" element={<Organizations />} />
+          <Route path="/organizations/:id" element={<OrganizationDetails />} />
+          <Route path="/organizations/edit/:id" element={<EditOrganization />} />
+          <Route path="/preachers/:id" element={<PreacherDetails />} />
+          <Route path="/organizations/add" element={<AddOrganization />} />
           <Route path="/callers/add" element={<AddCaller />} />
           <Route path="/profile" element={<Profile />} />
           {/* Add other dashboard routes here later, e.g., /requests */}

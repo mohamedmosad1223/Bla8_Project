@@ -29,12 +29,24 @@ from app.routers import (
     chats_router,
 )
 
+from contextlib import asynccontextmanager
+from app.utils.scheduler import start_scheduler, shutdown_scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup events
+    start_scheduler()
+    yield
+    # Shutdown events
+    shutdown_scheduler()
+
 app = FastAPI(
     title="Balagh API",
     description="منصة بلاغ للتعريف بالإسلام — REST API",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter

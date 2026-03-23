@@ -610,6 +610,7 @@ class InterestedPersonRegister(BaseModel):
     communication_lang_id:  Optional[int]  = Field(None, gt=0)
     person_email:           Optional[EmailStr] = Field(None, max_length=255)
     phone:                  Optional[str]  = Field(None, max_length=30)
+    guest_session_id:       Optional[str]  = Field(None, max_length=255, description="إذا كان الزائر يتحدث مع الذكاء الاصطناعي، أرسل الـ Session ID ليتم ربط الرسائل بحسابه الجديد")
 
     @field_validator("password")
     @classmethod
@@ -989,6 +990,10 @@ class AccountDeletionRequest(BaseModel):
 
 class AIChatMessageCreate(BaseModel):
     content: str = Field(..., min_length=1)
+
+class GuestAIChatCreate(BaseModel):
+    session_id: str = Field(..., min_length=1, max_length=255, description="معرف الجلسة الخاص بالزائر")
+    message: str = Field(..., min_length=1)
 
 class AIChatMessageRead(BaseModel):
     role: str

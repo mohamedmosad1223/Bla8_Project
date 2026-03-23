@@ -66,9 +66,11 @@
 }
 
 .stat-trend.up {
-  color: #10B981; /* green */
+  color: #10B981;
+  /* green */
 }
 
 .stat-trend.down {
-  color: #EF4444; /* red */
+  color: #EF4444;
+  /* red */
 }

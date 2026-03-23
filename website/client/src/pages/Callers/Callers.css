@@ -61,7 +61,8 @@
 .search-input-wrapper-outlined .search-icon {
   position: static;
   color: var(--text-gray);
-  margin-left: 12px; /* RTL */
+  margin-left: 12px;
+  /* RTL */
 }
 
 .search-input-outlined {
@@ -184,11 +185,11 @@
   transition: 0.3s;
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background-color: #10B981;
 }
 
-.toggle-switch input:checked + .toggle-slider::before {
+.toggle-switch input:checked+.toggle-slider::before {
   transform: translateX(20px);
 }
 
@@ -216,14 +217,37 @@
   background-color: #f3f4f6;
 }
 
-.action-icon-btn.delete-icon { color: #EF4444; }
-.action-icon-btn.delete-icon:hover { background-color: #FEF2F2; }
-.action-icon-btn.edit-icon { color: #6B7280; }
-.action-icon-btn.edit-icon:hover { background-color: #F3F4F6; }
-.action-icon-btn.view-icon { color: #6B7280; }
-.action-icon-btn.view-icon:hover { background-color: #F3F4F6; }
-.action-icon-btn.chat-icon { color: #3B82F6; }
-.action-icon-btn.chat-icon:hover { background-color: #EFF6FF; }
+.action-icon-btn.delete-icon {
+  color: #EF4444;
+}
+
+.action-icon-btn.delete-icon:hover {
+  background-color: #FEF2F2;
+}
+
+.action-icon-btn.edit-icon {
+  color: #6B7280;
+}
+
+.action-icon-btn.edit-icon:hover {
+  background-color: #F3F4F6;
+}
+
+.action-icon-btn.view-icon {
+  color: #6B7280;
+}
+
+.action-icon-btn.view-icon:hover {
+  background-color: #F3F4F6;
+}
+
+.action-icon-btn.chat-icon {
+  color: #3B82F6;
+}
+
+.action-icon-btn.chat-icon:hover {
+  background-color: #EFF6FF;
+}
 
 /* empty state inherited from Notifications.css basically, could be made common but kept here for isolation */
 .empty-state {
@@ -263,7 +287,8 @@
 .sort-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0; /* Align left edge with button left edge (RTL right-side equivalent) */
+  left: 0;
+  /* Align left edge with button left edge (RTL right-side equivalent) */
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -280,7 +305,8 @@
   font-weight: 700;
   color: var(--text-dark);
   border-bottom: 1px solid var(--border-gray);
-  display: none; /* Hide title if not explicitly needed, or keep for spacing */
+  display: none;
+  /* Hide title if not explicitly needed, or keep for spacing */
 }
 
 .sort-option {
@@ -419,7 +445,8 @@
 }
 
 /* Custom Inputs inside Filter */
-.filter-date-input, .filter-select {
+.filter-date-input,
+.filter-select {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -432,7 +459,8 @@
   cursor: pointer;
 }
 
-.filter-date-input.active-outline, .filter-select.active-outline {
+.filter-date-input.active-outline,
+.filter-select.active-outline {
   border-color: var(--primary-gold);
 }
 
@@ -440,7 +468,8 @@
   border: none;
   background: transparent;
   width: 100%;
-  margin-right: 8px; /* RTL space for icon */
+  margin-right: 8px;
+  /* RTL space for icon */
   outline: none;
   color: var(--text-dark);
   font-family: inherit;
@@ -507,7 +536,8 @@
 }
 
 .radio-custom.checked {
-  border-color: #DBA841; /* Gold */
+  border-color: #DBA841;
+  /* Gold */
 }
 
 .radio-custom.checked::after {
@@ -553,7 +583,8 @@
 }
 
 .check-align-left {
-  margin-right: auto; /* Push checkbox to the far left in RTL */
+  margin-right: auto;
+  /* Push checkbox to the far left in RTL */
 }
 
 /* Status selection */
@@ -569,7 +600,8 @@
 
 .status-option {
   display: flex;
-  justify-content: flex-start; /* Start from right in RTL */
+  justify-content: flex-start;
+  /* Start from right in RTL */
   align-items: center;
   padding: 10px 16px;
   border-radius: 8px;
@@ -582,19 +614,24 @@
 }
 
 .status-option span {
-  flex: 1; /* take up remaining space so checking aligns strictly */
+  flex: 1;
+  /* take up remaining space so checking aligns strictly */
 }
 
 /* Green Status */
 .status-option.active-status {
-  color: #10B981; /* Green text */
-  background-color: #F0FDF4; /* light green bg */
+  color: #10B981;
+  /* Green text */
+  background-color: #F0FDF4;
+  /* light green bg */
 }
 
 /* Red Status */
 .status-option.inactive-status {
-  color: #EF4444; /* Red text */
-  background-color: #FEF2F2; /* light red bg */
+  color: #EF4444;
+  /* Red text */
+  background-color: #FEF2F2;
+  /* light red bg */
 }
 
 /* Reset default custom checkmarks for filter lists to be empty rounded squares */
@@ -612,13 +649,15 @@
 }
 
 .checkbox-custom.checked {
-  background-color: #DBA841; /* Gold */
+  background-color: #DBA841;
+  /* Gold */
   border-color: #DBA841;
   color: white;
 }
 
 .checkbox-custom.checked-gold {
-  background-color: #DBA841; /* Gold Checkbox! */
+  background-color: #DBA841;
+  /* Gold Checkbox! */
   border-color: #dba841;
   color: white;
 }
@@ -626,10 +665,11 @@
 .filter-accordion-content .submenu-item {
   padding: 10px 16px;
   gap: 12px;
-  justify-content: flex-start; /* Align text start (right) */
+  justify-content: flex-start;
+  /* Align text start (right) */
 }
 
 .filter-accordion-content .submenu-item span {
-  flex: 1; /* Allows the checkmark to push left */
+  flex: 1;
+  /* Allows the checkmark to push left */
 }
-

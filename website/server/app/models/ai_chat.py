@@ -8,7 +8,8 @@ class AIChatMessage(Base):
     __tablename__ = "ai_chat_messages"
 
     id:         Mapped[int]      = mapped_column(sa.BigInteger, primary_key=True, autoincrement=True)
-    user_id:    Mapped[int]      = mapped_column(sa.BigInteger, sa.ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id:    Mapped[int|None] = mapped_column(sa.BigInteger, sa.ForeignKey("users.user_id"), nullable=True, index=True)
+    session_id: Mapped[str|None] = mapped_column(sa.String(255), nullable=True, index=True) # for guests
     role:       Mapped[str]      = mapped_column(sa.String(20), nullable=False) # "user" or "ai"
     content:    Mapped[str]      = mapped_column(sa.Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now())

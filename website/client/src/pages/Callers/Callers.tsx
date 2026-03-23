@@ -14,16 +14,16 @@ interface Preacher {
 }
 
 const mockPreachers: Preacher[] = [
-  { id: 1, code: '123456', name: 'جون سميث',   nationality: 'فرنسا',          joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 2, code: '123456', name: 'جون سميث',   nationality: 'انجلترا',        joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-  { id: 3, code: '123456', name: 'جون سميث',   nationality: 'البرتغال',       joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 4, code: '123456', name: 'جون سميث',   nationality: 'المانيا',         joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 5, code: '123456', name: 'جون سميث',   nationality: 'بلجيكا',         joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-  { id: 6, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 7, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-  { id: 8, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 9, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 10, code: '123456', name: 'جون سميث',  nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 1, code: '123456', name: 'جون سميث', nationality: 'فرنسا', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 2, code: '123456', name: 'جون سميث', nationality: 'انجلترا', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 3, code: '123456', name: 'جون سميث', nationality: 'البرتغال', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 4, code: '123456', name: 'جون سميث', nationality: 'المانيا', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 5, code: '123456', name: 'جون سميث', nationality: 'بلجيكا', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 6, code: '123456', name: 'جون سميث', nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 7, code: '123456', name: 'جون سميث', nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
+  { id: 8, code: '123456', name: 'جون سميث', nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 9, code: '123456', name: 'جون سميث', nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
+  { id: 10, code: '123456', name: 'جون سميث', nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
 ];
 
 const Callers = () => {
@@ -35,10 +35,10 @@ const Callers = () => {
   const toggleActive = (id: number) => {
     setPreachers(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
   };
-  
+
   // Filter states
   const [filterLanguages, setFilterLanguages] = useState<string[]>(['الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية']);
-  
+
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
@@ -80,28 +80,28 @@ const Callers = () => {
     <div className="callers-page">
       <div className="callers-header-area">
         <h1 className="page-title">دعاة الجمعية</h1>
-        
+
         <div className="callers-actions">
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={() => navigate('/callers/add')}
           >
             <Plus size={18} />
             اضافة داعية
           </button>
-          
+
           <div className="search-filter-group">
             <div className="search-input-wrapper-outlined">
               <Search size={18} className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="بحث" 
+              <input
+                type="text"
+                placeholder="بحث"
                 className="search-input-outlined"
               />
             </div>
-            
+
             <div className="filter-popup-container" ref={filterRef}>
-              <button 
+              <button
                 className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
               >
@@ -128,20 +128,20 @@ const Callers = () => {
 
                     {/* Join Date Accordion */}
                     <div className="filter-accordion">
-                      <div 
+                      <div
                         className="filter-accordion-header"
                         onClick={() => toggleAccordion('date')}
                       >
                         <span>تاريخ الانضمام</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`text-gray transition-transform ${openAccordion === 'date' ? 'rotate-180' : ''}`} 
+                        <ChevronDown
+                          size={16}
+                          className={`text-gray transition-transform ${openAccordion === 'date' ? 'rotate-180' : ''}`}
                         />
                       </div>
                       {openAccordion === 'date' && (
                         <div className="filter-accordion-content mt-2">
                           <div className="filter-date-input active-outline relative-date-input">
-                            <input 
+                            <input
                               type="date"
                               className="custom-date-picker"
                             />
@@ -152,34 +152,34 @@ const Callers = () => {
 
                     {/* Type Accordion */}
                     <div className="filter-accordion">
-                      <div 
+                      <div
                         className="filter-accordion-header"
                         onClick={() => toggleAccordion('type')}
                       >
                         <span>النوع</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`text-gray transition-transform ${openAccordion === 'type' ? 'rotate-180' : ''}`} 
+                        <ChevronDown
+                          size={16}
+                          className={`text-gray transition-transform ${openAccordion === 'type' ? 'rotate-180' : ''}`}
                         />
                       </div>
                       {openAccordion === 'type' && (
                         <div className="filter-accordion-content mt-2">
                           <div className="filter-submenu-list bordered-list">
-                            <label 
+                            <label
                               className="submenu-item"
                               onClick={(e) => { e.preventDefault(); setSelectedType('داعية'); }}
                             >
                               <div className={`checkbox-custom check-align-left ${selectedType === 'داعية' ? 'checked-gold' : ''}`}>
-                                  {selectedType === 'داعية' && <Check size={12} strokeWidth={3} color="white" />}
+                                {selectedType === 'داعية' && <Check size={12} strokeWidth={3} color="white" />}
                               </div>
                               <span>داعية</span>
                             </label>
-                            <label 
+                            <label
                               className="submenu-item"
                               onClick={(e) => { e.preventDefault(); setSelectedType('غير ذلك'); }}
                             >
-                               <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked-gold' : ''}`}>
-                                  {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={3} color="white" />}
+                              <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked-gold' : ''}`}>
+                                {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={3} color="white" />}
                               </div>
                               <span>غير ذلك</span>
                             </label>
@@ -190,17 +190,17 @@ const Callers = () => {
 
                     {/* Language Accordion */}
                     <div className="filter-accordion">
-                      <div 
+                      <div
                         className="filter-accordion-header"
                         onClick={() => toggleAccordion('language')}
                       >
                         <span>اللغة</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`text-gray transition-transform ${openAccordion === 'language' ? 'rotate-180' : ''}`} 
+                        <ChevronDown
+                          size={16}
+                          className={`text-gray transition-transform ${openAccordion === 'language' ? 'rotate-180' : ''}`}
                         />
                       </div>
-                      
+
                       <div className="filter-accordion-content mt-2">
                         <div className="filter-tags-wrapper">
                           {filterLanguages.map((lang, index) => (
@@ -214,26 +214,26 @@ const Callers = () => {
                         </div>
 
                         {openAccordion === 'language' && (
-                           <div className="filter-submenu-list bordered-list mt-3">
-                             {availableLanguages.map((lang) => {
-                               const isSelected = filterLanguages.includes(lang);
-                               return (
-                                  <label key={lang} className="submenu-item" onClick={(e) => {
-                                    e.preventDefault();
-                                    if (isSelected) {
-                                      removeLanguage(lang);
-                                    } else {
-                                      addLanguage(lang);
-                                    }
-                                  }}>
-                                    <div className={`checkbox-custom check-align-left ${isSelected ? 'checked-gold' : ''}`}>
-                                      {isSelected && <Check size={12} strokeWidth={3} color="white" />}
-                                    </div>
-                                    <span>{lang}</span>
-                                  </label>
-                               );
-                             })}
-                           </div>
+                          <div className="filter-submenu-list bordered-list mt-3">
+                            {availableLanguages.map((lang) => {
+                              const isSelected = filterLanguages.includes(lang);
+                              return (
+                                <label key={lang} className="submenu-item" onClick={(e) => {
+                                  e.preventDefault();
+                                  if (isSelected) {
+                                    removeLanguage(lang);
+                                  } else {
+                                    addLanguage(lang);
+                                  }
+                                }}>
+                                  <div className={`checkbox-custom check-align-left ${isSelected ? 'checked-gold' : ''}`}>
+                                    {isSelected && <Check size={12} strokeWidth={3} color="white" />}
+                                  </div>
+                                  <span>{lang}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -242,28 +242,28 @@ const Callers = () => {
                     <div className="filter-accordion no-border">
                       <div className="filter-accordion-header filter-status-header" onClick={() => toggleAccordion('status')}>
                         <span>الحالة</span>
-                        <ChevronDown 
-                          size={16} 
-                          className={`text-gray transition-transform ${openAccordion === 'status' ? 'rotate-180' : ''}`} 
+                        <ChevronDown
+                          size={16}
+                          className={`text-gray transition-transform ${openAccordion === 'status' ? 'rotate-180' : ''}`}
                         />
                       </div>
                       {openAccordion === 'status' && (
                         <div className="filter-accordion-content status-content mt-2">
-                          <label 
+                          <label
                             className={`status-option ${selectedStatus === 'مفعل' ? 'active-status' : ''}`}
                             onClick={() => setSelectedStatus('مفعل')}
                           >
                             <div className={`checkbox-custom check-align-left ${selectedStatus === 'مفعل' ? 'checked-gold' : ''}`}>
-                                {selectedStatus === 'مفعل' && <Check size={12} strokeWidth={3} color="white" />}
+                              {selectedStatus === 'مفعل' && <Check size={12} strokeWidth={3} color="white" />}
                             </div>
                             <span>مفعل</span>
                           </label>
-                          <label 
+                          <label
                             className={`status-option ${selectedStatus === 'غير مفعل' ? 'inactive-status' : ''}`}
                             onClick={() => setSelectedStatus('غير مفعل')}
                           >
                             <div className={`checkbox-custom check-align-left ${selectedStatus === 'غير مفعل' ? 'checked-gold' : ''}`}>
-                                 {selectedStatus === 'غير مفعل' && <Check size={12} strokeWidth={3} color="white" />}
+                              {selectedStatus === 'غير مفعل' && <Check size={12} strokeWidth={3} color="white" />}
                             </div>
                             <span>غيرمفعل</span>
                           </label>
@@ -275,16 +275,16 @@ const Callers = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="sort-container" ref={sortRef}>
-              <button 
+              <button
                 className={`btn-icon-text ${isSortOpen ? 'active' : ''}`}
                 onClick={() => setIsSortOpen(!isSortOpen)}
               >
                 <SortDesc size={18} />
                 تصنيف
               </button>
-              
+
               {isSortOpen && (
                 <div className="sort-dropdown">
                   <div className="sort-dropdown-title">تصنيف</div>
