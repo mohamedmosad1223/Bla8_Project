@@ -1,14 +1,18 @@
 from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.models.user import User
-from app.models.ai_chat import AIChatMessage
+from app.models.ai_chat import AIChatMessage, AIChatConversation
 from app.models.enums import UserRole
 from app.controllers.messages_controller import MessagesController
-from app.schemas.schemas import AIChatMessageCreate, AIChatMessageRead, GuestAIChatCreate
+from app.schemas.schemas import (
+    AIChatMessageCreate, AIChatMessageRead, GuestAIChatCreate,
+    AIChatConversationCreate, AIChatConversationRead, AIChatConversationListResponse
+)
 from app.utils.llm_service import LLMService
+from app.utils.analytics_service import AnalyticsAIOrchestrator
 
 class ChatsController:
 
@@ -28,32 +32,62 @@ class ChatsController:
 
     @staticmethod
     def send_ai_message(db: Session, user: User, payload: AIChatMessageCreate):
-        """إرسال رسالة للذكاء الاصطناعي واستلام رد (تجريبي حالياً)"""
-        # السماح لجميع المسجلين باستخدام الشات وحفظ رسائلهم
+        """إرسال رسالة للذكاء الاصطناعي واستلام رد (يدعم الجلسات المتعددة)"""
+        # 1. إعداد الجلسة (Conversation)
+        conversation_id = payload.conversation_id
+        if not conversation_id:
+            title_text = payload.content[:30] + ("..." if len(payload.content) > 30 else "")
+            new_conv = AIChatConversation(user_id=user.user_id, title=title_text)
+            db.add(new_conv)
+            db.commit()
+            db.refresh(new_conv)
+            conversation_id = new_conv.id
 
-
-        # 1. Save User Message
+        # 2. حفظ رسالة المستخدم
         user_msg = AIChatMessage(
             user_id=user.user_id,
+            conversation_id=conversation_id,
             role="user",
             content=payload.content
         )
         db.add(user_msg)
-        db.commit() # Commit to get it in history, and also safely
+        db.commit()
         
-        # 2. Fetch recent chat history to provide context to LLM (e.g. last 10 messages)
-        recent_history = db.query(AIChatMessage).filter(AIChatMessage.user_id == user.user_id).order_by(AIChatMessage.created_at.desc()).limit(10).all()
-        recent_history.reverse() # chronological order
+        # 3. جلب تاريخ المحادثة في هذه الجلسة تحديداً
+        recent_history = (
+            db.query(AIChatMessage)
+            .filter(AIChatMessage.conversation_id == conversation_id)
+            .order_by(AIChatMessage.created_at.desc())
+            .limit(10)
+            .all()
+        )
+        recent_history.reverse()
         
         messages = []
         for msg in recent_history:
-            # We map 'ai' to 'assistant' for OpenAI compatibility
             mapped_role = "assistant" if msg.role == "ai" else "user"
             messages.append({"role": mapped_role, "content": msg.content})
         
-        # 3. Generate AI Response via LLM — pass user role for role-based prompt selection
+        # 4. استدعاء الـ LLM واصطناع رد
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
         ai_response_text = LLMService.generate_chat_response(messages, role=user_role)
+        
+        # 5. حفظ رد الذكاء الاصطناعي في نفس الجلسة
+        ai_msg = AIChatMessage(
+            user_id=user.user_id,
+            conversation_id=conversation_id,
+            role="ai",
+            content=ai_response_text
+        )
+        db.add(ai_msg)
+        db.commit()
+        db.refresh(ai_msg)
+
+        return {
+            "user_message": user_msg,
+            "ai_response": ai_msg,
+            "conversation_id": conversation_id
+        }
         
         ai_msg = AIChatMessage(
             user_id=user.user_id,
@@ -127,6 +161,126 @@ class ChatsController:
         return {"message": f"تم حذف {deleted_count} رسالة من الزوار أقدم من {days} يوم(أيام)"}
 
     @staticmethod
+    def create_conversation(db: Session, user: User, payload: AIChatConversationCreate):
+        """إنشاء جلسة محادثة جديدة"""
+        conversation = AIChatConversation(
+            user_id=user.user_id,
+            title=payload.title or "محادثة جديدة"
+        )
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
+        return conversation
+
+    @staticmethod
+    def list_conversations(db: Session, user: User):
+        """جلب قائمة جلسات المحادثة للمستخدم"""
+        conversations = db.query(AIChatConversation).filter(
+            AIChatConversation.user_id == user.user_id
+        ).order_by(AIChatConversation.created_at.desc()).all()
+        return {"conversations": conversations}
+
+    @staticmethod
+    def get_conversation_messages(db: Session, user: User, conversation_id: int):
+        """جلب الرسائل داخل جلسة محادثة معينة"""
+        conv = db.query(AIChatConversation).filter(
+            AIChatConversation.id == conversation_id,
+            AIChatConversation.user_id == user.user_id
+        ).first()
+        if not conv:
+            raise HTTPException(status_code=404, detail="الجلسة غير موجودة")
+        
+        messages = db.query(AIChatMessage).filter(
+            AIChatMessage.conversation_id == conversation_id
+        ).order_by(AIChatMessage.created_at.asc()).all()
+        
+        return {"history": messages, "welcome_message": f"مرحباً بك في جلسة: {conv.title}"}
+
+    @staticmethod
+    def send_analytics_ai_message(db: Session, user: User, payload: AIChatMessageCreate):
+        """شات تحليلي خاص بوزير الأوقاف ومشرف الجمعية — Read-Only آمن 100%"""
+        user_role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
+
+        # تأكد من الصلاحية
+        if user.role not in (UserRole.minister, UserRole.organization):
+            raise HTTPException(status_code=403, detail="هذا الشات مخصص لوزير الأوقاف ومشرفي الجمعيات فقط.")
+
+        # لو كان مشرف جمعية → جيب org_id تلقائياً
+        org_id: Optional[int] = None
+        if user.role == UserRole.organization:
+            from app.models.organization import Organization
+            org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
+            if org:
+                org_id = org.org_id
+
+        # 1. إعداد الجلسة (Conversation)
+        conversation_id = payload.conversation_id
+        if not conversation_id:
+            # لو لم يتم إرسال id جلسة، انشئ واحدة جديدة بعنوان مقتبس من الرسالة
+            title_text = payload.content[:30] + ("..." if len(payload.content) > 30 else "")
+            new_conv = AIChatConversation(user_id=user.user_id, title=title_text)
+            db.add(new_conv)
+            db.commit()
+            db.refresh(new_conv)
+            conversation_id = new_conv.id
+
+        # 1. حفظ رسالة المستخدم
+        user_msg = AIChatMessage(
+            user_id=user.user_id,
+            conversation_id=conversation_id,
+            role="user",
+            content=payload.content
+        )
+        db.add(user_msg)
+        db.commit()
+
+        # 2. جلب تاريخ المحادثة (آخر 10 رسائل في هذه الجلسة تحديداً)
+        recent_history = (
+            db.query(AIChatMessage)
+            .filter(AIChatMessage.conversation_id == conversation_id)
+            .order_by(AIChatMessage.created_at.desc())
+            .limit(10)
+            .all()
+        )
+        recent_history.reverse()
+
+        messages = []
+        for msg in recent_history:
+            mapped_role = "assistant" if msg.role == "ai" else "user"
+            messages.append({"role": mapped_role, "content": msg.content})
+
+        # 3. أرسل للذكاء الاصطناعي واجلب البيانات بأمان
+        ai_response_text = AnalyticsAIOrchestrator.chat(
+            messages=messages,
+            role=user_role_val,
+            db=db,
+            org_id=org_id
+        )
+
+        # 4. حفظ رد الذكاء الاصطناعي
+        ai_msg = AIChatMessage(
+            user_id=user.user_id,
+            conversation_id=conversation_id,
+            role="ai",
+            content=ai_response_text
+        )
+        db.add(ai_msg)
+        db.commit()
+        db.refresh(ai_msg)
+
+        return {
+            "user_message": user_msg,
+            "ai_response": ai_msg
+        }
+
+    @staticmethod
+    def clear_my_ai_chat_history(db: Session, user: User):
+        """حذف تاريخ المحادثة بالكامل للمستخدم الحالي لبدء شات جديد"""
+        deleted_count = db.query(AIChatMessage).filter(AIChatMessage.user_id == user.user_id).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"تم مسح تاريخ المحادثة بنجاح. تم حذف {deleted_count} رسالة."}
+
+    @staticmethod
     def get_preacher_chats(db: Session, user: User):
         """جلب محادثات المستخدم مع الدعاة فقط"""
         # We reuse the existing preview logic
@@ -134,10 +288,6 @@ class ChatsController:
         all_chatsData = all_chats_response.get("data", [])
         
         # Filter for chats involving preachers
-        # Since get_my_chats_preview labels them in other_party_name or we can deduce from role
-        # However, a cleaner way might be to filter by the role of the other user in DMs
-        # For request-based chats, the other party IS usually a preacher for interested persons.
-        
         preacher_chats = []
         for chat in all_chatsData:
             # If it's a request, it's already between Submitter and Preacher

@@ -136,9 +136,14 @@ def build_prompt_with_context(base_prompt: str, query: str, role: str = "interes
     """يدمج السياق المسترجع في الـ System Prompt ويُلزم الـ AI بعدم الاختراع"""
     context = retrieve_context(query, role)
 
+    # 🚨 سياسة "لا رد بدون داتا" للأدوار المحددة (داعية، زائر، مهتم)
+    restricted_roles = ['preacher', 'guest', 'interested']
+    if not context and role in restricted_roles:
+        return "__BLOCK_RESPONSE__"
+
     if context:
         return base_prompt + f"""
-
+        
 ══════════════════════════════════════════
 📚 CONTEXT FROM ISLAMIC KNOWLEDGE BASE
 ══════════════════════════════════════════
@@ -150,6 +155,7 @@ If the context doesn't fully answer the question, say:
 ══════════════════════════════════════════
 """
     else:
+        # للمدير والمشرف (minister/organization) → نسمح برد عام لو مفيش داتا (أو لو الأدوار مش ريستريكتد)
         return base_prompt + """
 
 IMPORTANT: No specific data found in our knowledge base.

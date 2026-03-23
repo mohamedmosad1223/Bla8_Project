@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 # ── Load .env ───────────────────────────────────────────────────────────────
-_BASE_DIR = Path(__file__).parent.parent.parent
+_BASE_DIR = Path(__file__).parent.parent
 _ENV_FILE = _BASE_DIR / ".env"
 load_dotenv(_ENV_FILE)
 

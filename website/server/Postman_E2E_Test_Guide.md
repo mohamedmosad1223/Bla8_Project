@@ -490,3 +490,125 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
   - Returns Privacy Policy and Terms of Service.
 - **Delete/Suspend Account**: `POST /api/minister/delete-account`
   - Body: `{"password": "NewMinisterPass!1"}` (Soft-delete/Suspension).
+
+---
+
+## 17. AI Chat & Analytics Assistant (Role-Based)
+
+The platform features several AI personas tailored to different roles. All chat endpoints are under `/api/chat/`.
+
+### 17.1 Guest AI (No Login)
+- **Role**: Public / Anonymous User.
+- **Endpoint**: `POST /api/chat/ai/guest/send`
+- **Method**: `POST`
+- **Payload**:
+  ```json
+  {
+    "session_id": "guest_unique_session_123",
+    "message": "Hello, I have a question about Islam."
+  }
+  ```
+- **Goal**: Allow visitors to ask basic questions without creating an account.
+
+### 17.2 AI for Interested Persons (Non-Muslims)
+- **Role**: `interested`
+- **Login required**.
+- **Send Message**: `POST /api/chat/ai/send`
+  - **Payload**: `{"content": "Explain the concept of Tawheed."}`
+- **Get History**: `GET /api/chat/ai/history`
+- **Persona**: Gentle, welcoming, and moderate introduction to Islam.
+
+### 17.3 AI for Preachers (Scholarly Support)
+- **Role**: `preacher`
+- **Endpoint**: `POST /api/chat/ai/send`
+- **Payload**:
+  ```json
+  {
+    "content": "How can I explain the concept of Afterlife to someone with a scientific background?"
+  }
+  ```
+- **Persona**: Professional, scholarly, and provides evidence from Quran/Sunnah for Dawah work.
+
+### 17.4 AI for Muslim Callers (General Support)
+- **Role**: `muslim_caller`
+- **Endpoint**: `POST /api/chat/ai/send`
+- **Payload**: `{"content": "Tips for doing Dawah on social media?"}`
+- **Persona**: Encouraging and supportive for active callers.
+
+### 17.5 Analytics AI (Minister & Organization)
+These endpoints are **secure and read-only**. They execute SQL `SELECT` queries on the database to provide real-time analytics.
+
+#### A. Minister of Endowments (Global Analysis)
+- **Role**: `minister`
+- **Endpoint**: `POST /api/chat/analytics/send`
+- **Payload**:
+  ```json
+  {
+    "content": "Give me a summary of new Muslims in all organizations for the last 3 months."
+  }
+  ```
+- **Capability**: Can query the entire platform database (read-only).
+
+#### B. Organization Supervisor (Organization-Specific)
+- **Role**: `organization`
+- **Endpoint**: `POST /api/chat/analytics/send`
+- **Payload**:
+  ```json
+  {
+    "content": "Compare the performance of my top 5 preachers ranking by converted cases."
+  }
+  ```
+- **Security**: Automatically restricted to data belonging to the supervisor's organization (`org_id` filtering is enforced at the code level).
+
+---
+
+## 19. AI Chat & Session Management (ChatGPT Style)
+
+The AI supports multiple independent conversation sessions for registered users (Minister/Organization).
+
+### 19.1 List All My Conversations
+- **Endpoint**: `GET /api/chat/conversations`
+- **Goal**: Get a list of all your previous chat sessions.
+- **Example Response**:
+  ```json
+  {
+    "conversations": [
+      { "id": 1, "title": "تحليل أداء الدعاة", "created_at": "..." },
+      { "id": 2, "title": "تقرير الجمعيات", "created_at": "..." }
+    ]
+  }
+  ```
+
+### 19.2 Start a New Titled Conversation
+- **Endpoint**: `POST /api/chat/conversations`
+- **Payload**:
+  ```json
+  {
+    "title": "مباحثات شهر مارس"
+  }
+  ```
+
+### 19.3 Fetch Messages for a Specific Session
+- **Endpoint**: `GET /api/chat/conversations/{conversation_id}/messages`
+- **Goal**: Retrieve the full history of a specific chat session.
+
+### 19.4 Send Analytics Message in a Session
+- **Endpoint**: `POST /api/chat/analytics/send`
+- **Payload**:
+  ```json
+  {
+    "content": "Compare the performance of top 5 preachers.",
+    "conversation_id": 1
+  }
+  ```
+- **Note**: If `conversation_id` is omitted, the AI will automatically create a **new session** for you.
+
+---
+
+## 20. Database Maintenance (Migrations)
+
+To ensure all new features are active, run the following command in the server directory:
+```bash
+alembic upgrade head
+```
+

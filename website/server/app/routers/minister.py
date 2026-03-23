@@ -42,11 +42,12 @@ def get_minister_reports_analytics(
 
 @router.get("/organizations")
 def get_minister_organizations(
+    search: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
-    """جلب قائمة بكل الجمعيات مع إحصائيات الأداء (لوزير الأوقاف)"""
-    return MinisterDashboardController.get_organizations_overview(db)
+    """جلب قائمة بكل الجمعيات مع إحصائيات الأداء (لوزير الأوقاف) وإمكانية البحث"""
+    return MinisterDashboardController.get_organizations_overview(db, search=search)
 
 @router.get("/organizations/{org_id}")
 def get_minister_organization_details(
@@ -82,17 +83,23 @@ def get_minister_organization_preachers(
         joining_date=joining_date
     )
 
-@router.patch("/preachers/{preacher_id}/toggle-status")
-def toggle_minister_preacher_status(
-    preacher_id: int,
+@router.get("/preachers")
+def get_minister_all_preachers(
+    search: Optional[str] = None,
+    nationality_id: Optional[int] = None,
+    language_id: Optional[int] = None,
+    status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
-    """تبديل حالة الداعية بين مفعل وموقوف (لوزير الأوقاف)"""
-    result = MinisterDashboardController.toggle_preacher_status(db, preacher_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="الداعية غير موجود")
-    return result
+    """جلب قائمة جميع الدعاة على مستوى النظام مع فلاتر وبحث (لوزير الأوقاف)"""
+    return MinisterDashboardController.get_global_preachers(
+        db=db, 
+        search=search, 
+        nationality_id=nationality_id, 
+        language_id=language_id, 
+        status=status
+    )
 
 @router.get("/preachers/{preacher_id}")
 def get_minister_preacher_details(
@@ -106,17 +113,23 @@ def get_minister_preacher_details(
         raise HTTPException(status_code=404, detail="الداعية غير موجود")
     return details
 
-@router.delete("/preachers/{preacher_id}")
-def delete_minister_preacher(
-    preacher_id: int,
+@router.get("/preachers")
+def get_minister_all_preachers(
+    search: Optional[str] = None,
+    nationality_id: Optional[int] = None,
+    language_id: Optional[int] = None,
+    status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
-    """حذف حساب داعية (لوزير الأوقاف)"""
-    result = MinisterDashboardController.delete_preacher(db, preacher_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="الداعية غير موجود")
-    return result
+    """جلب قائمة جميع الدعاة على مستوى النظام مع فلاتر وبحث (لوزير الأوقاف)"""
+    return MinisterDashboardController.get_global_preachers(
+        db=db, 
+        search=search, 
+        nationality_id=nationality_id, 
+        language_id=language_id, 
+        status=status
+    )
 
 # ─── Minister Profile & Settings ─────────────────────────────────────────────
 

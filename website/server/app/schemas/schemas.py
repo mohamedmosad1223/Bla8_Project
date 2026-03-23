@@ -988,19 +988,37 @@ class AccountDeletionRequest(BaseModel):
 
 # ─── Chat & AI ────────────────────────────────────────────────────────────
 
+class AIChatConversationCreate(BaseModel):
+    title: Optional[str] = Field("محادثة جديدة", max_length=255)
+
+class AIChatConversationRead(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+class AIChatConversationUpdate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+
 class AIChatMessageCreate(BaseModel):
     content: str = Field(..., min_length=1)
+    conversation_id: Optional[int] = None
 
 class GuestAIChatCreate(BaseModel):
     session_id: str = Field(..., min_length=1, max_length=255, description="معرف الجلسة الخاص بالزائر")
     message: str = Field(..., min_length=1)
 
 class AIChatMessageRead(BaseModel):
+    id: int
     role: str
     content: str
+    conversation_id: Optional[int] = None
     created_at: datetime
     model_config = {"from_attributes": True}
 
 class AIChatHistoryResponse(BaseModel):
     history: List[AIChatMessageRead]
     welcome_message: str
+
+class AIChatConversationListResponse(BaseModel):
+    conversations: List[AIChatConversationRead]

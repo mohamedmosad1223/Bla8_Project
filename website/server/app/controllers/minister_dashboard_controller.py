@@ -215,38 +215,7 @@ class MinisterDashboardController:
         
         return results
 
-    @staticmethod
-    def toggle_preacher_status(db: Session, preacher_id: int):
-        """
-        تبديل حالة حساب الداعية بين مفعل (active) وموقوف (suspended).
-        مع إعادة تعيين الطلبات لقيد الانتظار إذا تم الإيقاف.
-        """
-        preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
-        if not preacher or not preacher.user_id:
-            return None
-        
-        user = db.query(User).filter(User.user_id == preacher.user_id).first()
-        if not user:
-            return None
-        
-        if user.status == AccountStatus.active:
-            user.status = AccountStatus.suspended
-            preacher.status = PreacherStatus.suspended
-            
-            # إعادة كل الطلبات الحالية (in_progress) لتصبح (pending)
-            db.query(DawahRequest).filter(
-                DawahRequest.assigned_preacher_id == preacher_id,
-                DawahRequest.status == RequestStatus.in_progress
-            ).update({
-                DawahRequest.status: RequestStatus.pending,
-                DawahRequest.assigned_preacher_id: None
-            })
-        else:
-            user.status = AccountStatus.active
-            preacher.status = PreacherStatus.active
-        
-        db.commit()
-        return {"preacher_id": preacher_id, "new_status": user.status.value}
+    # Removed toggle_preacher_status to enforce read-only role for the minister
 
     @staticmethod
     def get_preacher_details(db: Session, preacher_id: int):
@@ -315,17 +284,47 @@ class MinisterDashboardController:
         }
 
     @staticmethod
-    def delete_preacher(db: Session, preacher_id: int):
+    def get_global_preachers(
+        db: Session, 
+        search: Optional[str] = None,
+        nationality_id: Optional[int] = None,
+        language_id: Optional[int] = None,
+        status: Optional[str] = None
+    ):
         """
-        حذف حساب داعية بشكل كامل (أو تعطيله حسب سياسة النظام).
+        جلب قائمة جميع الدعاة لوزير الأوقاف ببحث عام (مع فلاتر).
+        لا تقم بجلب الإدارة أو غيرهم، فقط الدعاة.
         """
-        from app.controllers.preachers_controller import PreachersController
-        try:
-            return PreachersController.delete_preacher(db, preacher_id)
-        except HTTPException as e:
-            if e.status_code == 404:
-                return None
-            raise e
+        query = db.query(Preacher).join(User, Preacher.user_id == User.user_id)
+
+        if search:
+            query = query.filter(Preacher.full_name.ilike(f"%{search}%"))
+        
+        if nationality_id:
+            query = query.filter(Preacher.nationality_country_id == nationality_id)
+        
+        if language_id:
+            query = query.filter(Preacher.languages.any(PreacherLanguage.language_id == language_id))
+        
+        if status:
+            query = query.filter(User.status == status)
+        
+        preachers = query.all()
+        results = []
+
+        for p in preachers:
+            results.append({
+                "preacher_id": p.preacher_id,
+                "full_name": p.full_name,
+                "organization_name": p.organization.organization_name if p.organization else "متطوع",
+                "nationality": db.query(Country).filter(Country.country_id == p.nationality_country_id).first().country_name if p.nationality_country_id else "غير محدد",
+                "languages": [db.query(Language).filter(Language.language_id == l.language_id).first().language_name for l in p.languages],
+                "joining_date": p.created_at.strftime("%d/%m/%Y %I:%M %p"),
+                "status": p.user.status.value,
+                "phone": p.phone
+            })
+        
+        return results
 
     @staticmethod
     def get_global_dashboard_stats(db: Session, org_id: Optional[int] = None, period: Optional[str] = "all_time"):
@@ -564,11 +563,58 @@ class MinisterDashboardController:
         }
 
     @staticmethod
-    def get_organizations_overview(db: Session):
+    def get_global_preachers(
+        db: Session, 
+        search: Optional[str] = None,
+        nationality_id: Optional[int] = None,
+        language_id: Optional[int] = None,
+        status: Optional[str] = None
+    ):
         """
-        جلب قائمة بكل الجمعيات مع إحصائيات الأداء لكل منها.
+        جلب قائمة جميع الدعاة لوزير الأوقاف ببحث عام (مع فلاتر).
+        لا تقم بجلب الإدارة أو غيرهم، فقط الدعاة.
         """
-        orgs = db.query(Organization).all()
+        query = db.query(Preacher).join(User, Preacher.user_id == User.user_id)
+
+        if search:
+            query = query.filter(Preacher.full_name.ilike(f"%{search}%"))
+        
+        if nationality_id:
+            query = query.filter(Preacher.nationality_country_id == nationality_id)
+        
+        if language_id:
+            query = query.filter(Preacher.languages.any(PreacherLanguage.language_id == language_id))
+        
+        if status:
+            query = query.filter(User.status == status)
+        
+        preachers = query.all()
+        results = []
+
+        for p in preachers:
+            results.append({
+                "preacher_id": p.preacher_id,
+                "full_name": p.full_name,
+                "organization_name": p.organization.organization_name if p.organization else "متطوع",
+                "nationality": db.query(Country).filter(Country.country_id == p.nationality_country_id).first().country_name if p.nationality_country_id else "غير محدد",
+                "languages": [db.query(Language).filter(Language.language_id == l.language_id).first().language_name for l in p.languages],
+                "joining_date": p.created_at.strftime("%d/%m/%Y %I:%M %p"),
+                "status": p.user.status.value,
+                "phone": p.phone
+            })
+        
+        return results
+
+    @staticmethod
+    def get_organizations_overview(db: Session, search: Optional[str] = None):
+        """
+        جلب قائمة بكل الجمعيات مع إحصائيات الأداء لكل منها (مع إمكانية البحث).
+        """
+        query = db.query(Organization)
+        if search:
+            query = query.filter(Organization.organization_name.ilike(f"%{search}%"))
+            
+        orgs = query.all()
         results = []
 
         for org in orgs:
@@ -604,7 +650,7 @@ class MinisterDashboardController:
 
         # Separate entry for Volunteer Preachers (those without an organization)
         volunteers_preachers_count = db.query(Preacher).filter(Preacher.org_id == None).count()
-        if volunteers_preachers_count > 0:
+        if volunteers_preachers_count > 0 and (not search or "متطوع" in search):
             v_new_muslims = db.query(DawahRequest).join(Preacher).filter(
                 Preacher.org_id == None,
                 DawahRequest.status == RequestStatus.converted
