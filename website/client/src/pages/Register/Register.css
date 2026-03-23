@@ -1,0 +1,22 @@
+.register-container {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.register-header {
+  margin-bottom: 2rem;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.register-btn {
+  margin-top: 1.5rem;
+}
