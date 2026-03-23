@@ -34,6 +34,14 @@ import AwqafAssociationReports from './pages/AwqafAssociationReports/AwqafAssoci
 import AwqafPreacherDetails from './pages/AwqafPreacherDetails/AwqafPreacherDetails';
 import AwqafPreacherPerformance from './pages/AwqafPreacherPerformance/AwqafPreacherPerformance';
 import AwqafReportsAnalytics from './pages/AwqafReportsAnalytics/AwqafReportsAnalytics';
+import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
+import AdminAssociations from './pages/AdminAssociations/AdminAssociations';
+import AdminAddAssociation from './pages/AdminAddAssociation/AdminAddAssociation';
+import AdminAssociationDetails from './pages/AdminAssociationDetails/AdminAssociationDetails';
+import AdminEditAssociation from './pages/AdminEditAssociation/AdminEditAssociation';
+import AdminPreacherDetails from './pages/AdminPreacherDetails/AdminPreacherDetails';
+import AdminCallers from './pages/AdminCallers/AdminCallers';
+
 
 const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
@@ -41,6 +49,7 @@ const RoleDashboard = () => {
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
   if (role === 'non_muslim') return <NonMuslimDashboard />;
   if (role === 'awqaf_manager') return <AwqafDashboard />;
+  if (role === 'admin') return <AdminDashboard />;
   return <Dashboard />;
 };
 
@@ -93,6 +102,13 @@ function App() {
           <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<AwqafPreacherDetails />} />
           <Route path="/awqaf/preacher-performance" element={<AwqafPreacherPerformance />} />
           <Route path="/awqaf/reports" element={<AwqafReportsAnalytics />} />
+          <Route path="/admin/associations" element={<AdminAssociations />} />
+          <Route path="/admin/associations/add" element={<AdminAddAssociation />} />
+          <Route path="/admin/associations/:id" element={<AdminAssociationDetails />} />
+          <Route path="/admin/associations/:id/edit" element={<AdminEditAssociation />} />
+          <Route path="/admin/associations/:id/preachers/:preacherId" element={<AdminPreacherDetails />} />
+          <Route path="/admin/callers" element={<AdminCallers />} />
+          <Route path="/admin/callers/:preacherId" element={<AdminPreacherDetails />} />
 
         </Route>
       </Routes>

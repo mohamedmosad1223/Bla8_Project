@@ -51,7 +51,7 @@ const RegistrationSelection = () => {
 
           <div className="bottom-link" style={{ marginTop: '20px', textAlign: 'center' }}>
             <p style={{ margin: 0, color: 'var(--text-gray)', fontSize: '0.9rem' }}>
-              {/* <a href="/preacher-association-login" style={{ color: 'var(--primary-gold)', fontWeight: 'bold' }}>الذهاب لصفحة تسجيل الدخول الدعاة و الجمعيات</a> */}
+              <a href="/preacher-association-login" style={{ color: 'var(--primary-gold)', fontWeight: 'bold' }}>الذهاب لصفحة تسجيل الدخول الدعاة و الجمعيات</a>
             </p>
           </div>
         </div>

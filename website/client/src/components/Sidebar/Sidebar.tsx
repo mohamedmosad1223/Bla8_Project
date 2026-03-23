@@ -8,6 +8,7 @@ const Sidebar = () => {
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
   const isAwqafManager = userRole === 'awqaf_manager';
+  const isAdmin = userRole === 'admin';
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
@@ -121,6 +122,23 @@ const Sidebar = () => {
                 <NavLink to="/ai" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <Bot size={20} className="nav-icon" />
                   الذكاء الاصطناعي
+                </NavLink>
+              </li>
+            </>
+          )}
+          {/* Admin-only */}
+          {isAdmin && (
+            <>
+              <li className="nav-item">
+                <NavLink to="/admin/associations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Users size={20} className="nav-icon" />
+                  الجمعيات
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/admin/callers" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  <Users size={20} className="nav-icon" />
+                  دعاة الجمعيات
                 </NavLink>
               </li>
             </>

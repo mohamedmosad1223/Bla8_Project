@@ -1,0 +1,330 @@
+/* ═══════════════════════════════════════
+   Admin Dashboard – Main Container
+═══════════════════════════════════════ */
+.admin-dashboard {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ad-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════
+   Stat Cards  (3 per row × 2 rows)
+═══════════════════════════════════════ */
+.ad-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.ad-stat-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border-gray, #F0F0F0);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  direction: rtl;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.ad-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ad-stat-title {
+  font-size: 0.85rem;
+  color: var(--text-gray, #8A8A8A);
+  font-weight: 500;
+}
+
+.ad-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-dark, #1A1A2E);
+  line-height: 1;
+}
+
+.ad-stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════
+   Tables Row
+═══════════════════════════════════════ */
+.ad-tables-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 20px;
+}
+
+/* ═══════════════════════════════════════
+   Charts Row
+═══════════════════════════════════════ */
+.ad-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ═══════════════════════════════════════
+   Shared Card
+═══════════════════════════════════════ */
+.ad-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border-gray, #F0F0F0);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  padding: 20px 22px;
+  direction: rtl;
+}
+
+.ad-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dark, #1A1A2E);
+  margin: 0 0 16px 0;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════
+   Tables
+═══════════════════════════════════════ */
+.ad-table-card {
+  overflow: hidden;
+}
+
+.ad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  direction: rtl;
+}
+
+.ad-table thead tr {
+  background: var(--bg-color, #F8F8FB);
+}
+
+.ad-table th {
+  padding: 10px 12px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-dark, #1A1A2E);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-gray, #F0F0F0);
+}
+
+.ad-table td {
+  padding: 10px 12px;
+  text-align: right;
+  color: var(--text-gray, #555);
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.ad-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ad-table tbody tr:hover {
+  background: #FAFAFA;
+}
+
+/* Progress bar in table */
+.ad-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  direction: rtl;
+}
+
+.ad-progress-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dark, #1A1A2E);
+  min-width: 30px;
+}
+
+.ad-progress-bg {
+  flex: 1;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.ad-progress-fill {
+  height: 100%;
+  background: #10B981;
+  border-radius: 99px;
+}
+
+/* ═══════════════════════════════════════
+   Donut Chart Card
+═══════════════════════════════════════ */
+.ad-chart-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ad-donut-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+}
+
+.ad-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.ad-donut-total {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-dark, #1A1A2E);
+  line-height: 1;
+}
+
+.ad-donut-label {
+  font-size: 0.8rem;
+  color: var(--text-gray, #8A8A8A);
+  margin-top: 2px;
+}
+
+.ad-donut-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  direction: rtl;
+}
+
+.ad-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.ad-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ad-legend-name {
+  color: var(--text-gray, #8A8A8A);
+}
+
+.ad-legend-val {
+  font-weight: 700;
+  color: var(--text-dark, #1A1A2E);
+}
+
+/* ═══════════════════════════════════════
+   Map Card
+═══════════════════════════════════════ */
+.ad-map-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Kuwait Map */
+.ad-kuwait-map-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.ad-kuwait-map-img {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Governorates list */
+.ad-gov-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ad-gov-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ad-gov-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  direction: rtl;
+}
+
+.ad-gov-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-dark, #1A1A2E);
+}
+
+.ad-gov-count {
+  font-size: 0.78rem;
+  color: var(--text-gray, #8A8A8A);
+}
+
+/* ═══════════════════════════════════════
+   Responsive
+═══════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .ad-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ad-tables-row,
+  .ad-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ad-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

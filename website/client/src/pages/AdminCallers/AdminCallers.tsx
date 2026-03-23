@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye, Edit, MessageCircle } from 'lucide-react';
-import './Callers.css';
+import { Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye } from 'lucide-react';
+import './AdminCallers.css';
 
 interface Preacher {
   id: number;
@@ -26,11 +26,12 @@ const mockPreachers: Preacher[] = [
   { id: 10, code: '123456', name: 'جون سميث',  nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
 ];
 
-const Callers = () => {
+const AdminCallers = () => {
   const navigate = useNavigate();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [preachers, setPreachers] = useState(mockPreachers);
+  const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
 
   const toggleActive = (id: number) => {
     setPreachers(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
@@ -82,14 +83,6 @@ const Callers = () => {
         <h1 className="page-title">دعاة الجمعية</h1>
         
         <div className="callers-actions">
-          <button 
-            className="btn-primary" 
-            onClick={() => navigate('/callers/add')}
-          >
-            <Plus size={18} />
-            اضافة داعية
-          </button>
-          
           <div className="search-filter-group">
             <div className="search-input-wrapper-outlined">
               <Search size={18} className="search-icon" />
@@ -322,21 +315,15 @@ const Callers = () => {
                   <td>
                     <label className="toggle-switch">
                       <input type="checkbox" checked={preacher.active} onChange={() => toggleActive(preacher.id)} />
-                      <span className="toggle-slider"></span>
+                    <span className="toggle-slider"></span>
                     </label>
                   </td>
                   <td>
                     <div className="actions-cell">
-                      <button className="action-icon-btn chat-icon" title="محادثة" onClick={() => navigate('/conversations')}>
-                        <MessageCircle size={16} />
-                      </button>
-                      <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/awqaf/associations/1/preachers/${preacher.id}`)}>
+                      <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/admin/callers/${preacher.id}`)}>
                         <Eye size={16} />
                       </button>
-                      <button className="action-icon-btn edit-icon" title="تعديل" onClick={() => alert(`تعديل بيانات ${preacher.name}`)}>
-                        <Edit size={16} />
-                      </button>
-                      <button className="action-icon-btn delete-icon" title="حذف" onClick={() => alert(`حذف الداعية ${preacher.name}`)}>
+                      <button className="action-icon-btn delete-icon" title="حذف" onClick={() => setShowDeletePreacherModal(true)}>
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -347,8 +334,43 @@ const Callers = () => {
           </table>
         </div>
       </div>
+
+      {showDeletePreacherModal && (
+        <div className="aadmin-modal-overlay">
+          <div className="new-delete-modal-card">
+            <button 
+              className="new-close-btn" 
+              onClick={() => setShowDeletePreacherModal(false)}
+            >
+              <X size={20} />
+            </button>
+            <div className="new-danger-circle">
+              <X size={40} className="new-danger-x-icon" />
+            </div>
+            
+            <h3 className="new-delete-title">حذف الداعية</h3>
+            <p className="new-delete-desc">هل تود ان تتخذ هذا الاجراء ؟</p>
+            
+            <div className="new-modal-actions">
+              <button 
+                className="new-btn-confirm"
+                onClick={() => setShowDeletePreacherModal(false)}
+              >
+                تأكيد
+              </button>
+              <button 
+                className="new-btn-cancel"
+                onClick={() => setShowDeletePreacherModal(false)}
+              >
+                الغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
-export default Callers;
+export default AdminCallers;
