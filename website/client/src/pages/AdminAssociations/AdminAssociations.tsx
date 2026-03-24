@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Trash2, Plus } from 'lucide-react';
+import { Eye, Trash2, Plus, MessageCircle } from 'lucide-react';
 import './AdminAssociations.css';
 
 // ─── Mock Data ──────────────────────────────────────────────
@@ -271,6 +271,14 @@ const AdminAssociations = () => {
                       onClick={() => navigate(`/admin/associations/${row.id}`)}
                     >
                       <Eye size={15} />
+                    </button>
+                    <button
+                      className="aadmin-icon-btn aadmin-chat-btn"
+                      title="محادثة"
+                      onClick={() => navigate(`/admin/chat/${row.id}`)}
+                      style={{ color: '#dba841' }}
+                    >
+                      <MessageCircle size={15} />
                     </button>
                     <button
                       className="aadmin-icon-btn aadmin-delete-btn"

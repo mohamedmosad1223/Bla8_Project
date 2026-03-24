@@ -1,10 +1,12 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import StatCard from '../../components/StatCard/StatCard';
 import {
   Users,
-  Building2,
+  FileText,
+  MessageCircle,
   UserCheck,
   UserX,
-  ClipboardList,
+  BookOpen,
 } from 'lucide-react';
 import './AdminDashboard.css';
 
@@ -20,54 +22,14 @@ const governorates = [
 
 // ─── Stat Cards Data ───────────────────────────────────────
 const statCards = [
-  {
-    id: 1,
-    title: 'اجمالي عدد الجمعيات المسجلة',
-    value: '100',
-    icon: <Building2 size={22} />,
-    bgColor: '#FEF3C7',
-    color: '#D97706',
-  },
-  {
-    id: 2,
-    title: 'اجمالي عدد الدعاة',
-    value: '15000',
-    icon: <Users size={22} />,
-    bgColor: '#E0E7FF',
-    color: '#6366F1',
-  },
-  {
-    id: 3,
-    title: 'اجمالي الافراد المسجلين',
-    value: '5000',
-    icon: <UserCheck size={22} />,
-    bgColor: '#FCE7F3',
-    color: '#EC4899',
-  },
-  {
-    id: 4,
-    title: 'اجمالي الحالات المسجلة',
-    value: '9500',
-    icon: <ClipboardList size={22} />,
-    bgColor: '#EDE9FE',
-    color: '#7C3AED',
-  },
-  {
-    id: 5,
-    title: 'عدد من اسلموا',
-    value: '4500',
-    icon: <UserCheck size={22} />,
-    bgColor: '#D1FAE5',
-    color: '#10B981',
-  },
-  {
-    id: 6,
-    title: 'اجمالي حالات الرفض',
-    value: '5000',
-    icon: <UserX size={22} />,
-    bgColor: '#FEE2E2',
-    color: '#EF4444',
-  },
+  { id: 1, title: 'اجمالي عدد الجمعيات', value: '100', icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: '10.5%+' },
+  { id: 2, title: 'عدد المحادثات الجديدة', value: '100', icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 3, title: 'عدد المحادثات المفتوحة', value: '100', icon: <MessageCircle size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 4, title: 'عدد المستفيدين', value: '100', icon: <UserCheck size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 5, title: 'المحالون للتعليم و المتابعة', value: '100', icon: <BookOpen size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: '10.5%+' },
+  { id: 6, title: 'اجمالي عدد المحادثات', value: '100', icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 7, title: 'من اسلموا', value: '100', icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'down' as const, trendValue: '10.5%-' },
+  { id: 8, title: 'من رفضوا', value: '100', icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '10.5%-' },
 ];
 
 // ─── Associations Table Data ────────────────────────────────
@@ -107,16 +69,17 @@ const AdminDashboard = () => {
 
       {/* ── Stat Cards ── */}
       <div className="ad-stats-grid">
-        {statCards.map((card) => (
-          <div className="ad-stat-card" key={card.id}>
-            <div className="ad-stat-info">
-              <span className="ad-stat-title">{card.title}</span>
-              <span className="ad-stat-value">{card.value}</span>
-            </div>
-            <div className="ad-stat-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
-              {card.icon}
-            </div>
-          </div>
+        {statCards.map((stat) => (
+          <StatCard
+            key={stat.id}
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            iconBgColor={stat.bgColor}
+            iconColor={stat.color}
+            trend={stat.trend as 'up' | 'down'}
+            trendValue={stat.trendValue}
+          />
         ))}
       </div>
 
