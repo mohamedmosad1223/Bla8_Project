@@ -1,0 +1,185 @@
+/* ─── MuslimCallerDashboard.css ─────────────────────────────
+   Fits inside DashboardLayout → sidebar/header provided by layout.
+   Matching the PreacherDashboard theme.
+─────────────────────────────────────────────────────────── */
+
+.mc-page {
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg-color, #f7f8fa);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1.5rem;
+  direction: rtl;
+}
+
+/* White card that holds the form */
+.mc-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Logo */
+.mc-logo-area { margin-bottom: 1rem; }
+.mc-logo { width: 88px; object-fit: contain; }
+
+/* Page title */
+.mc-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1a202c;
+  margin-bottom: 1.75rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── Form layout ── */
+.mc-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* Two-column rows */
+.mc-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.mc-row > * { flex: 1; min-width: 0; }
+
+/* Override input border-radius to match pill style */
+.mc-form .custom-input {
+  border-radius: 50px !important;
+}
+
+/* ── Custom Select ── */
+.mc-select-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+.mc-sel-icon {
+  position: absolute;
+  right: 14px;
+  color: #a0aec0;
+  display: flex;
+  pointer-events: none;
+  z-index: 1;
+}
+.mc-sel-chevron {
+  position: absolute;
+  left: 12px;
+  color: #a0aec0;
+  display: flex;
+  pointer-events: none;
+  z-index: 1;
+}
+.mc-select {
+  width: 100%;
+  padding: 0.82rem 2.5rem 0.82rem 2rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  color: #2d3748;
+  background: #fff;
+  appearance: none;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  text-align: right;
+  transition: border-color 0.18s;
+}
+.mc-select:focus { border-color: var(--primary-blue, #1e4d8c); }
+
+/* ── Textarea ── */
+.mc-textarea-wrapper { position: relative; width: 100%; }
+.mc-ta-icon {
+  position: absolute;
+  right: 14px;
+  top: 13px;
+  color: #a0aec0;
+}
+.mc-textarea {
+  width: 100%;
+  min-height: 108px;
+  padding: 0.82rem 2.5rem 0.82rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  color: #2d3748;
+  background: #fff;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.18s;
+  text-align: right;
+  direction: rtl;
+}
+.mc-textarea:focus { border-color: var(--primary-blue, #1e4d8c); }
+.mc-textarea::placeholder { color: #a0aec0; }
+
+/* ── Checkbox row ── */
+.mc-check-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ── Submit button ── */
+.mc-btn-submit {
+  width: 100%;
+  padding: 0.95rem;
+  background: #1e4d8c;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s, transform 0.1s;
+}
+.mc-btn-submit:hover  { background: #163d70; }
+.mc-btn-submit:active { transform: scale(0.98); }
+
+/* ── Field wrapper ── */
+.mc-field-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Validation Errors ── */
+.mc-error-msg {
+  color: #E53E3E;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding-right: 4px;
+}
+
+.mc-error-center {
+  text-align: center;
+}
+
+/* Red border on inputs/selects with errors */
+.mc-error-border .custom-input,
+.mc-error-border .mc-select {
+  border-color: #E53E3E !important;
+}
+
+.mc-select-wrapper.mc-error-border .mc-select {
+  border-color: #E53E3E !important;
+}
+

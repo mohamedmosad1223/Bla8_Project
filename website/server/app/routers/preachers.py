@@ -1,0 +1,165 @@
+from typing import Optional, List
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response
+from sqlalchemy.orm import Session
+from datetime import datetime
+from pydantic import EmailStr
+
+from app.database import get_db
+from app.models.enums import PreacherType, PreacherStatus, GenderType, ApprovalStatus, UserRole
+from app.schemas import PreacherUpdate, PreacherRegister
+from app.controllers.preachers_controller import PreachersController
+from app.controllers.profiles_controller import ProfilesController
+from app.auth import check_role, get_optional_current_user, get_current_user
+from app.models.user import User
+from app.models.preacher import Preacher
+
+router = APIRouter(
+    prefix="/api/preachers",
+    tags=["Preachers"]
+)
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+def register_preacher(
+    email: EmailStr = Form(...),
+    password: str = Form(...),
+    password_confirm: str = Form(...),
+    full_name: str = Form(...),
+    phone: str = Form(...),
+    preacher_email: EmailStr = Form(...),
+    scientific_qualification: str = Form(...),
+    nationality_country_id: int = Form(...),
+    org_id: Optional[int] = Form(None),
+    type: Optional[PreacherType] = Form(None),
+    gender: Optional[GenderType] = Form(None),
+    languages: List[int] = Form([]),
+    qualification_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """تسجيل داعية مع رفع ملف المؤهلات"""
+    payload = PreacherRegister(
+        email=email,
+        password=password,
+        password_confirm=password_confirm,
+        full_name=full_name,
+        phone=phone,
+        preacher_email=preacher_email,
+        scientific_qualification=scientific_qualification,
+        nationality_country_id=nationality_country_id,
+        org_id=org_id,
+        type=type,
+        gender=gender,
+        languages=languages,
+        qualification_file="placeholder"
+    )
+    return PreachersController.register(db, payload, qualification_file, current_user)
+
+
+@router.get("/", dependencies=[Depends(check_role([UserRole.admin, UserRole.organization]))])
+def list_preachers(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = Query(None, description="بحث بالاسم أو الرقم التعريفى"),
+    type: Optional[PreacherType] = Query(None),
+    preacher_status: Optional[PreacherStatus] = Query(None, alias="status"),
+    gender: Optional[GenderType] = Query(None),
+    approval_status: Optional[ApprovalStatus] = Query(None),
+    nationality_country_id: Optional[int] = Query(None),
+    org_id: Optional[int] = Query(None, description="Filter by organization"),
+    languages: List[int] = Query([], description="قائمة معرفات اللغات (فلترة متعددة)"),
+    joined_after: Optional[datetime] = Query(None),
+    joined_before: Optional[datetime] = Query(None),
+    order_by: str = Query("latest", regex="^(latest|oldest)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """قائمة الدعاة — مع فلترة متقدمة (يتم تحديد الجمعية تلقائياً إذا كان المستخدم جمعية)"""
+    
+    # لو المستخدم عبارة عن جمعية، نجبر الفلتر إنه يجيب الدعاة بتوعها بس
+    if current_user.role == UserRole.organization:
+        org_id = current_user.organization.org_id
+
+    return PreachersController.list_preachers(
+        db=db, skip=skip, limit=limit, 
+        search=search, type=type,
+        preacher_status=preacher_status, gender=gender, 
+        approval_status=approval_status,
+        nationality_country_id=nationality_country_id, 
+        org_id=org_id,
+        languages=languages,
+        joined_after=joined_after,
+        joined_before=joined_before,
+        order_by=order_by
+    )
+
+
+@router.get("/{preacher_id}")
+def get_preacher(preacher_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """جلب داعية بالـ ID"""
+    preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+    if not preacher:
+        raise HTTPException(status_code=404, detail="الداعية غير موجود")
+
+    # لو أدمن: تمام
+    if current_user.role == UserRole.admin:
+        pass
+    # لو جمعية: لازم الداعية يكون تبعها
+    elif current_user.role == UserRole.organization:
+        if preacher.org_id != current_user.organization.org_id:
+            raise HTTPException(status_code=403, detail="لا يمكنك الوصول لداعية لا ينتمي لجمعيتك")
+    # لو داعية: لازم يكون هو نفسه
+    elif current_user.role == UserRole.preacher:
+        if preacher.preacher_id != current_user.preacher.preacher_id:
+            raise HTTPException(status_code=403, detail="لا يمكنك الوصول لبيانات داعية آخر")
+    else:
+        raise HTTPException(status_code=403, detail="ليس لديك صلاحية")
+
+    return PreachersController.get_preacher(db, preacher_id)
+
+
+@router.patch("/{preacher_id}", dependencies=[Depends(check_role([UserRole.admin, UserRole.organization, UserRole.preacher]))])
+def update_preacher(preacher_id: int, payload: PreacherUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """تحديث بيانات الداعية"""
+    # التحقق من الصلاحيات
+    # لو أدمن: تمام
+    # لو جمعية: لازم الداعية يكون تبعها
+    # لو داعية: لازم يكون هو نفسه
+    
+    preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+    if not preacher:
+        raise HTTPException(status_code=404, detail="الداعية غير موجود")
+
+    if current_user.role == UserRole.admin:
+        pass
+    elif current_user.role == UserRole.organization:
+        if preacher.org_id != current_user.organization.org_id:
+            raise HTTPException(status_code=403, detail="لا يمكنك تعديل داعية لا ينتمي لجمعيتك")
+    elif current_user.role == UserRole.preacher:
+        if preacher.preacher_id != current_user.preacher.preacher_id:
+            raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات داعية آخر")
+        
+        # منع الداعية من تعديل حالة الموافقة الخاصة به
+        if payload.approval_status is not None or payload.rejection_reason is not None:
+             raise HTTPException(status_code=403, detail="لا تملك صلاحية تعديل حالة الموافقة")
+            
+    return PreachersController.update_preacher(db, preacher_id, payload)
+
+
+@router.delete("/{preacher_id}", dependencies=[Depends(check_role([UserRole.admin, UserRole.organization]))])
+def delete_preacher(preacher_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """حذف داعية — يحذف البروفايل ويعمل soft-delete للمستخدم"""
+    preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+    if not preacher:
+         raise HTTPException(status_code=404, detail="الداعية غير موجود")
+
+    if current_user.role == UserRole.organization:
+        if preacher.org_id != current_user.organization.org_id:
+            raise HTTPException(status_code=403, detail="لا يمكنك حذف داعية لا ينتمي لجمعيتك")
+
+    return PreachersController.delete_preacher(db, preacher_id)
+
+@router.post("/logout")
+def logout_preacher(response: Response):
+    """تسجيل خروج الداعية ومسح كوكيز الجلسة"""
+    response.delete_cookie("access_token")
+    return ProfilesController.logout()
