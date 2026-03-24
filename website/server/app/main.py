@@ -28,6 +28,7 @@ from app.routers import (
     profiles_router,
     chats_router,
     minister_router,
+    ws_chat_router,
 )
 
 from contextlib import asynccontextmanager
@@ -86,12 +87,11 @@ app.include_router(help_router)
 app.include_router(profiles_router)
 app.include_router(chats_router)
 app.include_router(minister_router)
-
+app.include_router(ws_chat_router)
 
 @app.get("/", tags=["Health"])
 def root():
     return {"status": "ok", "app": "Balagh API", "env": settings.APP_ENV}
-
 
 @app.get("/health", tags=["Health"])
 def health_check():

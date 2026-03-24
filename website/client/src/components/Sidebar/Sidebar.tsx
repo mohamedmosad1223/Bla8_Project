@@ -5,6 +5,7 @@ import './Sidebar.css';
 const Sidebar = () => {
   const navigate = useNavigate();
   const userRole = localStorage.getItem('userRole') || 'organization';
+  const isNonMuslim = userRole === 'non_muslim' || userRole === 'interested';
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
   const isAwqafManager = userRole === 'awqaf_manager';
@@ -27,7 +28,7 @@ const Sidebar = () => {
       <nav className="sidebar-nav">
         <ul className="nav-list">
           {/* Common */}
-          {userRole !== 'non_muslim' && (
+          {!isNonMuslim && (
             <li className="nav-item">
               <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
                 <Home size={20} className="nav-icon" />
@@ -167,7 +168,7 @@ const Sidebar = () => {
           )}
 
           {/* Non-Muslim only */}
-          {userRole === 'non_muslim' && (
+          {isNonMuslim && (
             <>
               <li className="nav-item">
                 <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>

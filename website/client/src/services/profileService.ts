@@ -18,7 +18,7 @@ export const profileService = {
   /**
    * Change current user's password
    */
-  changePassword: async (data: any) => {
+  changePassword: async (data: { old_password?: string; new_password: string; password_confirm?: string; otp?: string }) => {
     const response = await api.post('/profile/change-password', data);
     return response.data;
   },
@@ -28,5 +28,14 @@ export const profileService = {
   deleteAccount: async (password: string) => {
     const response = await api.post('/profile/delete-account', { password });
     return response.data;
+  },
+
+  /**
+   * Fetch all available languages from the backend
+   * Used in LanguageSelection page (no auth required)
+   */
+  getLanguages: async () => {
+    const response = await api.get('/profile/languages');
+    return response.data; // Array of { id, name, code }
   },
 };

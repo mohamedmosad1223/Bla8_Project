@@ -43,3 +43,26 @@
   justify-content: center;
   pointer-events: none;
 }
+
+.custom-input.with-icon-right {
+  padding-right: 2.5rem;
+}
+
+.input-icon-right {
+  position: absolute;
+  right: 1rem;
+  color: #A0AEC0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+
+.input-icon-right:hover {
+  color: var(--primary-gold);
+}

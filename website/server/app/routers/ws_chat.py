@@ -117,7 +117,7 @@ def _get_sender_name(sender: User) -> str:
 # ── WebSocket Endpoint ───────────────────────────────────────────────────
 
 @router.websocket("/ws/chat")
-async def chat_websocket(websocket: WebSocket, token: str = Query(...)):
+async def chat_websocket(websocket: WebSocket, token: str = Query(None)):
     """
     WebSocket Real-Time Chat
     ─────────────────────────
@@ -155,6 +155,13 @@ async def chat_websocket(websocket: WebSocket, token: str = Query(...)):
     """
 
     # 1. Authenticate
+    if not token:
+        token = websocket.cookies.get("access_token")
+    
+    if not token:
+        await websocket.close(code=4001, reason="توكن غير صالح")
+        return
+        
     email = _authenticate_ws_token(token)
     if not email:
         await websocket.close(code=4001, reason="توكن غير صالح")
