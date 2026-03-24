@@ -1,0 +1,411 @@
+/* ═══════════════════════════════════════
+   Admin Association Details Page
+═══════════════════════════════════════ */
+.adetails-page {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  direction: rtl;
+}
+
+/* ── Header ── */
+.adetails-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adetails-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-gray, #6B7280);
+}
+.adetails-crumb-link {
+  color: var(--text-gray, #6B7280);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.adetails-crumb-link:hover {
+  color: var(--text-dark, #1A1A2E);
+}
+.adetails-crumb-current {
+  color: var(--text-dark, #1A1A2E);
+  font-weight: 600;
+}
+.adetails-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+/* ── Tabs ── */
+.adetails-tabs {
+  display: flex;
+  gap: 32px;
+  border-bottom: 2px dashed #E5E7EB; /* dashed border as in image */
+  padding-bottom: 0;
+  margin-top: 10px;
+}
+.adetails-tab-btn {
+  background: none;
+  border: none;
+  padding: 0 0 16px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-gray, #9CA3AF);
+  cursor: pointer;
+  position: relative;
+  font-family: inherit;
+}
+.adetails-tab-btn.active {
+  color: var(--primary-gold, #C9A84C);
+}
+.adetails-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* align w/ border */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-gold, #C9A84C);
+}
+
+/* ── Content Area ── */
+.adetails-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Card Section */
+.adetails-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+/* Section Header */
+.adetails-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+.adetails-section-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+.adetails-actions {
+  display: flex;
+  gap: 16px;
+}
+.adetails-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.adetails-icon-btn.delete-btn {
+  color: #EF4444;
+}
+.adetails-icon-btn.delete-btn:hover {
+  background: #FEE2E2;
+}
+.adetails-icon-btn.edit-btn {
+  color: var(--primary-gold, #C9A84C);
+}
+.adetails-icon-btn.edit-btn:hover {
+  background: #FEF3C7;
+}
+
+
+/* Data Grid */
+.adetails-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  row-gap: 32px;
+  column-gap: 24px;
+}
+.adetails-grid.single {
+  grid-template-columns: 1fr;
+}
+
+.adetails-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.adetails-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--primary-gold, #C9A84C);
+  font-weight: 600;
+}
+.adetails-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  text-align: start;
+}
+.adetails-value.ltr-fix {
+  direction: ltr;
+}
+.adetails-value.status-active {
+  color: #10B981;
+}
+
+.adetails-divider {
+  height: 1px;
+  background: #E5E7EB;
+  margin: 8px 0;
+}
+
+/* ── Stats ── */
+.adetails-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+/* ── Charts ── */
+.adetails-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+.adetails-chart-card {
+  background: #fff;
+  border: 1px solid var(--border-gray, #E5E7EB);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.adetails-chart-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.adetails-chart-header.row-between {
+  justify-content: space-between;
+}
+.adetails-chart-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+.adetails-chart-select {
+  padding: 4px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  background: #F9FAFB;
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+.adetails-chart-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+}
+
+/* Kuwait Map specific */
+.adetails-chart-content.map-wrapper {
+  gap: 16px;
+  align-items: center;
+}
+.adetails-kuwait-map {
+  max-width: 140px;
+  height: auto;
+  margin: 10px auto 16px;
+}
+.adetails-gov-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.adetails-gov-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.adetails-gov-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+.adetails-gov-count {
+  font-size: 0.75rem;
+  color: var(--text-gray, #6B7280);
+}
+.adetails-gov-progress {
+  width: 100%;
+  height: 6px;
+  background: #F3F4F6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.adetails-gov-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* ── Preachers Tab Controls ── */
+.adetails-preachers-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 16px;
+  gap: 32px;
+}
+.adetails-search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #D1D5DB;
+  padding: 8px 0;
+  width: 250px;
+}
+.adetails-search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+}
+.adetails-search-box input::placeholder {
+  color: #9CA3AF;
+}
+.adetails-filter-btn, .adetails-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 8px 0;
+}
+
+/* ── Preachers Table ── */
+.adetails-table-container {
+  background: white;
+  border: 1px solid var(--border-gray, #E5E7EB);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+.adetails-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+.adetails-table th {
+  padding: 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  border-bottom: 1px solid #E5E7EB;
+  background: #fff;
+}
+.adetails-table td {
+  padding: 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  border-bottom: 1px solid #E5E7EB;
+  vertical-align: middle;
+}
+.adetails-table tr:last-child td {
+  border-bottom: none;
+}
+.adetails-table .multiline-cell {
+  white-space: pre-line;
+  color: #6B7280;
+  font-size: 0.85rem;
+}
+.adetails-table-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.adetails-icon-btn.view-btn {
+  color: #374151;
+}
+.adetails-icon-btn.view-btn:hover {
+  background: #F3F4F6;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #E5E7EB;
+  transition: .4s;
+}
+.switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+.switch input:checked + .slider {
+  background-color: #10B981;
+}
+.switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+.switch .slider.round {
+  border-radius: 34px;
+}
+.switch .slider.round:before {
+  border-radius: 50%;
+}

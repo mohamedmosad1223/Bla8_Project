@@ -1,0 +1,185 @@
+/* ─── Page ─── */
+.pd-page {
+  padding: 0 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: pdFadeIn 0.35s ease;
+}
+@keyframes pdFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pd-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin: 0 0 0.25rem;
+}
+
+/* ─── Stat Cards ─── */
+.pd-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.pd-stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pd-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.pd-stat-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.pd-stat-info { display: flex; flex-direction: column; gap: 4px; }
+.pd-stat-label { font-size: 0.8rem; color: #718096; font-weight: 600; }
+.pd-stat-value { font-size: 2rem; font-weight: 800; color: #2d3748; line-height: 1; }
+.pd-stat-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: #f9fafb; display: flex; align-items: center; justify-content: center;
+}
+.pd-stat-trend { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600; }
+.pd-stat-trend.up   { color: #51cf66; }
+.pd-stat-trend.down { color: #ff6b6b; }
+.pd-trend-val { font-weight: 700; }
+.pd-stat-sub { color: #a0aec0; font-weight: 400; margin-right: 4px; }
+
+/* ─── Generic Card ─── */
+.pd-chart-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.pd-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.75rem;
+}
+.pd-chart-title { font-size: 0.95rem; font-weight: 700; color: #2d3748; margin: 0 0 0.75rem; }
+.pd-select {
+  background: #f0f4f8; border: none; border-radius: 8px;
+  padding: 4px 10px; font-size: 0.8rem; color: #4a5568;
+  font-family: inherit; cursor: pointer; outline: none;
+}
+
+/* ─── Row 1 (Area + Map) ─── */
+.pd-row-charts {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+  min-height: 0;
+}
+.pd-chart-flex { display: flex; flex-direction: column; }
+
+/* ─── Responsive SVG wrapper ─── */
+.pd-chart-svg-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.pd-svg-responsive {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+}
+
+/* ─── Tooltip ─── */
+.pd-tooltip {
+  position: absolute;
+  background: #2d3748;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
+/* ─── Province Section  ─── */
+.pd-chart-map { overflow: hidden; }
+.pd-province-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+.pd-map-svg {
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+}
+.pd-prov-bars { display: flex; flex-direction: column; gap: 6px; }
+.pd-prov-row { display: flex; align-items: center; gap: 6px; }
+.pd-prov-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.pd-prov-name {
+  font-size: 0.7rem; color: #718096;
+  width: 95px; flex-shrink: 0; text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pd-prov-track { flex: 1; height: 6px; background: #edf2f7; border-radius: 10px; overflow: hidden; }
+.pd-prov-fill  { height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+.pd-prov-val   { font-size: 0.68rem; color: #718096; white-space: nowrap; flex-shrink: 0; }
+
+/* ─── Row 2 (Follow-up + Donut + AI) ─── */
+.pd-row-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.pd-bottom-card { display: flex; flex-direction: column; gap: 0.5rem; overflow: hidden; }
+
+/* ─── Followup legend ─── */
+.pd-followup-legend {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 0.8rem; color: #4a5568; margin-top: 4px;
+}
+.pd-followup-legend span { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.pd-followup-legend strong { color: #2d3748; }
+
+/* ─── Donut ─── */
+.pd-donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.pd-donut-svg { width: 140px; height: 140px; }
+.pd-donut-seg { cursor: pointer; transition: stroke-width 0.15s; }
+.pd-donut-legend { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.pd-legend-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: #4a5568; cursor: pointer;
+  padding: 4px 6px; border-radius: 8px; transition: background 0.15s;
+  justify-content: flex-end;
+}
+.pd-legend-row.hovered { background: #f9fafb; }
+.pd-legend-row strong { color: #2d3748; margin-right: auto; }
+.pd-legend-text { flex: 1; text-align: right; }
+.pd-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+/* ─── AI Card ─── */
+.pd-ai-card { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.pd-ai-svg { width: 110px; height: 110px; }
+.pd-ai-note { font-size: 0.78rem; color: #718096; text-align: center; margin: 0; font-style: italic; line-height: 1.5; }
+
+/* ─── Interactive dot ─── */
+.pd-dot-hover { cursor: pointer; transition: r 0.15s; }
+.pd-dot-hover:hover { r: 7; }
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .pd-row-charts { grid-template-columns: 1fr; }
+  .pd-chart-map  { order: -1; }
+}
+@media (max-width: 900px) {
+  .pd-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .pd-row-bottom { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .pd-stats-grid { grid-template-columns: 1fr; }
+}
