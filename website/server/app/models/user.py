@@ -25,11 +25,11 @@ class User(Base):
     deleted_at:    Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
 
     # Relationships
-    admin:           Mapped["Admin"]          = relationship("Admin",           back_populates="user", uselist=False)
-    organization:    Mapped["Organization"]   = relationship("Organization",    back_populates="user", uselist=False)
-    preacher:        Mapped["Preacher"]       = relationship("Preacher",        back_populates="user", uselist=False, foreign_keys="Preacher.user_id")
-    muslim_caller:   Mapped["MuslimCaller"]   = relationship("MuslimCaller",   back_populates="user", uselist=False)
-    interested_person: Mapped["InterestedPerson"] = relationship("InterestedPerson", back_populates="user", uselist=False)
+    admin:           Mapped["Admin"]          = relationship("Admin",           back_populates="user", uselist=False, cascade="all, delete-orphan")
+    organization:    Mapped["Organization"]   = relationship("Organization",    back_populates="user", uselist=False, cascade="all, delete-orphan")
+    preacher:        Mapped["Preacher"]       = relationship("Preacher",        back_populates="user", uselist=False, foreign_keys="Preacher.user_id", cascade="all, delete-orphan")
+    muslim_caller:   Mapped["MuslimCaller"]   = relationship("MuslimCaller",   back_populates="user", uselist=False, cascade="all, delete-orphan")
+    interested_person: Mapped["InterestedPerson"] = relationship("InterestedPerson", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
         sa.Index("idx_users_role", "role"),

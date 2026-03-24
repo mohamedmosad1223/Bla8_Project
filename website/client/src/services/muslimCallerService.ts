@@ -5,12 +5,8 @@ export const muslimCallerService = {
    * Register a new Muslim Caller
    * Can involve a multipart form if certificates are uploaded
    */
-  register: async (formData: FormData) => {
-    const response = await api.post('/muslim-callers/register', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  register: async (data: any) => {
+    const response = await api.post('/muslim-callers/register', data);
     return response.data;
   },
 

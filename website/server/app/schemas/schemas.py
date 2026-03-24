@@ -984,7 +984,7 @@ class PolicyRead(BaseModel):
     description: Optional[str]
 
 class AccountDeletionRequest(BaseModel):
-    password: str = Field(..., min_length=8)
+    password: str = Field(...)
 
 # ─── Chat & AI ────────────────────────────────────────────────────────────
 

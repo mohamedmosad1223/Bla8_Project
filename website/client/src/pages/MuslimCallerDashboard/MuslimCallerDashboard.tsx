@@ -6,6 +6,7 @@ import {
 import Input from '../../components/common/Input/Input';
 import Checkbox from '../../components/common/Checkbox/Checkbox';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
+import { dawahRequestService } from '../../services/dawahRequestService';
 import './MuslimCallerDashboard.css';
 
 /* ── Reusable Select Field ──────────────────────────────────────── */
@@ -54,6 +55,9 @@ const MuslimCallerDashboard: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(p => ({ ...p, [name]: value }));
@@ -85,14 +89,56 @@ const MuslimCallerDashboard: React.FC = () => {
     return newErrors;
   };
 
-  const submit = (e: React.FormEvent) => {
+  // Channel enum mapping
+  const channelMap: Record<string, string> = {
+    whatsapp: 'whatsapp',
+    phone: 'phone',
+    telegram: 'telegram',
+    messenger: 'messenger',
+  };
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+    setApiError(null);
     const newErrors = validate();
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
+    if (Object.keys(newErrors).length !== 0) return;
+
+    try {
+      setLoading(true);
+      // Map form to backend schema
+      const [firstName, ...rest] = form.fullName.trim().split(' ');
+      const lastName = rest.join(' ') || '';
+
+      const payload = {
+        request_type: 'invited',
+        invited_first_name: firstName,
+        invited_last_name: lastName || undefined,
+        invited_gender: form.gender || undefined,
+        invited_phone: form.phone || undefined,
+        communication_channel: channelMap[form.communicationMethod] || form.communicationMethod,
+        notes: form.comment || undefined,
+      };
+
+      await dawahRequestService.create(payload);
       setShowModal(true);
+
+      // Reset form
+      setForm({ fullName: '', religion: '', nationality: '', language: '', phone: '', gender: '', age: '', communicationMethod: '', comment: '', acceptedTerms: false });
+      setSubmitted(false);
+      setErrors({});
+    } catch (err: any) {
+      console.error('Dawah request error:', err.response?.data || err);
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        setApiError(typeof detail === 'string' ? detail : JSON.stringify(detail));
+      } else {
+        setApiError('حدث خطأ أثناء إرسال الطلب');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -203,7 +249,15 @@ const MuslimCallerDashboard: React.FC = () => {
           </div>
           {getError('acceptedTerms') && <span className="mc-error-msg mc-error-center">{getError('acceptedTerms')}</span>}
 
-          <button type="submit" className="mc-btn-submit">إرسال</button>
+          {apiError && (
+            <div style={{ color: 'red', margin: '8px 0', textAlign: 'center', fontSize: '0.9rem' }}>
+              {apiError}
+            </div>
+          )}
+
+          <button type="submit" className="mc-btn-submit" disabled={loading}>
+            {loading ? 'جاري الإرسال...' : 'إرسال'}
+          </button>
         </form>
       </div>
 

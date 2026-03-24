@@ -1,16 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
+import { authService } from '../../services/authService';
 import './ForgotPassword.css';
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/reset-activation');
+    if (!email) return;
+
+    setLoading(true);
+    setError('');
+    try {
+      await authService.forgotPassword(email);
+      navigate('/reset-activation', { state: { email } });
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'حدث خطأ أثناء إرسال رمز التحقق');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -18,7 +34,7 @@ const ForgotPassword: React.FC = () => {
       {/* Back Button positioned at top right */}
       <button 
         className="back-btn"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/login')}
       >
         عودة <ChevronRight size={18} />
       </button>
@@ -38,11 +54,15 @@ const ForgotPassword: React.FC = () => {
               type="email" 
               placeholder="البريد الالكتروني" 
               icon={<Mail size={18} />}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
             
-            <button type="submit" className="auth-btn primary-btn submit-btn">
-              تأكيد
+            {error && <p className="error-text" style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</p>}
+
+            <button type="submit" className="auth-btn primary-btn submit-btn" disabled={loading}>
+              {loading ? 'جاري الإرسال...' : 'تأكيد'}
             </button>
           </form>
         </div>

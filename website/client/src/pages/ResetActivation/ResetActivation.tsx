@@ -1,20 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import OTPInput from '../../components/common/OTPInput/OTPInput';
+import { authService } from '../../services/authService';
 import './ResetActivation.css';
 
 const ResetActivation: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || '';
+  
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleComplete = (code: string) => {
-    console.log("Reset OTP Entered:", code);
+    setOtp(code);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/reset-password');
+    if (!email) {
+      setError('البريد الإلكتروني مفقود. يرجى البدء من جديد.');
+      return;
+    }
+    if (otp.length < 6) {
+      setError('يرجى إدخال الكود كاملاً (6 أرقام)');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await authService.verifyOtp(email, otp);
+      navigate('/reset-password', { state: { email, otp } });
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'الرمز غير صحيح أو منتهي الصلاحية');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    try {
+      await authService.forgotPassword(email);
+      alert('تم إعادة إرسال الكود بنجاح');
+    } catch (err) {
+      alert('فشل إعادة إرسال الكود');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,16 +78,18 @@ const ResetActivation: React.FC = () => {
 
           <form className="reset-activation-form" onSubmit={handleSubmit}>
             <div className="otp-wrapper">
-              <OTPInput length={4} onComplete={handleComplete} />
+              <OTPInput length={6} onComplete={handleComplete} />
             </div>
 
-            <button type="submit" className="auth-btn primary-btn activation-btn">
-              تأكيد
+            {error && <p className="error-text" style={{ color: 'red', marginTop: '10px', textAlign: 'center' }}>{error}</p>}
+
+            <button type="submit" className="auth-btn primary-btn activation-btn" disabled={loading}>
+              {loading ? 'جاري التحقق...' : 'تأكيد'}
             </button>
           </form>
 
           <p className="bottom-link">
-            لم يصلك الكود؟ <a href="#">إعادة إرسال الكود</a>
+            لم يصلك الكود؟ <a href="#" onClick={handleResend}>إعادة إرسال الكود</a>
           </p>
         </div>
       </div>

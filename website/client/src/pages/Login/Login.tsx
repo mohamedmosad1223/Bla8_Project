@@ -4,14 +4,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
 import Checkbox from '../../components/common/Checkbox/Checkbox';
-// import { authService } from '../../services/authService';
+import { authService } from '../../services/authService';
 import './Login.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = new URLSearchParams(location.search).get('role');
-  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'organization' ? '/partner-register' : role === 'non_muslim' ? '/register?role=non_muslim' : '/register';
+  const registerLink = role === 'preacher' ? '/preacher-register' : role === 'organization' ? '/partner-register' : role === 'non_muslim' ? '/register?role=non_muslim' : role === 'muslim_caller' ? '/register?role=muslim_caller' : '/register';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,17 +31,16 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      // const response = await authService.login(email, password);
-      
-      // Save role from URL param (e.g. ?role=muslim_caller)
-      const savedRole = role || 'admin';
-      localStorage.setItem('userData', JSON.stringify({ name: 'Test User', email }));
-      localStorage.setItem('userRole', savedRole);
-      
+      const response = await authService.login(email, password);
+
+      // Fetch full profile and save to localStorage
+      await authService.getMe();
+      localStorage.setItem('userRole', response.user.role);
+
       // Full reload so RoleDashboard reads fresh localStorage
       window.location.href = '/dashboard';
-    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      setError(err.response?.data?.detail || 'حدث خطأ أثناء تسجيل الدخول');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'كلمة المرور أو البريد الإلكتروني غير صحيح');
     } finally {
       setLoading(false);
     }
@@ -50,7 +49,7 @@ const Login: React.FC = () => {
   return (
     <AuthLayout>
       {/* Back Button positioned at top right */}
-      <button 
+      <button
         className="back-btn"
         onClick={() => navigate(-1)}
       >
@@ -61,7 +60,7 @@ const Login: React.FC = () => {
         <div className="form-container">
           <div className="header-text login-header">
             <div className="top-logo">
-               <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
+              <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
             </div>
             <h2>تسجيل الدخول</h2>
             <p>من فضلك قم بملأ البيانات التالية</p>
@@ -69,18 +68,18 @@ const Login: React.FC = () => {
 
           <form className="login-form" onSubmit={handleSubmit}>
             {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-            <Input 
-              type="email" 
-              placeholder="البريد الالكتروني" 
+            <Input
+              type="email"
+              placeholder="البريد الالكتروني"
               icon={<Mail size={18} />}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            
-            <Input 
-              type="password" 
-              placeholder="الباسورد" 
+
+            <Input
+              type="password"
+              placeholder="الباسورد"
               icon={<KeyRound size={18} />}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -88,7 +87,14 @@ const Login: React.FC = () => {
             />
 
             <div className="form-options">
-              <a href="/forgot-password" className="forgot-password">نسيت الرقم السري ؟</a>
+              <button 
+                type="button" 
+                className="forgot-password" 
+                onClick={() => navigate('/forgot-password', { state: { email } })}
+                style={{ background: 'none', border: 'none', color: '#dba841', cursor: 'pointer', padding: 0, font: 'inherit' }}
+              >
+                نسيت الرقم السري ؟
+              </button>
               <Checkbox label="تذكرني" />
             </div>
 

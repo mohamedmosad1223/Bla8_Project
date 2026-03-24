@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Globe, HelpCircle, Shield, Trash2, Camera, MessageSquare, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText, Send, Image as ImageIcon } from 'lucide-react';
+import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, MessageSquare, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText, Send, Image as ImageIcon } from 'lucide-react';
+import { profileService } from '../../services/profileService';
+import { authService } from '../../services/authService';
+import ForgotPasswordModal from '../../components/common/Modal/ForgotPasswordModal';
 import './Profile.css';
 
 type ActiveSection = 'account-info' | 'change-password' | 'language' | 'help-center' | 'help-center-faq' | 'customer-service' | 'privacy-policy';
@@ -168,9 +171,9 @@ const CustomerServiceChat: React.FC<{ onSectionChange: (sec: ActiveSection) => v
           <button className="cs-icon-btn">
             <ImageIcon size={20} />
           </button>
-          <input 
-            type="text" 
-            placeholder="اكتب هنا...." 
+          <input
+            type="text"
+            placeholder="اكتب هنا...."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
@@ -222,6 +225,190 @@ const Profile: React.FC = () => {
   const [activeSection, setActiveSection] = useState<ActiveSection>('account-info');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // --- Form State ---
+  const [form, setForm] = useState({
+    fullName: '',
+    email: '',
+    phone: ''
+  });
+  const [originalForm, setOriginalForm] = useState({
+    fullName: '',
+    email: '',
+    phone: ''
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // --- Password Visibility States ---
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showModalPasswordVisible, setShowModalPasswordVisible] = useState(false);
+
+  // --- Edit Protection State ---
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalPassword, setModalPassword] = useState('');
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState('');
+
+  const handleVerifyPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalLoading(true);
+    setModalError('');
+    try {
+      // Re-login to verify password
+      const rawData = localStorage.getItem('userData');
+      const data = rawData ? JSON.parse(rawData) : null;
+      const actualEmail = data?.user?.email || data?.email || form.email;
+      
+      await authService.login(actualEmail, modalPassword);
+      // Success
+      setIsEditing(true);
+      setShowPasswordModal(false);
+      setModalPassword('');
+    } catch (err: any) {
+      setModalError('كلمة المرور غير صحيحة');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Check if anything changed
+    if (
+      form.fullName === originalForm.fullName &&
+      form.email === originalForm.email &&
+      form.phone === originalForm.phone
+    ) {
+      setIsEditing(false);
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      // Call API with form data
+      await profileService.updateProfile({
+        full_name: form.fullName,
+        email: form.email,
+        phone: form.phone
+      });
+      
+      // Refresh local user data via authService
+      await authService.getMe();
+      
+      // Close editing mode and show success modal
+      setIsEditing(false);
+      setOriginalForm({ ...form });
+      setSuccessMessage('لقد تم تحديث بياناتك بنجاح');
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg('حدث خطأ أثناء تحديث البيانات. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setErrorMsg('كلمات المرور الجديدة غير متطابقة');
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      setErrorMsg('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      await profileService.changePassword({
+        old_password: passwordForm.oldPassword,
+        new_password: passwordForm.newPassword,
+        password_confirm: passwordForm.confirmPassword
+      });
+
+      setSuccessMessage('لقد تم تغيير كلمة المرور بنجاح');
+      setShowSuccessModal(true);
+      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      setActiveSection('account-info');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.detail || 'حدث خطأ أثناء تغيير كلمة المرور');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      await authService.forgotPassword(form.email);
+      // Open modal instead of navigating
+      setIsForgotModalOpen(true);
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.detail || 'حدث خطأ أثناء إرسال رمز التغيير');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalLoading(true);
+    setModalError('');
+    try {
+      await profileService.deleteAccount(modalPassword);
+      // Clear all user data
+      localStorage.clear();
+      // Redirect to login
+      window.location.href = '/login';
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setModalError(detail[0]?.msg || 'خطأ في التحقق من البيانات');
+      } else {
+        setModalError(detail || 'كلمة المرور غير صحيحة');
+      }
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Load user data on mount
+  React.useEffect(() => {
+    const rawData = localStorage.getItem('userData');
+    if (rawData) {
+      try {
+        const data = JSON.parse(rawData);
+        const name = data?.profile?.full_name || data?.profile?.name || data?.full_name || data?.name || '';
+        const email = data?.user?.email || data?.email || '';
+        const phone = data?.profile?.phone || data?.phone || '';
+        
+        const userData = { fullName: name, email, phone };
+        setForm(userData);
+        setOriginalForm(userData);
+      } catch (err) {
+        console.error("Failed to parse user data", err);
+      }
+    }
+  }, []);
+
   const showAvatar = !['help-center', 'help-center-faq', 'privacy-policy'].includes(activeSection);
 
   return (
@@ -250,39 +437,112 @@ const Profile: React.FC = () => {
 
           {/* Account info form */}
           {activeSection === 'account-info' && (
-            <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
+            <form className="profile-form" onSubmit={handleFormSubmit}>
+              {errorMsg && <div style={{ color: 'red', marginBottom: '15px' }}>{errorMsg}</div>}
               <div className="pf-input-icon">
-                <input type="text" placeholder="الاسم بالكامل" />
+                <input 
+                  type="text" 
+                  placeholder="الاسم بالكامل" 
+                  value={form.fullName}
+                  onChange={(e) => setForm({...form, fullName: e.target.value})}
+                  disabled={!isEditing}
+                />
                 <span className="pf-icon"><User size={18} /></span>
               </div>
               <div className="pf-input-icon">
-                <input type="email" placeholder="البريد الالكتروني" />
+                <input 
+                  type="email" 
+                  placeholder="البريد الالكتروني" 
+                  value={form.email}
+                  onChange={(e) => setForm({...form, email: e.target.value})}
+                  disabled={!isEditing}
+                />
                 <span className="pf-icon"><Mail size={18} /></span>
               </div>
               <div className="pf-input-icon">
-                <input type="tel" placeholder="رقم الهاتف" />
+                <input 
+                  type="tel" 
+                  placeholder="رقم الهاتف" 
+                  value={form.phone}
+                  onChange={(e) => setForm({...form, phone: e.target.value})}
+                  disabled={!isEditing}
+                />
                 <span className="pf-icon"><Phone size={18} /></span>
               </div>
-              <button type="submit" className="pf-save-btn">حفظ</button>
+              
+              {!isEditing ? (
+                <button type="button" className="pf-save-btn" onClick={() => setShowPasswordModal(true)}>
+                  تعديل البيانات
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" className="pf-save-btn" disabled={loading} style={{ flex: 1 }}>
+                    {loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                  </button>
+                  <button type="button" className="pf-save-btn" style={{ flex: 1, backgroundColor: '#f44336' }} onClick={() => {
+                    setIsEditing(false);
+                    setErrorMsg('');
+                  }}>
+                    إلغاء التعديل
+                  </button>
+                </div>
+              )}
             </form>
           )}
 
           {/* Change password form */}
           {activeSection === 'change-password' && (
-            <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
+            <form className="profile-form" onSubmit={handlePasswordChange}>
+              {errorMsg && <div style={{ color: 'red', marginBottom: '15px' }}>{errorMsg}</div>}
               <div className="pf-input-icon">
-                <input type="password" placeholder="كلمة المرور الحالية" />
+                <input 
+                  type={showOldPassword ? "text" : "password"} 
+                  placeholder="كلمة المرور الحالية" 
+                  value={passwordForm.oldPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, oldPassword: e.target.value})}
+                  required
+                />
                 <span className="pf-icon"><Lock size={18} /></span>
+                <button type="button" className="pf-eye-btn" onClick={() => setShowOldPassword(!showOldPassword)}>
+                  {showOldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
               <div className="pf-input-icon">
-                <input type="password" placeholder="كلمة المرور الجديدة" />
+                <input 
+                  type={showNewPassword ? "text" : "password"} 
+                  placeholder="كلمة المرور الجديدة" 
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                  required
+                />
                 <span className="pf-icon"><Lock size={18} /></span>
+                <button type="button" className="pf-eye-btn" onClick={() => setShowNewPassword(!showNewPassword)}>
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
               <div className="pf-input-icon">
-                <input type="password" placeholder="تأكيد كلمة المرور" />
+                <input 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  placeholder="تأكيد كلمة المرور" 
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                  required
+                />
                 <span className="pf-icon"><Lock size={18} /></span>
+                <button type="button" className="pf-eye-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-              <button type="submit" className="pf-save-btn">حفظ</button>
+
+              <div className="pf-forgot-password">
+                <button type="button" onClick={handleForgotPassword} disabled={loading}>
+                  {loading ? 'جاري الإرسال...' : 'نسيت الرقم السري؟'}
+                </button>
+              </div>
+
+              <button type="submit" className="pf-save-btn" disabled={loading}>
+                {loading ? 'جاري الحفظ...' : 'حفظ'}
+              </button>
             </form>
           )}
 
@@ -382,16 +642,115 @@ const Profile: React.FC = () => {
       {showDeleteModal && (
         <div className="delete-modal-overlay" dir="rtl">
           <div className="delete-modal">
-            <button className="delete-modal-close" onClick={() => setShowDeleteModal(false)}>×</button>
-            <h3 className="delete-modal-title">هل انت متأكد من حذف الحساب</h3>
-            <p className="delete-modal-desc">يرجى التأكيد على أنك تريد حذف حسابك.</p>
-            <div className="delete-modal-actions">
-              <button className="delete-modal-confirm">حذف</button>
-              <button className="delete-modal-cancel" onClick={() => setShowDeleteModal(false)}>الغاء</button>
-            </div>
+            <button className="delete-modal-close" onClick={() => {
+              setShowDeleteModal(false);
+              setModalError('');
+              setModalPassword('');
+            }}>×</button>
+            <h3 className="delete-modal-title">هل انت متأكد من حذف الحساب؟</h3>
+            <p className="delete-modal-desc" style={{ marginBottom: '15px' }}>
+              سيتم حذف جميع بياناتك نهائياً من قاعدة البيانات. يرجى إدخال كلمة المرور للتأكيد.
+            </p>
+            
+            <form onSubmit={handleDeleteAccount}>
+              <div className="pf-input-icon" style={{ marginBottom: '20px' }}>
+                <input 
+                  type={showModalPasswordVisible ? "text" : "password"} 
+                  placeholder="كلمة المرور" 
+                  value={modalPassword}
+                  onChange={(e) => setModalPassword(e.target.value)}
+                  required
+                />
+                <span className="pf-icon"><Lock size={18} /></span>
+                <button type="button" className="pf-eye-btn" onClick={() => setShowModalPasswordVisible(!showModalPasswordVisible)}>
+                  {showModalPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+
+              {modalError && <div style={{ color: 'red', marginBottom: '15px', fontSize: '0.9rem', textAlign: 'center' }}>{modalError}</div>}
+
+              <div className="delete-modal-actions">
+                <button type="submit" className="delete-modal-confirm" disabled={modalLoading}>
+                  {modalLoading ? 'جاري الحذف...' : 'حذف نهائياً'}
+                </button>
+                <button type="button" className="delete-modal-cancel" onClick={() => setShowDeleteModal(false)}>الغاء</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
+
+      {/* ─── Password Verification Modal (Before Edit) ─── */}
+      {showPasswordModal && (
+        <div className="delete-modal-overlay" dir="rtl">
+          <div className="delete-modal">
+            <button className="delete-modal-close" onClick={() => {
+              setShowPasswordModal(false);
+              setModalError('');
+              setModalPassword('');
+            }}>×</button>
+            <h3 className="delete-modal-title">تأكيد الهوية</h3>
+            <p className="delete-modal-desc" style={{ marginBottom: '20px' }}>
+              يرجى إدخال كلمة المرور الخاصة بك لتتمكن من تعديل بياناتك.
+            </p>
+            
+            <form onSubmit={handleVerifyPassword}>
+              <div className="pf-input-icon" style={{ marginBottom: '20px' }}>
+                <input 
+                  type={showModalPasswordVisible ? "text" : "password"} 
+                  placeholder="كلمة المرور" 
+                  value={modalPassword}
+                  onChange={(e) => setModalPassword(e.target.value)}
+                  autoFocus
+                  required
+                />
+                <span className="pf-icon"><Lock size={18} /></span>
+                <button type="button" className="pf-eye-btn" onClick={() => setShowModalPasswordVisible(!showModalPasswordVisible)}>
+                  {showModalPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {modalError && <div style={{ color: 'red', marginBottom: '15px', fontSize: '0.9rem', textAlign: 'center' }}>{modalError}</div>}
+              
+              <div className="delete-modal-actions">
+                <button type="submit" className="delete-modal-confirm" disabled={modalLoading} style={{ backgroundColor: '#183141' }}>
+                  {modalLoading ? 'جاري التحقق...' : 'تأكيد'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Success Modal (New Design) ─── */}
+      {showSuccessModal && (
+        <div className="delete-modal-overlay" dir="rtl">
+          <div className="success-modal-v2">
+            <div className="success-dragger"></div>
+            
+            <div className="success-wavy-icon">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 0C42.8722 0 45.4552 1.54719 46.8504 3.99282C48.5135 2.8258 50.5901 2.39296 52.6106 2.79155C54.6311 3.19013 56.4173 4.38466 57.5614 6.10427C59.6247 5.6133 61.8016 5.864 63.6879 6.80983C65.5742 7.75567 67.0141 9.32049 67.7397 11.2139C69.7523 11.3972 71.6186 12.3082 72.9904 13.7779C74.3622 15.2475 75.1274 17.1554 75.1436 19.1466C76.9922 20.0163 78.4116 21.5732 79.1362 23.525C79.8608 25.4768 79.8291 27.6577 79.0471 29.6582C80.252 31.2582 80.826 33.2505 80.6481 35.2152C80.4702 37.1798 79.5558 38.9482 78.1065 40.1466C79.5558 41.345 80.4702 43.1134 80.6481 45.078C80.826 47.0427 80.252 49.035 79.0471 50.635C79.8291 52.6355 79.8608 54.8164 79.1362 56.7682C78.4116 58.7199 76.9922 60.2769 75.1436 61.1466C75.1274 63.1378 74.3622 65.0457 72.9904 66.5153C71.6186 67.985 69.7523 68.8959 67.7397 69.0792C67.0141 70.9727 65.5742 72.5375 63.6879 73.4833C61.8016 74.4292 59.6247 74.6798 57.5614 74.1889C56.4173 75.9085 54.6311 77.1031 52.6106 77.5016C50.5901 77.9002 48.5135 77.4674 46.8504 76.3003C45.4552 78.746 42.8722 80.2931 40 80.2931C37.1278 80.2931 34.5448 78.746 33.1496 76.3003C31.4865 77.4674 29.4099 77.9002 27.3894 77.5016C25.3689 77.1031 23.5827 75.9085 22.4386 74.1889C20.3753 74.6798 18.1984 74.4292 16.3121 73.4833C14.4258 72.5375 12.9859 70.9727 12.2603 69.0792C10.2477 68.8959 8.38139 67.985 7.00959 66.5153C5.63779 65.0457 4.87258 63.1378 4.85641 61.1466C3.00783 60.2769 1.58841 58.7199 0.863831 56.7682C0.139257 54.8164 0.17094 52.6355 0.952924 50.635C-0.252033 49.035 -0.826002 47.0427 -0.648083 45.078C-0.470165 43.1134 0.44421 41.345 1.89354 40.1466C0.44421 38.9482 -0.470165 37.1798 -0.648083 35.2152C-0.826001 33.2505 -0.252033 31.2582 0.952924 29.6582C0.17094 27.6577 0.139258 25.4768 0.863832 23.525C1.58841 21.5732 3.00783 20.0163 4.85641 19.1466C4.87258 17.1554 5.63779 15.2475 7.00959 13.7779C8.38139 12.3082 10.2477 11.3972 12.2603 11.2139C12.9859 9.32049 14.4258 7.75567 16.3121 6.80983C18.1984 5.864 20.3753 5.6133 22.4386 6.10427C23.5827 4.38466 25.3689 3.19013 27.3894 2.79155C29.4099 2.39296 31.4865 2.8258 33.1496 3.99282C34.5448 1.54719 37.1278 0 40 0Z" fill="#00D285"/>
+                <path d="M26 42L35 51L56 30" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <h3 className="success-modal-title-v2">{successMessage}</h3>
+            
+            <button 
+              className="success-modal-btn" 
+              onClick={() => setShowSuccessModal(false)}
+            >
+              تم
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={isForgotModalOpen} 
+        onClose={() => setIsForgotModalOpen(false)} 
+        email={form.email} 
+      />
     </div>
   );
 };

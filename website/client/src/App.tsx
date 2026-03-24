@@ -77,7 +77,7 @@ function App() {
         <Route path="/preacher-register" element={<PreacherRegister />} />
         <Route path="/language-selection" element={<LanguageSelection />} />
         <Route path="/how-to-start" element={<HowToStart />} />
-        
+
         {/* Standalone Non-Muslim Routes */}
         <Route path="/guest/chat" element={<NonMuslimDashboard />} />
         <Route path="/guest/library" element={<Library />} />

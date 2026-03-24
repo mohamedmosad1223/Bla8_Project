@@ -118,10 +118,13 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
     db.commit()
 
     # Send actual email
-    EmailService.send_otp_email(
+    email_sent = EmailService.send_otp_email(
         to_email=user.email,
         otp=otp
     )
+    
+    if not email_sent:
+        print(f"CRITICAL: Failed to send OTP email to {user.email}. OTP is: {otp}")
 
     return {"message": "تم إرسال رمز التأكيد إلى البريد الإلكتروني (إن وجد)."}
 

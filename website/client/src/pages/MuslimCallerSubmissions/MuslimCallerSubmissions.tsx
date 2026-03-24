@@ -1,50 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
+import { dawahRequestService } from '../../services/dawahRequestService';
 import './MuslimCallerSubmissions.css';
 
-/* ── Dummy data ── */
 interface Submission {
-  id: number;
-  name: string;
-  status: 'converted' | 'in_progress' | 'rejected';
-  statusLabel: string;
-  submissionDate: string;
-  lastUpdate: string;
+  request_id: number;
+  invited_name: string;
+  status: string;
+  submission_date: string;
+  updated_at: string;
 }
 
-const dummySubmissions: Submission[] = [
-  {
-    id: 1, name: 'ديفيد كارتر',
-    status: 'converted', statusLabel: 'اسلم الحمدلله',
-    submissionDate: '22-01-2023-7:00 AM', lastUpdate: 'منذ يوم',
-  },
-  {
-    id: 2, name: 'جوزيف سميث',
-    status: 'in_progress', statusLabel: 'قيد الاقناع',
-    submissionDate: '22-01-2023-7:00 AM', lastUpdate: 'منذ يوم',
-  },
-  {
-    id: 3, name: 'وليام ألكسندر',
-    status: 'rejected', statusLabel: 'رفض',
-    submissionDate: '22-01-2023-7:00 AM', lastUpdate: 'منذ يوم',
-  },
-];
+const statusMap: Record<string, { label: string; cssKey: string }> = {
+  pending:          { label: 'قيد الانتظار',  cssKey: 'pending' },
+  in_progress:      { label: 'قيد الاقناع',   cssKey: 'in_progress' },
+  under_persuasion: { label: 'تحت الإقناع',   cssKey: 'in_progress' },
+  converted:        { label: 'اسلم الحمدلله', cssKey: 'converted' },
+  rejected:         { label: 'رفض',           cssKey: 'rejected' },
+  no_response:      { label: 'لا يوجد رد',    cssKey: 'rejected' },
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('ar-EG', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+};
 
 const MuslimCallerSubmissions = () => {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-  const filteredSubmissions = dummySubmissions.filter(sub => {
-    const matchesSearch = sub.name.includes(searchQuery) || sub.statusLabel.includes(searchQuery);
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        setLoading(true);
+        const res = await dawahRequestService.getMySubmissions();
+        setSubmissions(res?.data || []);
+      } catch (err: any) {
+        console.error('Submissions fetch error:', err.response?.data || err);
+        setError('تعذر تحميل التقديمات');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSubmissions();
+  }, []);
+
+  const filteredSubmissions = submissions.filter(sub => {
+    const fullName = sub.invited_name || '';
+    const matchesSearch = fullName.includes(searchQuery);
     const matchesFilter = activeFilter ? sub.status === activeFilter : true;
     return matchesSearch && matchesFilter;
   });
 
   const filterOptions = [
-    { key: null, label: 'الكل' },
-    { key: 'converted', label: 'اسلم الحمدلله' },
+    { key: null,          label: 'الكل' },
+    { key: 'converted',   label: 'اسلم الحمدلله' },
     { key: 'in_progress', label: 'قيد الاقناع' },
-    { key: 'rejected', label: 'رفض' },
+    { key: 'pending',     label: 'قيد الانتظار' },
+    { key: 'rejected',    label: 'رفض' },
   ];
 
   return (
@@ -79,37 +98,40 @@ const MuslimCallerSubmissions = () => {
         ))}
       </div>
 
+      {/* Loading / Error */}
+      {loading && <div className="mcd-empty"><p>جاري التحميل...</p></div>}
+      {error && <div className="mcd-empty"><p style={{ color: 'red' }}>{error}</p></div>}
+
       {/* Submissions Grid */}
-      <div className="mcd-grid">
-        {filteredSubmissions.map(sub => (
-          <div key={sub.id} className="mcd-card">
-            {/* Status Badge */}
-            <div className={`mcd-badge mcd-badge--${sub.status}`}>
-              {sub.statusLabel}
-            </div>
-
-            {/* Name */}
-            <h3 className="mcd-card-name">{sub.name}</h3>
-
-            {/* Submission Date */}
-            <div className="mcd-card-detail">
-              <Calendar size={14} className="mcd-detail-icon" />
-              <span className="mcd-detail-label">تاريخ التقديم</span>
-            </div>
-            <div className="mcd-card-date">{sub.submissionDate}</div>
-
-            {/* Last Update */}
-            <div className="mcd-card-detail">
-              <Clock size={14} className="mcd-detail-icon" />
-              <span className="mcd-detail-label">اخر تحديث</span>
-            </div>
-            <div className="mcd-card-date">{sub.lastUpdate}</div>
-          </div>
-        ))}
-      </div>
+      {!loading && !error && (
+        <div className="mcd-grid">
+          {filteredSubmissions.map(sub => {
+            const fullName = sub.invited_name || '';
+            const statusInfo = statusMap[sub.status] || { label: sub.status, cssKey: 'pending' };
+            return (
+              <div key={sub.request_id} className="mcd-card">
+                <div className={`mcd-badge mcd-badge--${statusInfo.cssKey}`}>
+                  {statusInfo.label}
+                </div>
+                <h3 className="mcd-card-name">{fullName || 'بدون اسم'}</h3>
+                <div className="mcd-card-detail">
+                  <Calendar size={14} className="mcd-detail-icon" />
+                  <span className="mcd-detail-label">تاريخ التقديم</span>
+                </div>
+                <div className="mcd-card-date">{formatDate(sub.submission_date)}</div>
+                <div className="mcd-card-detail">
+                  <Clock size={14} className="mcd-detail-icon" />
+                  <span className="mcd-detail-label">اخر تحديث</span>
+                </div>
+                <div className="mcd-card-date">{formatDate(sub.updated_at)}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Empty State */}
-      {filteredSubmissions.length === 0 && (
+      {!loading && !error && filteredSubmissions.length === 0 && (
         <div className="mcd-empty">
           <p>لا توجد تقديمات حالياً</p>
         </div>

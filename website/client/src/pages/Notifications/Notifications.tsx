@@ -8,8 +8,8 @@ const Notifications = () => {
   return (
     <div className="notifications-page" dir="rtl">
       <div className="notifications-header-area">
-        <button 
-          className="back-button" 
+        <button
+          className="back-button"
           onClick={() => navigate(-1)}
         >
           عودة
