@@ -1,29 +1,57 @@
 import './NationalitiesChart.css';
 
-const NationalitiesChart = () => {
+// المحافظات الست ثابتة دائماً - القيم تيجي من الـ API لو فيه بيانات، وإلا صفر
+const KUWAIT_GOVERNORATES = [
+  { name: 'محافظة العاصمة',      color: '#F59E0B' },
+  { name: 'محافظة الأحمدي',      color: '#EC4899' },
+  { name: 'محافظة الفروانية',    color: '#10B981' },
+  { name: 'محافظة حولي',         color: '#8B5CF6' },
+  { name: 'محافظة الجهراء',      color: '#EF4444' },
+  { name: 'محافظة مبارك الكبير', color: '#3B82F6' },
+];
+
+interface ChartItem {
+  label: string;
+  value: number;
+}
+
+interface NationalitiesChartProps {
+  data?: ChartItem[]; // بيانات حقيقية من الـ API لو فيه
+}
+
+const NationalitiesChart = ({ data }: NationalitiesChartProps) => {
+  // نبني map من اسم المحافظة → القيمة الحقيقية (لو جات من الـ API)
+  const dataMap: Record<string, number> = {};
+  if (data) {
+    data.forEach(item => { dataMap[item.label] = item.value; });
+  }
+
+  // نحسب أعلى قيمة عشان نحسب نسبة الـ progress bar (لو كلها صفر نسيبها صفر)
+  const govList = KUWAIT_GOVERNORATES.map(gov => ({
+    ...gov,
+    value: dataMap[gov.name] ?? 0,
+  }));
+  const maxValue = Math.max(...govList.map(g => g.value), 1); // الـ 1 عشان منقسمش على صفر
+
   return (
     <div className="nationalities-container">
       <div className="awqaf-kuwait-map-wrap">
         <img src="/image 1.png" alt="خريطة الكويت" className="awqaf-kuwait-map-img" />
       </div>
       <div className="awqaf-gov-grid">
-        {[
-          { name: 'محافظة العاصمة',    value: 72, color: '#F59E0B' },
-          { name: 'محافظة الأحمدي',   value: 60, color: '#EC4899' },
-          { name: 'محافظة الفروانية', value: 50, color: '#10B981' },
-          { name: 'محافظة حولي',       value: 40, color: '#8B5CF6' },
-          { name: 'محافظة الجهراء',   value: 30, color: '#EF4444' },
-          { name: 'محافظة مبارك الكبير', value: 20, color: '#3B82F6' },
-        ].map(gov => (
+        {govList.map(gov => (
           <div key={gov.name} className="awqaf-gov-item">
             <span className="awqaf-gov-name">{gov.name}</span>
             <div className="awqaf-gov-bar-wrap">
               <div
                 className="awqaf-gov-bar"
-                style={{ width: `${(gov.value / 72) * 100}%`, background: gov.color }}
+                style={{
+                  width: gov.value > 0 ? `${(gov.value / maxValue) * 100}%` : '0%',
+                  background: gov.color,
+                }}
               />
             </div>
-            <span className="awqaf-gov-value">{gov.value} ألف شخص</span>
+            <span className="awqaf-gov-value">{gov.value}</span>
           </div>
         ))}
       </div>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Filter as FilterIcon, SortDesc, Eye,
@@ -14,20 +14,20 @@ const statusLabel = (st: string | null) => {
     under_persuasion: 'قيد الإقناع',
     converted: 'تم إسلامه',
     rejected: 'رفض الإسلام',
+    pending: 'قيد الإقناع'
   };
   return st ? (map[st] ?? st) : '—';
 };
 
-const statusBadgeClass = (st: string | null) => {
-  const lbl = statusLabel(st);
-  if (lbl === 'تم إسلامه')  return 'creq-status-badge creq-status-green';
-  if (lbl === 'رفض الإسلام') return 'creq-status-badge creq-status-red';
-  return 'creq-status-badge creq-status-yellow';
+const StatusBadge = ({ status }: { status: string | null }) => {
+  const label = statusLabel(status);
+  let cls = 'creq-status-badge ';
+  if (label === 'تم إسلامه') cls += 'creq-status-green';
+  else if (label === 'رفض الإسلام') cls += 'creq-status-red';
+  else cls += 'creq-status-yellow';
+  
+  return <span className={cls}>{label}</span>;
 };
-
-const StatusBadge = ({ status }: { status: string | null }) => (
-  <span className={statusBadgeClass(status)}>{statusLabel(status)}</span>
-);
 
 const genderLabel = (g: string | null) => {
   if (!g) return '—';
@@ -82,27 +82,25 @@ const TableView = ({
       <thead>
         <tr>
           <th>رقم <span className="creq-sort-arrow">↕</span></th>
-          <th>اسم الشخص <span className="creq-sort-arrow">↕</span></th>
-          <th>الجنسية <span className="creq-sort-arrow">↕</span></th>
-          <th>لغة التواصل <span className="creq-sort-arrow">↕</span></th>
-          <th>الديانة <span className="creq-sort-arrow">↕</span></th>
-          <th>تاريخ الارسال <span className="creq-sort-arrow">↕</span></th>
-          <th>الملاحظات <span className="creq-sort-arrow">↕</span></th>
+          <th>اسم الداعي <span className="creq-sort-arrow">↕</span></th>
+          <th>اسم المدعو <span className="creq-sort-arrow">↕</span></th>
+          <th>اسم الداعية <span className="creq-sort-arrow">↕</span></th>
+          <th>تاريخ الدعوة <span className="creq-sort-arrow">↕</span></th>
           <th>حالة الطلب <span className="creq-sort-arrow">↕</span></th>
+          <th>ملاحظة <span className="creq-sort-arrow">↕</span></th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        {requests.map((req) => (
+        {(requests || []).map((req) => (
           <tr key={req.request_id}>
-            <td>#{req.request_id}</td>
+            <td>{req.request_id}</td>
+            <td>{req.submitted_by_name || 'لا يوجد'}</td>
             <td>{invitedName(req)}</td>
-            <td>{req.invited_country_name || '—'}</td>
-            <td>{req.invited_language_name || '—'}</td>
-            <td>{req.invited_religion || '—'}</td>
-            <td className="creq-date-cell" style={{ whiteSpace: 'pre-line' }}>{formatDate(req.submission_date)}</td>
-            <td><span className="creq-note-text">{req.notes || '—'}</span></td>
+            <td>{req.preacher_name || 'غير محدد'}</td>
+            <td className="creq-date-cell">{formatDate(req.submission_date)}</td>
             <td><StatusBadge status={req.status} /></td>
+            <td><span className="creq-note-text">{req.notes || '—'}</span></td>
             <td>
               <button className="creq-eye-btn" onClick={() => onView(req)} title="عرض التفاصيل">
                 <Eye size={18} />
@@ -217,31 +215,37 @@ const UpdateStatusModal = ({
 
 // ─── Detail View ──────────────────────────────────────────────────────────────
 const DetailView = ({
-  detail, onBack,
+  detail: initialDetail, onBack,
 }: {
   detail: PoolRequest; onBack: () => void;
 }) => {
+  const [detail, setDetail] = useState<PoolRequest>(initialDetail);
+  const [reports, setReports] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showReportReminder, setShowReportReminder] = useState(false);
   const navigate = useNavigate();
   const userRole = localStorage.getItem('userRole');
 
-  const mockReports = [
-    {
-      report_id: 1,
-      communication_type: 'External',
-      communication_details: 'واتساب',
-      content: 'تمت جلسة نقاش حول أسس الإسلام ومقارنة الأديان. أبدى الشخص اهتماماً بالغاً وطلب مزيداً من المصادر.',
-      created_at: '2026-03-15T10:30:00',
-    },
-    {
-      report_id: 2,
-      communication_type: 'Platform',
-      communication_details: null,
-      content: 'تم إرسال مقاطع مرئية تعريفية بالإسلام عبر المنصة. الشخص يتفاعل بإيجابية.',
-      created_at: '2026-03-17T14:00:00',
-    },
-  ];
+  useEffect(() => {
+    // 1. Refresh the request data to get the most up-to-date info (e.g. feedback)
+    dawahRequestService.getById(initialDetail.request_id)
+      .then(res => {
+        if (res.data) setDetail(res.data);
+      })
+      .catch(err => console.error("Error refreshing request:", err));
+
+    // 2. Fetch real reports
+    setReportsLoading(true);
+    dawahRequestService.getReports(initialDetail.request_id)
+      .then(res => {
+        setReports(res.data || []);
+      })
+      .catch(err => {
+        console.error("Error fetching reports:", err);
+      })
+      .finally(() => setReportsLoading(false));
+  }, [initialDetail.request_id]);
 
   return (
     <div className="creq-detail-page" dir="rtl">
@@ -310,6 +314,11 @@ const DetailView = ({
           <DetailField label="قناة التواصل" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}>
             {channelLabel(detail.communication_channel)}
           </DetailField>
+          {(userRole === 'organization' || userRole === 'admin') && (
+            <DetailField label="الداعية المسؤول" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="19" cy="11" r="2"/></svg>}>
+              {detail.preacher_name || 'غير محدد'}
+            </DetailField>
+          )}
         </div>
 
         {/* Row 3: contact link / status */}
@@ -363,19 +372,21 @@ const DetailView = ({
               <div className="creq-reports-header">
                 <ClipboardList size={18} className="creq-icon-gold" />
                 <span className="creq-reports-title">تقارير النشاط</span>
-                <span className="creq-reports-count">{mockReports.length} تقارير</span>
+                <span className="creq-reports-count">{reports.length} تقارير</span>
               </div>
-              {mockReports.length === 0 ? (
+              {reportsLoading ? (
+                <p className="creq-reports-empty">جارٍ تحميل التقارير...</p>
+              ) : reports.length === 0 ? (
                 <p className="creq-reports-empty">لا توجد تقارير مسجلة حتى الآن.</p>
               ) : (
                 <div className="creq-reports-list">
-                  {mockReports.map(r => (
+                  {reports.map(r => (
                     <div key={r.report_id} className="creq-report-card">
                       <div className="creq-report-card-header">
                         <span className="creq-report-source">
                           {r.communication_type === 'Platform'
                             ? <><Monitor size={14} /> داخل المنصة</>
-                            : <><Globe size={14} /> {r.communication_details}</>}
+                            : <><Globe size={14} /> {r.communication_details || 'تواصل خارجي'}</>}
                         </span>
                         <span className="creq-report-date">
                           {new Date(r.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -445,11 +456,26 @@ const CurrentRequests = () => {
   const filterRef = useRef<HTMLDivElement>(null);
 
   // ── Fetch ────────────────────────────────────────────────────────────────────
-  const fetchMyRequests = useCallback(() => {
+  const fetchRequests = useCallback(() => {
     setLoading(true);
     setError(null);
-    dawahRequestService.getMyRequests(0, 200)
-      .then(res => setAllRequests(res.data ?? []))
+    const role = localStorage.getItem('userRole');
+    
+    if (!role) {
+      setError('يرجى تسجيل الدخول لعرض الطلبات.');
+      setLoading(false);
+      return;
+    }
+
+    // Choose the right fetch method based on the role
+    const requestPromise = role === 'organization' 
+      ? dawahRequestService.getOrganizationRequests(0, 200)
+      : dawahRequestService.getMyRequests(0, 200);
+
+    requestPromise
+      .then((res: { data: PoolRequest[] }) => {
+        setAllRequests(res.data || []);
+      })
       .catch((err: any) => {
         const msg = err.response?.data?.detail || 'تعذّر تحميل الطلبات. تأكد من تشغيل الخادم وصحة تسجيل دخولك.';
         setError(msg);
@@ -457,7 +483,7 @@ const CurrentRequests = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchMyRequests(); }, [fetchMyRequests]);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   // ── Click outside close ──────────────────────────────────────────────────────
   useEffect(() => {

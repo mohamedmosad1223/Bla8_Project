@@ -18,5 +18,65 @@
 }
 
 .register-btn {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+}
+
+.register-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.form-input-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.input-group {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.form-select-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 40px 0 40px; /* مسافة متساوية يمين وشمال للايقونة والسهم */
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  font-size: 0.95rem;
+  color: #1e293b;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+  text-align: right; 
+}
+
+.form-select-input:focus {
+  border-color: #6366F1;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-icon-left {
+  position: absolute;
+  left: 15px; /* مكان الايقونة على الشمال زي باقي الفورم */
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+}
+
+/* سهم الاختيار الصغير */
+.input-group::after {
+  content: '▼';
+  font-size: 0.7rem;
+  position: absolute;
+  right: 15px;
+  color: #94a3b8;
+  pointer-events: none;
 }

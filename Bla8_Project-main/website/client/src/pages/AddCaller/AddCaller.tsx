@@ -1,33 +1,50 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Upload, X, Eye, Check } from 'lucide-react';
-import { muslimCallerService } from '../../services/muslimCallerService';
+import { ChevronRight, Upload, X, Eye, Check, AlertCircle, Loader2 } from 'lucide-react';
+import api from '../../services/api';
+import { preacherService } from '../../services/preacherService';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './AddCaller.css';
 
+
+
 const AddCaller = () => {
   const navigate = useNavigate();
-  const [languages, setLanguages] = useState<string[]>(['العربية', 'الانجليزية']);
+  const [availableLangs, setAvailableLangs] = useState<{id: number, name: string}[]>([]);
+  const [availableCountries, setAvailableCountries] = useState<{id: number, name: string}[]>([]);
+  const [selectedLangs, setSelectedLangs] = useState<number[]>([]); 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
-  
-  const availableLanguages = ['العربية', 'الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية', 'الهندية'];
-
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    scientificQualification: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [file, setFile] = useState<File | null>(null);
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  // جلب البيانات من السيرفر
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // اللغات
+        const langRes = await preacherService.getAllLanguages();
+        const langs = langRes.data || langRes;
+        if (Array.isArray(langs)) {
+           setAvailableLangs(langs);
+           const defaultIds = langs
+             .filter((l: any) => l.name.includes('العربية') || l.name.includes('الانجليزية'))
+             .map((l: any) => l.id);
+           setSelectedLangs(defaultIds);
+        }
+
+        // البلاد
+        const countryRes = await api.get('/preachers/countries');
+        const countries = countryRes.data?.data || countryRes.data || [];
+        setAvailableCountries(countries);
+        // تعيين أول بلد كجنسية افتراضية إذا لم يوجد اختيار
+        if (countries.length > 0) {
+            setFormData(prev => ({ ...prev, nationalityCountryId: countries[0].id }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -41,6 +58,21 @@ const AddCaller = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isLanguageDropdownOpen]);
 
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    scientificQualification: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    gender: 'male',
+    nationalityCountryId: 1, // سنحدثها عند جلب البلاد
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -52,15 +84,11 @@ const AddCaller = () => {
     }
   };
 
-  const removeLanguage = (langToRemove: string) => {
-    setLanguages(languages.filter(lang => lang !== langToRemove));
-  };
-  
-  const toggleLanguage = (lang: string) => {
-    if (languages.includes(lang)) {
-      removeLanguage(lang);
+  const toggleLanguage = (langId: number) => {
+    if (selectedLangs.includes(langId)) {
+      setSelectedLangs(selectedLangs.filter(id => id !== langId));
     } else {
-      setLanguages([...languages, lang]);
+      setSelectedLangs([...selectedLangs, langId]);
     }
   };
 
@@ -70,6 +98,10 @@ const AddCaller = () => {
       setError('كلمات المرور غير متطابقة');
       return;
     }
+    if (!file) {
+        setError('يرجى رفع ملف المؤهلات العلمية');
+        return;
+    }
 
     try {
       setLoading(true);
@@ -77,37 +109,49 @@ const AddCaller = () => {
       
       const payload = new FormData();
       payload.append('full_name', formData.fullName);
-      payload.append('email', formData.email);
+      payload.append('email', formData.email); // سيتم استخدامه كـ username
       payload.append('password', formData.password);
       payload.append('password_confirm', formData.confirmPassword);
       payload.append('phone', formData.phone);
-      if (formData.scientificQualification) {
-        payload.append('scientific_qualification', formData.scientificQualification);
-      }
+      payload.append('preacher_email', formData.email); // البريد الخاص بالتواصل
+      payload.append('scientific_qualification', formData.scientificQualification);
+      payload.append('gender', formData.gender);
+      payload.append('nationality_country_id', formData.nationalityCountryId.toString());
       
-      // Send languages as JSON or map to IDs based on backend lookup. 
-      // For now, joining them as a comma separated list or picking IDs (assuming IDs aren't mapped in UI)
-      payload.append('languages', languages.join(', '));
+      // إرسال اللغات كـ IDs (Backend expects a list of IDs)
+      selectedLangs.forEach(id => payload.append('languages', id.toString()));
       
-      // Default to dummy nationalities if not provided in UI to satisfy Backend constraints temporarily
-      payload.append('nationality_country_id', '1');
-      payload.append('residence_country_id', '1');
-
-      if (file) {
-        payload.append('qualification_file', file);
-      }
+      // الملف
+      payload.append('qualification_file', file);
       
-      await muslimCallerService.register(payload);
+      await preacherService.register(payload);
       setShowModal(true);
-    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      setError(err.response?.data?.detail || 'حدث خطأ أثناء الإضافة');
+    } catch (err: any) {
+      console.error('Full Error Object:', err);
+      const responseData = err.response?.data;
+      const detail = responseData?.detail;
+      
+      let errorMessage = 'حدث خطأ أثناء إضافة الداعية. تأكد من أن البيانات صحيحة.';
+      
+      if (typeof detail === 'string') {
+        errorMessage = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        // التعامل مع أخطاء Pydantic (422)
+        errorMessage = detail[0]?.msg || errorMessage;
+      } else if (responseData?.message) {
+        errorMessage = responseData.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="callers-page">
+    <div className="add-caller-page"> {/* تم تغيير الكلاس لضمان استقلالية التصميم */}
       <div className="notifications-header-area">
         <div className="breadcrumb">
           <button className="breadcrumb-link" onClick={() => navigate('/callers')}>
@@ -121,11 +165,15 @@ const AddCaller = () => {
 
       <div className="form-container">
         <form className="add-caller-form" onSubmit={handleSubmit}>
-          {error && <div className="error-message" style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+          {error && (
+            <div className="error-alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
+            </div>
+          )}
           
           <div className="form-grid">
-            
-            {/* Row 1 */}
+            {/* الاسم الكامل ورقم الهاتف */}
             <div className="form-group">
               <label>اسم الداعية بالكامل</label>
               <input type="text" name="fullName" placeholder="اسم الداعية بالكامل" className="form-input" value={formData.fullName} onChange={handleInputChange} required />
@@ -135,23 +183,56 @@ const AddCaller = () => {
               <input type="text" name="phone" placeholder="رقم الهاتف" className="form-input" value={formData.phone} onChange={handleInputChange} required />
             </div>
 
-            {/* Row 2 */}
+            {/* النوع - Gender */}
+            <div className="form-group">
+              <label>النوع</label>
+              <select 
+                name="gender" 
+                className="form-input" 
+                value={formData.gender} 
+                onChange={(e) => setFormData(prev => ({...prev, gender: e.target.value}))}
+                required
+                style={{ appearance: 'auto', paddingRight: '10px' }}
+              >
+                <option value="male">ذكر</option>
+                <option value="female">أنثى</option>
+              </select>
+            </div>
+
+            {/* الجنسية */}
+            <div className="form-group">
+              <label>الجنسية</label>
+              <select 
+                name="nationalityCountryId"
+                className="form-input" 
+                value={formData.nationalityCountryId} 
+                onChange={(e) => setFormData(prev => ({...prev, nationalityCountryId: parseInt(e.target.value)}))}
+                required 
+                style={{ appearance: 'auto', paddingRight: '10px' }}
+              >
+                {availableCountries.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* المؤهل العلمي والملف */}
             <div className="form-group">
               <label>المؤهل العلمي</label>
-              <input type="text" name="scientificQualification" placeholder="اكتب اسم ونوع المؤهل" className="form-input" value={formData.scientificQualification} onChange={handleInputChange} />
+              <input type="text" name="scientificQualification" placeholder="اكتب اسم ونوع المؤهل" className="form-input" value={formData.scientificQualification} onChange={handleInputChange} required />
             </div>
             <div className="form-group">
               <label>رفع الشهادات العملية</label>
               <div className="file-upload-wrapper">
-                <input type="file" id="certificate-upload" className="file-input-hidden" onChange={handleFileChange} />
+                <input type="file" id="certificate-upload" className="file-input-hidden" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" />
                 <label htmlFor="certificate-upload" className="file-upload-label form-input">
-                  <span className="placeholder-text">{file ? file.name : 'ارفع شهاداتك'}</span>
+                  <span className="placeholder-text">{file ? file.name : 'ارفع شهادات الداعية (PDF/JPG)'}</span>
                   <Upload size={18} className="upload-icon" />
                 </label>
               </div>
             </div>
 
-            {/* Row 3 */}
+            {/* البريد واللغات */}
             <div className="form-group">
               <label>البريد الالكتروني</label>
               <input type="email" name="email" placeholder="البريد الالكتروني" className="form-input" value={formData.email} onChange={handleInputChange} required />
@@ -164,39 +245,37 @@ const AddCaller = () => {
                 style={{ cursor: 'pointer', minHeight: '42px', height: 'auto' }}
               >
                 <div className="tags-wrapper">
-                  {languages.length === 0 && <span className="placeholder-text text-gray" style={{fontSize: '0.9rem', color: '#9CA3AF'}}>اختر اللغات...</span>}
-                  {languages.map((lang, index) => (
-                    <span key={index} className="tag" onClick={(e) => e.stopPropagation()}>
-                      {lang}
-                      <button type="button" className="tag-remove" onClick={(e) => {
-                        e.stopPropagation();
-                        removeLanguage(lang);
-                      }}>
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
+                  {selectedLangs.length === 0 && <span className="placeholder-text">اختر اللغات...</span>}
+                  {selectedLangs.map((langId) => {
+                    const lang = availableLangs.find(l => l.id === langId);
+                    return (
+                      <span key={langId} className="tag" onClick={(e) => e.stopPropagation()}>
+                        {lang?.name}
+                        <button type="button" className="tag-remove" onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLanguage(langId);
+                        }}>
+                          <X size={14} />
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
                 <button type="button" className="tag-dropdown-btn">
-                  <ChevronRight size={16} className={`transition-transform duration-200 ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} style={{ transform: isLanguageDropdownOpen ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
+                  <ChevronRight size={16} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} />
                 </button>
               </div>
 
-              {/* Language Dropdown */}
               {isLanguageDropdownOpen && (
                 <div className="language-dropdown-menu">
-                  {availableLanguages.map((lang) => {
-                    const isSelected = languages.includes(lang);
+                  {availableLangs.map((lang) => {
+                    const isSelected = selectedLangs.includes(lang.id);
                     return (
-                      <div 
-                        key={lang} 
-                        className="language-dropdown-item"
-                        onClick={() => toggleLanguage(lang)}
-                      >
+                      <div key={lang.id} className="language-dropdown-item" onClick={() => toggleLanguage(lang.id)}>
                         <div className={`checkbox-custom check-align-left ${isSelected ? 'checked' : ''}`}>
-                          {isSelected && <Check size={12} strokeWidth={4} />}
+                          {isSelected && <Check size={12} strokeWidth={4} color="white" />}
                         </div>
-                        <span>{lang}</span>
+                        <span>{lang.name}</span>
                       </div>
                     );
                   })}
@@ -204,35 +283,29 @@ const AddCaller = () => {
               )}
             </div>
 
-            {/* Row 4 */}
+            {/* كلمة السر */}
             <div className="form-group">
               <label>كلمة السر</label>
               <div className="password-input-wrapper">
                 <input type="password" name="password" placeholder="كلمة السر" className="form-input password-input" value={formData.password} onChange={handleInputChange} required />
-                <button type="button" className="password-toggle-btn">
-                  <Eye size={18} />
-                </button>
               </div>
             </div>
             <div className="form-group">
               <label>تأكيد كلمة السر</label>
               <div className="password-input-wrapper">
                 <input type="password" name="confirmPassword" placeholder="تأكيد كلمة السر" className="form-input password-input" value={formData.confirmPassword} onChange={handleInputChange} required />
-                <button type="button" className="password-toggle-btn">
-                  <Eye size={18} />
-                </button>
               </div>
             </div>
-
           </div>
 
           <div className="form-footer">
             <button type="submit" className="btn-save" disabled={loading}>
-              {loading ? 'جاري الحفظ...' : 'حفظ'}
+              {loading ? <Loader2 size={18} className="spin-icon" /> : 'حفظ البيانات'}
             </button>
           </div>
         </form>
       </div>
+
       <SuccessModal
         isOpen={showModal}
         onClose={() => {
@@ -240,7 +313,7 @@ const AddCaller = () => {
             navigate('/callers');
         }}
         title="تم إضافة الداعية بنجاح"
-        description="والآن يمكنه استلام طلبات"
+        description="تم تسجيل البيانات وإرسال إشعار للداعية"
       />
     </div>
   );

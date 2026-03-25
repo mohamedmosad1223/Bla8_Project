@@ -47,4 +47,13 @@ export const orgService = {
     const response = await api.delete(`/organizations/${orgId}`);
     return response.data;
   },
+
+  /**
+   * Get organization dashboard statistics
+   * Returns 8 stat cards + 3 charts data
+   */
+  getDashboardStats: async () => {
+    const response = await api.get('/dashboard/organization');
+    return response.data;
+  },
 };
