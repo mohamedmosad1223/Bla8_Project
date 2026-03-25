@@ -20,6 +20,8 @@ class InterestedPerson(Base):
     communication_lang_id: Mapped[int|None]       = mapped_column(sa.Integer, sa.ForeignKey("languages.language_id"))
     email:                 Mapped[str|None]       = mapped_column(sa.String(255))
     phone:                 Mapped[str|None]       = mapped_column(sa.String(30))
+    religion_id:           Mapped[int|None]       = mapped_column(sa.Integer, sa.ForeignKey("religions.religion_id"))
+    religion:              Mapped[str|None]       = mapped_column(sa.String(100))
     created_at:            Mapped[datetime]       = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now())
     updated_at:            Mapped[datetime]       = mapped_column(sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now())
 

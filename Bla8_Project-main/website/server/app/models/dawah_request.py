@@ -24,7 +24,8 @@ class DawahRequest(Base):
     invited_language_id:        Mapped[int|None]          = mapped_column(sa.Integer, sa.ForeignKey("languages.language_id"))
     invited_phone:              Mapped[str|None]          = mapped_column(sa.String(30))
     invited_email:              Mapped[str|None]          = mapped_column(sa.String(255))
-    invited_religion:           Mapped[str|None]          = mapped_column(sa.String(100))
+    invited_religion_id:        Mapped[int|None]          = mapped_column(sa.Integer, sa.ForeignKey("religions.religion_id"))
+    invited_religion:           Mapped[str|None]          = mapped_column(sa.String(100)) # Legacy or 'Other'
 
     # ── من رفع الطلب ────────────────────────────────────────
     submitted_by_caller_id: Mapped[int|None] = mapped_column(sa.BigInteger, sa.ForeignKey("muslim_callers.caller_id"))

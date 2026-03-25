@@ -1,27 +1,30 @@
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceDot } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import './ResponseTimeChart.css';
 
-const data = [
-  { name: 'يناير', time: 5 },
-  { name: 'فبراير', time: 7 },
-  { name: 'مارس', time: 4 },
-  { name: 'ابريل', time: 6 },
-  { name: 'مايو', time: 8 },
-  { name: 'يونيو', time: 5 },
-  { name: 'يوليو', time: 12 },
-  { name: 'اغسطس', time: 10 },
-  { name: 'سبتمبر', time: 7 },
-  { name: 'اكتوبر', time: 18 },
-  { name: 'نوفمبر', time: 9 },
-  { name: 'ديسمبر', time: 14 },
+interface ResponseTimeData {
+  name: string;
+  time: number;
+}
+
+interface ResponseTimeChartProps {
+  data?: ResponseTimeData[];
+}
+
+// بيانات افتراضية في حالة عدم وجود داتا
+const defaultData = [
+  { name: 'يناير', time: 0 },
+  { name: 'فبراير', time: 0 },
+  { name: 'مارس', time: 0 },
 ];
 
-const ResponseTimeChart = () => {
+const ResponseTimeChart = ({ data }: ResponseTimeChartProps) => {
+  const chartData = data && data.length > 0 ? data : defaultData;
+
   return (
     <div className="response-time-chart-wrapper">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={data}
+          data={chartData}
           margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
         >
           <defs>
@@ -58,15 +61,6 @@ const ResponseTimeChart = () => {
             fill="url(#colorTime)"
             dot={false}
             activeDot={{ r: 6, fill: '#DBA841', stroke: 'white', strokeWidth: 2 }}
-          />
-          <ReferenceDot
-            x="اكتوبر"
-            y={18}
-            r={6}
-            fill="#DBA841"
-            stroke="white"
-            strokeWidth={2}
-            label={{ value: '18 دقيقة', position: 'top', fill: 'white', fontSize: 12, fontWeight: 700, offset: 8 }}
           />
         </AreaChart>
       </ResponsiveContainer>

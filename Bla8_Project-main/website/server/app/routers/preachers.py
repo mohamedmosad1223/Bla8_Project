@@ -18,6 +18,26 @@ router = APIRouter(
     tags=["Preachers"]
 )
 
+@router.get("/languages")
+def get_all_languages(db: Session = Depends(get_db)):
+    """جلب كل اللغات المتاحة في النظام"""
+    from app.models.reference import Language
+    langs = db.query(Language).all()
+    return {"data": [{"id": l.language_id, "name": l.language_name} for l in langs]}
+
+@router.get("/countries")
+def get_all_countries(db: Session = Depends(get_db)):
+    """جلب كل البلاد المتاحة في النظام"""
+    from app.models.reference import Country
+    countries = db.query(Country).all()
+    return {"data": [{"id": c.country_id, "name": c.country_name} for c in countries]}
+@router.get("/religions")
+def get_all_religions(db: Session = Depends(get_db)):
+    """جلب كل الأديان المتاحة في النظام"""
+    from app.models.religion import Religion
+    religions = db.query(Religion).all()
+    return {"data": [{"id": r.religion_id, "name": r.religion_name} for r in religions]}
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_preacher(
     email: EmailStr = Form(...),
@@ -31,13 +51,21 @@ def register_preacher(
     org_id: Optional[int] = Form(None),
     type: Optional[PreacherType] = Form(None),
     gender: Optional[GenderType] = Form(None),
-    languages: List[int] = Form([]),
+    languages: List[str] = Form([]), # استقبالها كـ List[str] لزيادة المرونة
     qualification_file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """تسجيل داعية مع رفع ملف المؤهلات"""
     try:
+        # معالجة اللغات بشكل يدوي للتأكد من تحويلها لـ integers
+        processed_languages = []
+        for lang in languages:
+            if ',' in lang:
+                processed_languages.extend([int(x.strip()) for x in lang.split(',') if x.strip().isdigit()])
+            elif lang.isdigit():
+                processed_languages.append(int(lang))
+
         payload = PreacherRegister(
             email=email,
             password=password,
@@ -50,11 +78,13 @@ def register_preacher(
             org_id=org_id,
             type=type,
             gender=gender,
-            languages=languages,
+            languages=processed_languages,
             qualification_file="placeholder"
         )
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
+        # تحويل الأخطاء لنصوص واضحة لتجنب مشاكل الـ Serialization
+        error_messages = [{"msg": err["msg"], "loc": err["loc"]} for err in e.errors()]
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error_messages)
         
     return PreachersController.register(db, payload, qualification_file, current_user)
 
@@ -122,17 +152,66 @@ def get_preacher(preacher_id: int, db: Session = Depends(get_db), current_user: 
 
 
 @router.patch("/{preacher_id}", dependencies=[Depends(check_role([UserRole.admin, UserRole.organization, UserRole.preacher]))])
-def update_preacher(preacher_id: int, payload: PreacherUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """تحديث بيانات الداعية"""
-    # التحقق من الصلاحيات
-    # لو أدمن: تمام
-    # لو جمعية: لازم الداعية يكون تبعها
-    # لو داعية: لازم يكون هو نفسه
-    
+async def update_preacher(
+    preacher_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user),
+    full_name: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    preacher_email: Optional[str] = Form(None),
+    scientific_qualification: Optional[str] = Form(None),
+    gender: Optional[str] = Form(None),
+    languages: List[str] = Form([]), # تغييرها لـ List[str] لاستلام كل القيم
+    qualification_file: Optional[UploadFile] = File(None)
+):
+    """تحديث بيانات الداعية (يدعم لغات متعددة)"""
     preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
     if not preacher:
         raise HTTPException(status_code=404, detail="الداعية غير موجود")
 
+    update_dict = {}
+    if full_name: update_dict["full_name"] = full_name
+    if phone: update_dict["phone"] = phone
+    if preacher_email: update_dict["preacher_email"] = preacher_email
+    if scientific_qualification: update_dict["scientific_qualification"] = scientific_qualification
+    if gender: update_dict["gender"] = gender
+    
+    # معالجة اللغات (دعم حالتي النص الواحد أو القائمة)
+    lang_ids = []
+    if languages:
+        for item in languages:
+            try:
+                # لو باعت "1,2" في نص واحد
+                if "," in item:
+                    lang_ids.extend([int(x.strip()) for x in item.split(",") if x.strip()])
+                else:
+                    lang_ids.append(int(item))
+            except: continue
+        
+        if lang_ids:
+            update_dict["languages"] = list(set(lang_ids))
+
+    try:
+        payload = PreacherUpdate(**update_dict)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # معالجة الملف لو موجود
+    if qualification_file:
+        import os, uuid
+        UPLOAD_DIR = "static/uploads/qualifications"
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        ext = os.path.splitext(qualification_file.filename)[1]
+        filename = f"{uuid.uuid4()}{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, "wb") as f:
+            f.write(qualification_file.file.read())
+        preacher.qualification_file = f"/static/uploads/qualifications/{filename}"
+
+    if not payload:
+        raise HTTPException(status_code=400, detail="لم يتم إرسال بيانات لتحديثها")
+
+    # التحقق من الصلاحيات
     if current_user.role == UserRole.admin:
         pass
     elif current_user.role == UserRole.organization:

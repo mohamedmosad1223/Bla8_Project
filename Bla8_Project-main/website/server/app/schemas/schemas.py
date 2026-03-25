@@ -238,12 +238,13 @@ class DawahRequestCreate(BaseModel):
     invited_first_name:         Optional[str]  = Field(None, max_length=150)
     invited_last_name:          Optional[str]  = Field(None, max_length=150)
     invited_gender:             Optional[GenderType] = None
-    invited_nationality_id:     Optional[int]  = Field(None, gt=0)
+    invited_nationality_id:     int            = Field(..., gt=0)
     invited_current_country_id: Optional[int]  = Field(None, gt=0)
-    invited_language_id:        Optional[int]  = Field(None, gt=0)
+    invited_language_id:        int            = Field(..., gt=0)
     invited_phone:              Optional[str]  = Field(None, max_length=30)
     invited_email:              Optional[EmailStr] = Field(None, max_length=255)
-    invited_religion:           Optional[str]  = Field(None, max_length=100)
+    invited_religion_id:        int            = Field(..., gt=0)
+    invited_religion:           Optional[str]  = Field(None, max_length=100) # For 'Other'
 
     # من رفعه
     submitted_by_caller_id: Optional[int] = Field(None, gt=0)
@@ -423,10 +424,13 @@ class PreacherUpdate(BaseModel):
     status:                   Optional[PreacherStatus] = None
     approval_status:          Optional[ApprovalStatus] = None
     rejection_reason:         Optional[str] = None
+    languages:                Optional[list[int]]      = None # الحقل المفقود
 
     @field_validator("phone")
     @classmethod
-    def phone_valid(cls, v): return validate_phone(v)
+    def phone_valid(cls, v): 
+        if v: return validate_phone(v)
+        return v
 
 
 class MuslimCallerUpdate(BaseModel):
@@ -537,6 +541,7 @@ class PreacherRegister(BaseModel):
     scientific_qualification: str            = Field(..., min_length=2, max_length=255)
     qualification_file:       str            = Field(..., min_length=1, max_length=500, description="مسار ملف الشهادات PDF")
     languages:                list[int]      = Field(default_factory=list, description="قائمة معرفات اللغات")
+    languages:                list[int]      = Field(default_factory=list, description="قائمة معرفات اللغات")
 
     @field_validator("password")
     @classmethod
@@ -606,9 +611,11 @@ class InterestedPersonRegister(BaseModel):
     father_name:            Optional[str]  = Field(None, max_length=150)
     last_name:              str            = Field(..., min_length=1, max_length=150)
     gender:                 Optional[GenderType] = None
-    nationality_country_id: Optional[int]  = Field(None, gt=0)
+    nationality_country_id: int            = Field(..., gt=0)
     current_country_id:     Optional[int]  = Field(None, gt=0)
-    communication_lang_id:  Optional[int]  = Field(None, gt=0)
+    communication_lang_id:  int            = Field(..., gt=0)
+    religion_id:            int            = Field(..., gt=0)
+    religion:               Optional[str]  = Field(None, max_length=100) # For 'Other'
     person_email:           Optional[EmailStr] = Field(None, max_length=255)
     phone:                  Optional[str]  = Field(None, max_length=30)
     guest_session_id:       Optional[str]  = Field(None, max_length=255, description="إذا كان الزائر يتحدث مع الذكاء الاصطناعي، أرسل الـ Session ID ليتم ربط الرسائل بحسابه الجديد")

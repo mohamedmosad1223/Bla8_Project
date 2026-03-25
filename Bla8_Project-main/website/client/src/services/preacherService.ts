@@ -83,5 +83,29 @@ export const preacherService = {
     const response = await api.get('/dashboard/preacher');
     return response.data;
   },
+
+  /**
+   * Get all active languages in the system
+   */
+  getAllLanguages: async () => {
+    const response = await api.get('/preachers/languages');
+    return response.data;
+  },
+
+  /**
+   * Get all countries in the system
+   */
+  getAllCountries: async () => {
+    const response = await api.get('/preachers/countries');
+    return response.data;
+  },
+
+  /**
+   * Get all religions in the system
+   */
+  getAllReligions: async () => {
+    const response = await api.get('/preachers/religions');
+    return response.data;
+  },
 };
 

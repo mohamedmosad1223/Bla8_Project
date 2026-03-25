@@ -43,19 +43,26 @@ def send_welcome_email(to_email: str, preacher_name: str, org_name: str, raw_pas
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = settings.SMTP_FROM_EMAIL
+    from_addr = settings.SMTP_USERNAME # استخدم اليوزر بتاع الجيميل كالأصل
+    msg["From"] = f"منصة إبلاغ <{from_addr}>"
     msg["To"] = to_email
 
     part = MIMEText(html_content, "html")
     msg.attach(part)
 
+    print(f"DEBUG: Attempting to send welcome email to {to_email} via {settings.SMTP_SERVER}:{settings.SMTP_PORT}...")
+
     try:
         # Connect to SMTP server
-        server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT)
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
-        server.quit()
+        with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            server.sendmail(from_addr, to_email, msg.as_string())
+        
+        print(f"DEBUG: Welcome email SUCCESSFULLY sent to {to_email}")
         logger.info(f"Welcome email successfully sent to {to_email}")
+        return True
     except Exception as e:
+        print(f"DEBUG: ERROR SENDING EMAIL: {e}")
         logger.error(f"Failed to send email to {to_email}: {e}")
+        return False

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   User, BookOpen, Flag, Languages, Phone,
-  Calendar, Users, ClipboardList, ChevronDown, MessageSquare
+  Calendar, Users, ClipboardList, ChevronDown, MessageSquare, Link as LinkIcon
 } from 'lucide-react';
 import Input from '../../components/common/Input/Input';
 import Checkbox from '../../components/common/Checkbox/Checkbox';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
 import { dawahRequestService } from '../../services/dawahRequestService';
+import { preacherService } from '../../services/preacherService';
 import './MuslimCallerDashboard.css';
 
 /* ── Reusable Select Field ──────────────────────────────────────── */
@@ -42,26 +43,63 @@ const fieldLabels: Record<string, string> = {
   gender: 'الجنس',
   age: 'العمر',
   communicationMethod: 'وسيلة تواصل',
+  deepLink: 'رابط التواصل',
 };
 
 /* ── Main Component ─────────────────────────────────────────────── */
 const MuslimCallerDashboard: React.FC = () => {
   const [form, setForm] = useState({
-    fullName: '', religion: '', nationality: '', language: '',
-    phone: '', gender: '', age: '', communicationMethod: '',
-    comment: '', acceptedTerms: false,
+    fullName: '', 
+    religion: '', 
+    nationality: '', 
+    language: '',
+    phone: '', 
+    gender: '', 
+    age: '', 
+    communicationMethod: '',
+    deepLink: '',
+    comment: '', 
+    acceptedTerms: false,
   });
+
   const [showModal, setShowModal] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Dynamic Options from API (with hardcoded fallbacks as initial state)
+  const [countries, setCountries] = useState<{id: number, name: string}[]>([
+    {id: 1, name: 'مصر'}, {id: 2, name: 'السعودية'}, {id: 3, name: 'الكويت'}, {id: 4, name: 'أخرى'}
+  ]);
+  const [languages, setLanguages] = useState<{id: number, name: string}[]>([
+    {id: 1, name: 'العربية'}, {id: 2, name: 'الإنجليزية'}, {id: 3, name: 'الأردية'}, {id: 4, name: 'أخرى'}
+  ]);
+  const [religions, setReligions] = useState<{id: number, name: string}[]>([
+    {id: 1, name: 'مسيحية'}, {id: 2, name: 'ملحد'}, {id: 3, name: 'بوذي'}, {id: 4, name: 'لا ديني'}, {id: 5, name: 'هندوسي'}, {id: 6, name: 'أخرى'}
+  ]);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [cRes, lRes, rRes] = await Promise.all([
+          preacherService.getAllCountries(),
+          preacherService.getAllLanguages(),
+          preacherService.getAllReligions()
+        ]);
+        if (cRes.data) setCountries(cRes.data);
+        if (lRes.data) setLanguages(lRes.data);
+        if (rRes.data) setReligions(rRes.data);
+      } catch (err) {
+        console.error("Failed to fetch options:", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(p => ({ ...p, [name]: value }));
-    // Clear error for this field when user starts typing
     if (submitted && errors[name]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -82,6 +120,11 @@ const MuslimCallerDashboard: React.FC = () => {
       }
     }
 
+    // Require deepLink if social media is selected
+    if (['messenger', 'twitter', 'instagram', 'other_social'].includes(form.communicationMethod) && !form.deepLink) {
+        newErrors['deepLink'] = 'يرجى وضع رابط التواصل المباشر';
+    }
+
     if (!form.acceptedTerms) {
       newErrors['acceptedTerms'] = 'يجب الموافقة على إدخال البيانات الشخصية';
     }
@@ -89,12 +132,13 @@ const MuslimCallerDashboard: React.FC = () => {
     return newErrors;
   };
 
-  // Channel enum mapping
   const channelMap: Record<string, string> = {
     whatsapp: 'whatsapp',
     phone: 'phone',
     telegram: 'telegram',
     messenger: 'messenger',
+    twitter: 'twitter',
+    instagram: 'instagram'
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -108,9 +152,17 @@ const MuslimCallerDashboard: React.FC = () => {
 
     try {
       setLoading(true);
-      // Map form to backend schema
       const [firstName, ...rest] = form.fullName.trim().split(' ');
       const lastName = rest.join(' ') || '';
+
+      // Auto-generate Deep Links for WA/TG
+      let finalDeepLink = form.deepLink;
+      const cleanPhone = form.phone.replace(/\D/g, ''); 
+      if (form.communicationMethod === 'whatsapp' && cleanPhone) {
+        finalDeepLink = `https://wa.me/${cleanPhone}`;
+      } else if (form.communicationMethod === 'telegram' && cleanPhone) {
+        finalDeepLink = `https://t.me/${cleanPhone}`;
+      }
 
       const payload = {
         request_type: 'invited',
@@ -118,15 +170,18 @@ const MuslimCallerDashboard: React.FC = () => {
         invited_last_name: lastName || undefined,
         invited_gender: form.gender || undefined,
         invited_phone: form.phone || undefined,
+        invited_nationality_id: Number(form.nationality),
+        invited_language_id: Number(form.language),
+        invited_religion_id: Number(form.religion),
         communication_channel: channelMap[form.communicationMethod] || form.communicationMethod,
+        deep_link: finalDeepLink || undefined,
         notes: form.comment || undefined,
       };
 
       await dawahRequestService.create(payload);
       setShowModal(true);
 
-      // Reset form
-      setForm({ fullName: '', religion: '', nationality: '', language: '', phone: '', gender: '', age: '', communicationMethod: '', comment: '', acceptedTerms: false });
+      setForm({ fullName: '', religion: '', nationality: '', language: '', phone: '', gender: '', age: '', communicationMethod: '', deepLink: '', comment: '', acceptedTerms: false });
       setSubmitted(false);
       setErrors({});
     } catch (err: any) {
@@ -148,7 +203,6 @@ const MuslimCallerDashboard: React.FC = () => {
     <div className="mc-page" dir="rtl">
       <div className="mc-card">
 
-        {/* Logo */}
         <div className="mc-logo-area">
           <img src="/bla8_logo.png" alt="Balagh Logo" className="mc-logo" />
         </div>
@@ -167,28 +221,22 @@ const MuslimCallerDashboard: React.FC = () => {
             {getError('fullName') && <span className="mc-error-msg">{getError('fullName')}</span>}
           </div>
 
-          {/* Row: Religion + Nationality */}
           <div className="mc-row">
             <SelectField name="nationality" placeholder="الجنسية" icon={<Flag size={18} />}
               value={form.nationality} onChange={handle} error={getError('nationality')}
-              options={[{ value: 'kw', label: 'كويتي' }, { value: 'eg', label: 'مصري' },
-                        { value: 'sa', label: 'سعودي' }, { value: 'other', label: 'أخرى' }]}
+              options={countries.map(c => ({ value: String(c.id), label: c.name }))}
             />
             <SelectField name="religion" placeholder="الديانة" icon={<BookOpen size={18} />}
               value={form.religion} onChange={handle} error={getError('religion')}
-              options={[{ value: 'muslim', label: 'مسلم' }, { value: 'christian', label: 'مسيحي' },
-                        { value: 'jewish', label: 'يهودي' }, { value: 'other', label: 'أخرى' }]}
+              options={religions.map(r => ({ value: String(r.id), label: r.name }))}
             />
           </div>
 
-          {/* Language */}
           <SelectField name="language" placeholder="اللغة" icon={<Languages size={18} />}
             value={form.language} onChange={handle} error={getError('language')}
-            options={[{ value: 'ar', label: 'العربية' }, { value: 'en', label: 'الإنجليزية' },
-                      { value: 'fr', label: 'الفرنسية' }, { value: 'ur', label: 'الأردية' }]}
+            options={languages.map(l => ({ value: String(l.id), label: l.name }))}
           />
 
-          {/* Phone */}
           <div className="mc-field-wrap">
             <Input
               type="tel" name="phone" placeholder="رقم الهاتف"
@@ -198,7 +246,6 @@ const MuslimCallerDashboard: React.FC = () => {
             {getError('phone') && <span className="mc-error-msg">{getError('phone')}</span>}
           </div>
 
-          {/* Row: Age + Gender */}
           <div className="mc-row">
             <div className="mc-field-wrap">
               <Input
@@ -217,11 +264,30 @@ const MuslimCallerDashboard: React.FC = () => {
           {/* Communication Method */}
           <SelectField name="communicationMethod" placeholder="وسيلة تواصل" icon={<ClipboardList size={18} />}
             value={form.communicationMethod} onChange={handle} error={getError('communicationMethod')}
-            options={[{ value: 'whatsapp', label: 'واتساب' }, { value: 'phone', label: 'مكالمة هاتفية' },
-                      { value: 'telegram', label: 'تيليغرام' }, { value: 'messenger', label: 'ماسنجر' }]}
+            options={[
+              { value: 'whatsapp', label: 'واتساب' }, 
+              { value: 'phone', label: 'مكالمة هاتفية' },
+              { value: 'telegram', label: 'تيليغرام' }, 
+              { value: 'messenger', label: 'ماسنجر' },
+              { value: 'twitter', label: 'تويتر (X)' },
+              { value: 'instagram', label: 'إنستجرام' }
+            ]}
           />
 
-          {/* Comment */}
+          {/* Conditional Deep Link Input */}
+          {['messenger', 'twitter', 'instagram'].includes(form.communicationMethod) && (
+            <div className="mc-field-wrap">
+              <Input
+                type="text" name="deepLink" placeholder="رابط الملف الشخصي (Profile Link)"
+                icon={<LinkIcon size={18} />} value={form.deepLink} onChange={handle}
+                className={getError('deepLink') ? 'mc-error-border' : ''}
+              />
+              <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
+                برجاء وضع رابط الحساب المباشر لسهولة التواصل
+              </p>
+            </div>
+          )}
+
           <div className="mc-textarea-wrapper">
             <MessageSquare size={16} className="mc-ta-icon" />
             <textarea
@@ -230,7 +296,6 @@ const MuslimCallerDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Checkbox */}
           <div className="mc-check-row">
             <Checkbox
               label="الشخص يعلم بادخال بياناته الشخصية"

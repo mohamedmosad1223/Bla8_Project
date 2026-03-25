@@ -30,13 +30,19 @@ def accept_request(request_id: int, db: Session = Depends(get_db), current_user:
         raise HTTPException(status_code=403, detail="لا يمكنك قبول طلبات حتى تتم الموافقة على حسابك")
     preacher_id = current_user.preacher.preacher_id
     return DawahRequestsController.accept_request(db, request_id, preacher_id)
-@router.get("/my", dependencies=[Depends(check_role([UserRole.preacher]))])
+@router.get("/my", dependencies=[Depends(check_role([UserRole.preacher, UserRole.organization]))])
 def get_my_requests(skip: int = Query(0, ge=0), limit: int = Query(50, ge=1), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """رؤية الطلبات المسندة للداعية الحالي"""
-    if current_user.preacher.approval_status != ApprovalStatus.approved:
-        raise HTTPException(status_code=403, detail="حسابك قيد المراجعة")
-    preacher_id = current_user.preacher.preacher_id
-    return DawahRequestsController.list_my_requests(db, preacher_id, skip, limit)
+    """رؤية الطلبات المسندة للداعية الحالي أو التابعة للجمعية الحالية"""
+    if current_user.role == UserRole.preacher:
+        if current_user.preacher.approval_status != ApprovalStatus.approved:
+            raise HTTPException(status_code=403, detail="حسابك قيد المراجعة")
+        preacher_id = current_user.preacher.preacher_id
+        return DawahRequestsController.list_my_requests(db, preacher_id, skip, limit)
+    elif current_user.role == UserRole.organization:
+        org_id = current_user.organization.org_id
+        return DawahRequestsController.list_org_requests(db, org_id, skip, limit)
+    
+    raise HTTPException(status_code=403, detail="هذا الرول غير مسموح له بالوصول لهذا المسار")
 
 @router.get("/my-submissions", dependencies=[Depends(check_role([UserRole.muslim_caller, UserRole.interested]))])
 def get_my_submissions(skip: int = Query(0, ge=0), limit: int = Query(50, ge=1), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
