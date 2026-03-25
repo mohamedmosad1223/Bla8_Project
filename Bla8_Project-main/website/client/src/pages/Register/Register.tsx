@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Users, Mail, KeyRound, ChevronRight, Phone, Flag, Languages, BookOpen, Globe } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
@@ -8,33 +8,132 @@ import { muslimCallerService } from '../../services/muslimCallerService';
 import { preacherService } from '../../services/preacherService';
 import './Register.css';
 
-/* ── Reusable Select Field ──────────────────────────────────────── */
+/* ── Reusable Autocomplete Field ─────────────────────────────────── */
+const FormAutocomplete: React.FC<{
+  name: string;
+  placeholder: string;
+  icon: React.ReactNode;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (name: string, value: string) => void;
+  required?: boolean;
+}> = ({ name, placeholder, icon, options, value, onChange, required }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find(o => o.value === value);
+  const displayValue = selectedOption ? selectedOption.label : '';
+
+  const filteredOptions = options.filter(o => 
+    o.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (optionValue: string) => {
+    onChange(name, optionValue);
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
+  return (
+    <div className="autocomplete-container" ref={containerRef}>
+      <Input
+        name={name}
+        placeholder={placeholder}
+        icon={icon}
+        value={isOpen ? searchTerm : displayValue}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          if (!isOpen) setIsOpen(true);
+        }}
+        onFocus={() => {
+          setIsOpen(true);
+          setSearchTerm('');
+        }}
+        autoComplete="off"
+        required={required && !value}
+        className={!value && !isOpen ? 'placeholder-active' : ''}
+        onClick={() => setIsOpen(true)}
+      />
+      {isOpen && filteredOptions.length > 0 && (
+        <ul className="custom-autocomplete-dropdown">
+          {filteredOptions.map(o => (
+            <li 
+              key={o.value} 
+              className={`autocomplete-item ${o.value === value ? 'active' : ''}`}
+              onClick={() => handleSelect(o.value)}
+            >
+              {o.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+/* ── Reusable Select Field (Optional - kept for Gender if needed) ─── */
 const FormSelect: React.FC<{
   name: string;
   placeholder: string;
   icon: React.ReactNode;
   options: { value: string; label: string }[];
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange: (name: string, value: string) => void;
   required?: boolean;
-}> = ({ name, placeholder, icon, options, value, onChange, required }) => (
-  <div className="form-input-wrapper">
-    <div className="input-group">
-      <span className="input-icon-left">{icon}</span>
-      <select 
-        name={name} 
-        value={value} 
-        onChange={onChange} 
-        className="form-select-input"
-        required={required}
-        style={{ paddingRight: '45px' }} // إزاحة للكلمة عشان السهم
-      >
-        <option value="" disabled hidden>{placeholder}</option>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+}> = ({ name, placeholder, icon, options, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find(o => o.value === value);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="autocomplete-container" ref={containerRef}>
+      <div className="input-wrapper" onClick={() => setIsOpen(!isOpen)}>
+        <span className="input-icon">{icon}</span>
+        <button type="button" className={`custom-input with-icon ${!value ? 'placeholder-active' : ''}`} style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {selectedOption ? selectedOption.label : placeholder}
+          <ChevronRight size={16} style={{ transform: isOpen ? 'rotate(-90deg)' : 'rotate(90deg)', color: '#A0AEC0', transition: 'transform 0.2s' }} />
+        </button>
+      </div>
+      {isOpen && (
+        <ul className="custom-autocomplete-dropdown">
+          {options.map(o => (
+            <li 
+              key={o.value} 
+              className={`autocomplete-item ${o.value === value ? 'active' : ''}`}
+              onClick={() => {
+                onChange(name, o.value);
+                setIsOpen(false);
+              }}
+            >
+              {o.label}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -88,7 +187,12 @@ const Register: React.FC = () => {
       }
     };
     fetchOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleValueChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { value, name } = e.target;
@@ -150,7 +254,7 @@ const Register: React.FC = () => {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {
         // Extract field-specific error messages
-        const errorMsgs = detail.map((d: any) => `${d.loc[d.loc.length-1]}: ${d.msg}`).join('\n');
+        const errorMsgs = detail.map((d: { loc: (string | number)[], msg: string }) => `${d.loc[d.loc.length-1]}: ${d.msg}`).join('\n');
         setError(errorMsgs);
       } else {
         setError(detail || 'حدث خطأ أثناء التسجيل. تفقد الحقول وحاول مرة أخرى.');
@@ -204,35 +308,35 @@ const Register: React.FC = () => {
             {role !== 'muslim_caller' && (
               <>
                 <div className="register-row">
-                  <FormSelect 
+                  <FormAutocomplete 
                     name="nationality_country_id" placeholder="الجنسية" icon={<Flag size={18} />}
                     options={options.countries.map(c => ({ value: String(c.id), label: c.name }))}
-                    value={formData.nationality_country_id} onChange={handleInputChange} required
+                    value={formData.nationality_country_id} onChange={handleValueChange} required
                   />
-                  <FormSelect 
+                  <FormAutocomplete 
                     name="current_country_id" placeholder="بلد الإقامة" icon={<Globe size={18} />}
                     options={options.countries.map(c => ({ value: String(c.id), label: c.name }))}
-                    value={formData.current_country_id} onChange={handleInputChange} required
+                    value={formData.current_country_id} onChange={handleValueChange} required
                   />
                 </div>
 
                 <div className="register-row">
-                  <FormSelect 
+                  <FormAutocomplete 
                     name="religion_id" placeholder="الديانة الحالية" icon={<BookOpen size={18} />}
                     options={options.religions.map(r => ({ value: String(r.id), label: r.name }))}
-                    value={formData.religion_id} onChange={handleInputChange} required
+                    value={formData.religion_id} onChange={handleValueChange} required
                   />
-                  <FormSelect 
+                  <FormAutocomplete 
                     name="communication_lang_id" placeholder="لغة التواصل" icon={<Languages size={18} />}
                     options={options.languages.map(l => ({ value: String(l.id), label: l.name }))}
-                    value={formData.communication_lang_id} onChange={handleInputChange} required
+                    value={formData.communication_lang_id} onChange={handleValueChange} required
                   />
                 </div>
 
                 <FormSelect 
                   name="gender" placeholder="الجنس" icon={<Users size={18} />}
                   options={[{ value: 'male', label: 'ذكر' }, { value: 'female', label: 'أنثى' }]}
-                  value={formData.gender} onChange={handleInputChange} required
+                  value={formData.gender} onChange={handleValueChange} required
                 />
               </>
             )}
