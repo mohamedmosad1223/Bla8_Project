@@ -1,8 +1,8 @@
 import sys
 import os
 
-# إضافة مسار المشروع عشان الـ imports تشتغل
-sys.path.append(os.getcwd())
+# إضافة مسار المشروع (server/) عشان الـ imports تشتغل من أي مكان
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import SessionLocal
 from app.models.reference import Country

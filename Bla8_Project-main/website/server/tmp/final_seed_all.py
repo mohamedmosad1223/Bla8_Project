@@ -2,7 +2,7 @@ import sys
 import os
 
 # Ensure we can find the 'app' module
-sys.path.append(os.path.abspath("."))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     from app.database import engine
