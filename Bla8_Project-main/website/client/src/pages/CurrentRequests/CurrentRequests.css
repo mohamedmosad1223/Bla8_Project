@@ -2,15 +2,16 @@
    Variables & Theme
    -------------------------------- */
 :root {
-  --creq-primary: #166088;
-  --creq-accent: #dba841;
-  --creq-bg: #f4f7fa;
+  --creq-primary: #17648B;
+  --creq-accent: #DBA841;
+  --creq-bg: #FFFFFF;
   --creq-card-bg: #ffffff;
-  --creq-text-main: #2d3748;
+  --creq-text-main: #121212;
   --creq-text-muted: #718096;
-  --creq-text-light: #a0aec0;
-  --creq-border: #edf2f7;
-  --creq-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  --creq-text-light: #A0AEC0;
+  --creq-border: #F0F2F5;
+  --creq-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --font-cairo: 'Cairo', sans-serif;
 }
 
 /* --------------------------------
@@ -64,52 +65,41 @@
 }
 
 .creq-table th {
-  background-color: #fbfcfe;
-  padding: 18px 16px;
+  background-color: #F8FAFC;
+  padding: 14px 16px;
   font-weight: 700;
-  color: var(--creq-text-muted);
+  color: #121212;
   font-size: 0.85rem;
-  border-bottom: 2px solid var(--creq-border);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--creq-border);
+  text-align: right;
+  font-family: var(--font-cairo);
 }
 
 .creq-table td {
-  padding: 18px 16px;
+  padding: 16px;
   font-size: 0.9rem;
-  color: var(--creq-text-main);
+  color: #121212;
   border-bottom: 1px solid var(--creq-border);
   transition: background 0.2s;
+  font-family: var(--font-cairo);
 }
 
 .creq-table tr:hover td {
-  background-color: #fcfdfe;
-}
-
-.creq-sort-arrow {
-  font-size: 0.7rem;
-  color: var(--creq-text-light);
-  margin-right: 4px;
-}
-
-.creq-date-cell {
-  white-space: pre-line;
-  line-height: 1.5;
-  color: var(--creq-text-muted);
-  font-size: 0.85rem;
+  background-color: #FBFBFF;
 }
 
 .creq-eye-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--creq-text-light);
+  color: #121212;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 6px;
+  border-radius: 50%;
   transition: all 0.2s;
+  border: 1px solid #E2E8F0;
 }
 
 .creq-eye-btn:hover {
@@ -134,29 +124,26 @@
 .creq-status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 14px;
-  border-radius: 30px;
+  padding: 4px 12px;
+  border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .creq-status-green {
-  background-color: #f6ffed; /* very light green */
-  color: #52c41a; /* bright green text */
-  border: 1px solid #b7eb8f;
+  background-color: #E6FFFA;
+  color: #38B2AC;
 }
 
 .creq-status-red {
-  background-color: #fff1f0; /* very light red */
-  color: #ff4d4f; /* bright red text */
-  border: 1px solid #ffa39e;
+  background-color: #FFF5F5;
+  color: #FC8181;
 }
 
 .creq-status-yellow {
-  background-color: #fffbe6; /* very light yellow */
-  color: #faad14; /* bright gold/yellow text */
-  border: 1px solid #ffe58f;
+  background-color: #FFFFF0;
+  color: #D69E2E;
 }
 
 /* --------------------------------

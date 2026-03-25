@@ -16,6 +16,7 @@ import PartnerRegister from './pages/PartnerRegister/PartnerRegister';
 import PreacherRegister from './pages/PreacherRegister/PreacherRegister';
 import Callers from './pages/Callers/Callers';
 import AddCaller from './pages/AddCaller/AddCaller';
+import EditPreacher from './pages/EditPreacher/EditPreacher';
 import Profile from './pages/Profile/Profile';
 import NewRequests from './pages/NewRequests/NewRequests';
 import CurrentRequests from './pages/CurrentRequests/CurrentRequests';
@@ -92,6 +93,7 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/callers" element={<Callers />} />
           <Route path="/callers/add" element={<AddCaller />} />
+          <Route path="/callers/edit/:id" element={<EditPreacher />} />
           <Route path="/profile" element={<Profile />} />
           {/* Add other dashboard routes here later, e.g., /requests */}
           <Route path="/requests/new" element={<NewRequests />} />

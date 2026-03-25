@@ -27,6 +27,9 @@ export interface PoolRequest {
   // Submitter
   submitted_by_caller_id: number | null;
   submitted_by_person_id: number | null;
+  submitted_by_name: string | null;
+  preacher_name: string | null;
+  invited_name: string | null;
   needs_report?: boolean;
 }
 
@@ -102,6 +105,25 @@ export const dawahRequestService = {
    */
   updateStatus: async (requestId: number, data: { new_status: string; preacher_feedback?: string; conversion_date?: string }) => {
     const response = await api.patch(`/dawah-requests/${requestId}/status`, data);
+    return response.data;
+  },
+
+  /**
+   * Get all requests belonging to an organization (Org Manager view)
+   */
+  getOrganizationRequests: async (skip = 0, limit = 100): Promise<{ message: string; data: PoolRequest[] }> => {
+    const response = await api.get('/dawah-requests/my', {
+      params: { skip, limit },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get all reports for a specific request
+   * GET /api/dawah-reports/{request_id}
+   */
+  getReports: async (requestId: number): Promise<{ data: any[] }> => {
+    const response = await api.get(`/dawah-reports/${requestId}`);
     return response.data;
   },
 

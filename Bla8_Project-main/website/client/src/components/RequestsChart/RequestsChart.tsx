@@ -1,23 +1,55 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import './RequestsChart.css';
 
-// Mock data, summing up to 4000
-const data = [
-  { name: 'من أسلم', value: 2000, color: '#10B981' }, // green
-  { name: 'قيد التنفيذ', value: 1000, color: '#EAB308' }, // yellow
-  { name: 'تم الإلغاء', value: 1000, color: '#EF4444' }, // red
+interface ChartDataItem {
+  label: string;
+  value: number;
+}
+
+interface RequestsChartProps {
+  data?: ChartDataItem[];
+}
+
+// Map Arabic status labels to Arabic display names + colors
+const STATUS_CONFIG: Record<string, { name: string; color: string }> = {
+  converted:   { name: 'من أسلم',     color: '#10B981' },
+  in_progress: { name: 'قيد التنفيذ', color: '#EAB308' },
+  rejected:    { name: 'من رفضوا',    color: '#EF4444' },
+  pending:     { name: 'قيد الانتظار',color: '#6366F1' },
+  cancelled:   { name: 'تم الإلغاء',  color: '#9CA3AF' },
+};
+
+const FALLBACK_DATA = [
+  { name: 'من أسلم',     value: 0, color: '#10B981' },
+  { name: 'قيد التنفيذ', value: 0, color: '#EAB308' },
+  { name: 'من رفضوا',    value: 0, color: '#EF4444' },
 ];
 
-const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);
+const RequestsChart = ({ data }: RequestsChartProps) => {
+  const chartData = data && data.length > 0
+    ? data.map(item => {
+        const cfg = STATUS_CONFIG[item.label] ?? { name: item.label, color: '#6B7280' };
+        return { name: cfg.name, value: item.value, color: cfg.color };
+      })
+    : FALLBACK_DATA;
 
-const RequestsChart = () => {
+  const totalValue = chartData.reduce((acc, curr) => acc + curr.value, 0);
+
+  if (totalValue === 0) {
+    return (
+      <div className="requests-chart-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: '#9CA3AF', textAlign: 'center' }}>لا يوجد بيانات حالياً</p>
+      </div>
+    );
+  }
+
   return (
     <div className="requests-chart-container">
       <div className="doughnut-wrapper">
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={70}
@@ -27,7 +59,7 @@ const RequestsChart = () => {
               stroke="none"
               cornerRadius={8}
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
@@ -44,7 +76,7 @@ const RequestsChart = () => {
       </div>
       
       <div className="chart-legend">
-        {data.map((item, index) => (
+        {chartData.map((item, index) => (
           <div key={index} className="legend-item">
             <div className="legend-dot" style={{ backgroundColor: item.color }}></div>
             <div className="legend-info">

@@ -196,7 +196,12 @@
 .actions-cell {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end; /* يدفع الأيقونات لليسار في نظام الـ RTL */
+  gap: 12px; /* زيادة المسافة بين الأيقونات لسهولة الضغط */
+}
+
+.callers-table td:last-child {
+  text-align: left; /* محاذاة الخانة نفسها لليسار */
 }
 
 .action-icon-btn {

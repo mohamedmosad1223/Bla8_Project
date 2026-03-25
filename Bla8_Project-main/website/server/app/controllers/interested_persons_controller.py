@@ -47,17 +47,30 @@ class InterestedPersonsController:
             nationality_country_id=payload.nationality_country_id,
             current_country_id=payload.current_country_id,
             communication_lang_id=payload.communication_lang_id,
+            religion_id=payload.religion_id,
+            religion=payload.religion,
             email=payload.person_email,
             phone=payload.phone,
         )
         db.add(person)
         db.flush()
 
-        # أوتوماتيك: عمل طلب دعوة جديد لهذا الشخص
+        # أوتوماتيك: عمل طلب دعوة جديد لهذا الشخص ببياناته الكاملة
         request = DawahRequest(
             request_type=RequestType.self_interested,
             submitted_by_person_id=person.person_id,
             status=RequestStatus.pending,
+            # نسخ بيانات الشخص للطلب
+            invited_first_name=person.first_name,
+            invited_last_name=person.last_name,
+            invited_gender=person.gender,
+            invited_nationality_id=person.nationality_country_id,
+            invited_current_country_id=person.current_country_id,
+            invited_language_id=person.communication_lang_id,
+            invited_religion_id=person.religion_id,
+            invited_religion=person.religion,
+            invited_phone=person.phone,
+            invited_email=person.email,
             notes="طلب تسجيل ذاتي من النظام"
         )
         db.add(request)

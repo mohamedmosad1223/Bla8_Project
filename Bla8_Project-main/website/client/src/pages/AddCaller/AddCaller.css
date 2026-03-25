@@ -90,6 +90,20 @@
   color: #374151;
 }
 
+.error-alert {
+  background-color: #FEF2F2;
+  border-right: 4px solid #EF4444;
+  color: #B91C1C;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .form-input {
   width: 100%;
   padding: 12px 16px;
