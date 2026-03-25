@@ -201,7 +201,7 @@
   margin: 0;
 }
 
-/* ══════════════════════════════ CHAT PANEL ══════════════════════════════ */
+/* ─── CHAT PANEL ─── */
 .nm-chat-panel {
   flex: 1;
   display: flex;
@@ -354,7 +354,7 @@
   box-shadow: none;
 }
 
-/* ══════════════════════════════ EMPTY STATE ══════════════════════════════ */
+/* ─── EMPTY STATE ─── */
 .nm-empty-state {
   flex: 1;
   display: flex;
