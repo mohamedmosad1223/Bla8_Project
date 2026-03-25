@@ -53,7 +53,7 @@ const RoleDashboard = () => {
   const role = localStorage.getItem('userRole') || 'organization';
   if (role === 'preacher') return <PreacherDashboard />;
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
-  if (role === 'non_muslim') return <NonMuslimDashboard />;
+  if (role === 'non_muslim' || role === 'interested') return <NonMuslimDashboard />;
   if (role === 'awqaf_manager') return <AwqafDashboard />;
   if (role === 'admin') return <AdminDashboard />;
   return <Dashboard />;
@@ -61,7 +61,7 @@ const RoleDashboard = () => {
 
 const RoleConversations = () => {
   const role = localStorage.getItem('userRole') || 'organization';
-  if (role === 'non_muslim') return <NonMuslimConversation />;
+  if (role === 'non_muslim' || role === 'interested') return <NonMuslimConversation />;
   return <Conversations />;
 };
 

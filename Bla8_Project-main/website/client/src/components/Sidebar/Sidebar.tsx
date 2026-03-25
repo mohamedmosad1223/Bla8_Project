@@ -28,7 +28,7 @@ const Sidebar = () => {
       <nav className="sidebar-nav">
         <ul className="nav-list">
           {/* Common */}
-          {userRole !== 'non_muslim' && (
+          {userRole !== 'non_muslim' && userRole !== 'interested' && (
             <li className="nav-item">
               <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
                 <Home size={20} className="nav-icon" />
@@ -168,10 +168,16 @@ const Sidebar = () => {
           )}
 
           {/* Non-Muslim only */}
-          {userRole === 'non_muslim' && (
+          {(userRole === 'non_muslim' || userRole === 'interested') && (
             <>
               <li className="nav-item">
                 <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+                  <Bot size={20} className="nav-icon" />
+                  المحادثات
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <MessageCircle size={20} className="nav-icon" />
                   الرسائل
                 </NavLink>
@@ -180,12 +186,6 @@ const Sidebar = () => {
                 <NavLink to="/library" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <BookOpen size={20} className="nav-icon" />
                   المكتبة
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  <MessageCircle size={20} className="nav-icon" />
-                  المحادثات
                 </NavLink>
               </li>
             </>
