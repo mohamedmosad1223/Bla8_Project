@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Sliders, FileText, Book, Video, Mic, Share2, Eye, Play, Heart, DownloadCloud, X } from 'lucide-react';
+import { Search, FileText, Book, Video, Mic, Share2, Eye, Play, Heart, DownloadCloud, X } from 'lucide-react';
 import './Library.css';
 
 interface LibraryItem {
@@ -242,11 +242,7 @@ const Library: React.FC = () => {
         </button>
       </div>
 
-      {/* Search Header */}
       <div className="library-search-header">
-        <div className="filter-btn">
-          <Sliders size={20} />
-        </div>
         <div className="search-input-inner">
           <Search size={20} className="search-icon" />
           <input 

@@ -83,16 +83,16 @@ const ResponseChart = ({ data }: { data: ChartDataPoint[] }) => {
             stroke="#dba841" strokeWidth="2" className="pd-dot-hover"
             onMouseEnter={(e) => {
               const rect = svgRef.current?.getBoundingClientRect();
-              if (rect) setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top - 36, value: `${d.value} دقيقة`, label: d.label });
+              if (rect) setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top - 36, value: `${d.value} ساعة`, label: d.label });
             }}
             onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
           />
         ))}
         {data.length > 0 && (
           <>
-            <rect x={xp(peakIdx) - 30} y={yp(values[peakIdx]) - 28} width="60" height="22" rx="6" fill="#2d3748" />
-            <text x={xp(peakIdx)} y={yp(values[peakIdx]) - 13} textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">
-              {values[peakIdx]} دقيقة
+            <rect x={xp(peakIdx) - 30} y={yp(values[peakIdx]) - 20} width="60" height="22" rx="6" fill="#2d3748" />
+            <text x={xp(peakIdx)} y={yp(values[peakIdx]) - 5} textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">
+              {values[peakIdx]} ساعة
             </text>
           </>
         )}
@@ -288,38 +288,40 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 const PreacherDashboard: React.FC = () => {
   const [data, setData] = useState<PreacherDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [interval, setIntervalVal] = useState<'month' | 'day'>('month');
+
+  const fetchDashboardData = async (selectedInterval: 'month' | 'day') => {
+    try {
+      setLoading(true);
+      // Always fetch fresh profile from server to get latest approval_status
+      const profileRes = await import('../../services/authService').then(m => m.authService.getMe());
+      const approvalStatus = profileRes?.extra_data?.approval_status;
+      
+      if (approvalStatus === 'pending') {
+        setIsPending(true);
+        setLoading(false);
+        return;
+      }
+      
+      // Approved: load dashboard
+      const dashData = await preacherService.getDashboard(selectedInterval);
+      setData(dashData);
+    } catch (err) {
+      console.error('Dashboard error:', err);
+      setError('تعذّر تحميل بيانات الداشبورد. تأكد من تشغيل الخادم وصحة تسجيل الدخول.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        // Always fetch fresh profile from server to get latest approval_status
-        const profileRes = await import('../../services/authService').then(m => m.authService.getMe());
-        const approvalStatus = profileRes?.extra_data?.approval_status;
-        
-        if (approvalStatus === 'pending') {
-          setIsPending(true);
-          setLoading(false);
-          return;
-        }
-        
-        // Approved: load dashboard
-        const dashData = await preacherService.getDashboard();
-        setData(dashData);
-      } catch (err) {
-        console.error('Dashboard error:', err);
-        setError('تعذّر تحميل بيانات الداشبورد. تأكد من تشغيل الخادم وصحة تسجيل الدخول.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, []);
+    fetchDashboardData(interval);
+  }, [interval]);
 
   if (loading) return <LoadingSkeleton />;
 
@@ -389,8 +391,22 @@ const PreacherDashboard: React.FC = () => {
       {/* Row 1: Response Speed Chart + Governorates */}
       <div className="pd-row-charts">
         <div className="pd-chart-card pd-chart-flex">
-          <div className="pd-card-header">
-            <h2 className="pd-chart-title">سرعة الاستجابة الأولى (ساعات)</h2>
+          <div className="pd-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="pd-chart-title" style={{ margin: 0 }}>سرعة الاستجابة الأولى (ساعات)</h2>
+            <div className="pd-interval-toggle">
+              <button 
+                className={`pd-toggle-btn ${interval === 'month' ? 'active' : ''}`}
+                onClick={() => setIntervalVal('month')}
+              >
+                شهري
+              </button>
+              <button 
+                className={`pd-toggle-btn ${interval === 'day' ? 'active' : ''}`}
+                onClick={() => setIntervalVal('day')}
+              >
+                يومي
+              </button>
+            </div>
           </div>
           <ResponseChart data={data.response_speed_chart} />
         </div>

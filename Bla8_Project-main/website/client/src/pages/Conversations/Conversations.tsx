@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Send } from 'lucide-react';
+import { formatTimeAgo } from '../../utils/dateUtils';
 import './Conversations.css';
 import api from '../../services/api';
 
@@ -13,6 +14,8 @@ interface ChatPreview {
   last_message_at: string | null;
   unread_count: number;
   is_direct: boolean;
+  is_online?: boolean;    // v6
+  last_seen?: string | null; // v6
 }
 
 interface Message {
@@ -65,6 +68,7 @@ const AIBotIcon = ({ size = 40 }: { size?: number }) => (
 const Conversations = () => {
   const [searchParams] = useSearchParams();
   const initRequestId = searchParams.get('request_id');
+  const initUserId = searchParams.get('user_id');
 
   // Panel 1 — Chats list
   const [chats, setChats] = useState<ChatPreview[]>([]);
@@ -92,21 +96,29 @@ const Conversations = () => {
       const res = await api.get('/messages/my-chats');
       const data: ChatPreview[] = res.data?.data || [];
       
-      if (initRequestId && !hasAutoOpened.current) {
+      if (!hasAutoOpened.current && (initRequestId || initUserId)) {
         hasAutoOpened.current = true;
-        // Try to find the chat by request_id
-        const found = data.find(c => c.request_id === Number(initRequestId)) || null;
+        
+        let found: ChatPreview | null = null;
+        if (initRequestId) {
+          found = data.find(c => c.request_id === Number(initRequestId)) || null;
+        } else if (initUserId) {
+          found = data.find(c => c.other_user_id === Number(initUserId) && c.is_direct) || null;
+        }
         
         if (found) {
           setChats(data);
           setActiveChat(found);
-          // Fetch its messages
+          // Fetch its history
           try {
-            const msgRes = await api.get(`/messages/chat-history/${found.request_id}`);
+            const url = found.request_id 
+              ? `/messages/chat-history/${found.request_id}`
+              : `/messages/dm-history/${found.other_user_id}`;
+            const msgRes = await api.get(url);
             setMessages(msgRes?.data?.data || []);
           } catch { /* silent */ }
-        } else {
-          // Create a placeholder for this new chat
+        } else if (initRequestId) {
+          // Create a placeholder for this new request chat
           const placeholder: ChatPreview = {
             request_id: Number(initRequestId),
             other_user_id: null,
@@ -119,12 +131,26 @@ const Conversations = () => {
           setChats([placeholder, ...data]);
           setActiveChat(placeholder);
           setMessages([]);
+        } else if (initUserId) {
+          // Create a placeholder for this new DM
+          const placeholder: ChatPreview = {
+            request_id: null,
+            other_user_id: Number(initUserId),
+            other_party_name: searchParams.get('name') || `محادثة مباشرة`,
+            last_message: null,
+            last_message_at: null,
+            unread_count: 0,
+            is_direct: true
+          };
+          setChats([placeholder, ...data]);
+          setActiveChat(placeholder);
+          setMessages([]);
         }
       } else {
         setChats(data);
       }
     } catch { /* silent */ }
-  }, [initRequestId, searchParams]);
+  }, [initRequestId, initUserId, searchParams]);
 
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
@@ -237,15 +263,6 @@ const Conversations = () => {
     c.other_party_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ─── Group messages by date ───────────────────────────────────────────────
-  const groupedMessages = messages.reduce<{ date: string; msgs: Message[] }[]>((acc, msg) => {
-    const d = formatDate(msg.created_at);
-    const last = acc[acc.length - 1];
-    if (last && last.date === d) last.msgs.push(msg);
-    else acc.push({ date: d, msgs: [msg] });
-    return acc;
-  }, []);
-
   return (
     <div className="conv-page" dir="rtl">
 
@@ -317,7 +334,15 @@ const Conversations = () => {
         ) : (
           <>
             <div className="conv-chat-header">
-              <h3 className="conv-chat-title">{activeChat.other_party_name}</h3>
+              <div className="conv-chat-header-info">
+                <h3 className="conv-chat-title">{activeChat.other_party_name}</h3>
+                <div className="conv-chat-status">
+                  <span className={`conv-status-dot ${ (activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) ? 'online' : 'offline'}`}></span>
+                  {(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) 
+                    ? 'متصل الآن' 
+                    : (activeChat.last_seen ? `آخر ظهور ${formatTimeAgo(activeChat.last_seen)}` : 'غير متصل')}
+                </div>
+              </div>
               <div className="conv-chat-header-icons">
                 <div className="conv-chat-header-avatar bg-pink-100">
                   <AvatarIcon />
@@ -326,11 +351,16 @@ const Conversations = () => {
             </div>
 
             <div className="conv-chat-messages">
-              {groupedMessages.map(group => (
-                <div key={group.date}>
-                  <div className="conv-date-divider"><span>{group.date}</span></div>
-                  {group.msgs.map(msg => (
-                    <div key={msg.message_id} className={`conv-msg-row ${msg.is_mine ? 'conv-msg-sent' : 'conv-msg-received'}`}>
+              {messages.map((msg, idx) => {
+                const dateStr = formatDate(msg.created_at);
+                const showDivider = idx === 0 || formatDate(messages[idx-1].created_at) !== dateStr;
+                
+                return (
+                  <React.Fragment key={msg.message_id}>
+                    {showDivider && (
+                      <div className="conv-date-divider"><span>{dateStr}</span></div>
+                    )}
+                    <div className={`conv-msg-row ${msg.is_mine ? 'conv-msg-sent' : 'conv-msg-received'}`}>
                       {/* Sent: Avatar first (Right), then Bubble. Received: Bubble first, then Avatar (Left) */}
                       {msg.is_mine && (
                         <div className="conv-msg-avatar bg-red-100"><AvatarIcon /></div>
@@ -345,9 +375,9 @@ const Conversations = () => {
                         <div className="conv-msg-avatar bg-pink-100"><AvatarIcon /></div>
                       )}
                     </div>
-                  ))}
-                </div>
-              ))}
+                  </React.Fragment>
+                );
+              })}
               {messages.length === 0 && (
                 <p style={{ textAlign: 'center', color: '#94a3b8', marginTop: '2rem', fontSize: '0.9rem' }}>
                   لا توجد رسائل بعد — ابدأ المحادثة!
