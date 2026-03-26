@@ -77,8 +77,16 @@ const PartnerRegister: React.FC = () => {
       
       await orgService.register(payload);
       setShowModal(true);
-    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      setError(err.response?.data?.detail || 'حدث خطأ أثناء إرسال الطلب');
+    } catch (err: any) {
+      console.error('Registration Error:', err.response?.data || err);
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        // Extract messages from Pydantic validation errors
+        const errorMsgs = detail.map((d: any) => d.msg).join(' - ');
+        setError(errorMsgs);
+      } else {
+        setError(detail || 'حدث خطأ أثناء إرسال الطلب');
+      }
     } finally {
       setLoading(false);
     }
@@ -188,7 +196,7 @@ const PartnerRegister: React.FC = () => {
             {/* Row 8 Password */}
              <div className="form-group half-width">
               <div className="input-with-icon">
-                <input type="password" name="password" placeholder="الباسورد" value={formData.password} onChange={handleInputChange} required />
+                <input type="password" name="password" placeholder="الباسورد (حرف كبير + رقم)" value={formData.password} onChange={handleInputChange} required />
                 <span className="icon-wrapper"><Lock size={18} /></span>
               </div>
             </div>

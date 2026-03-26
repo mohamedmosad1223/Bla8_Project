@@ -161,7 +161,8 @@ async def update_preacher(
     preacher_email: Optional[str] = Form(None),
     scientific_qualification: Optional[str] = Form(None),
     gender: Optional[str] = Form(None),
-    languages: List[str] = Form([]), # تغييرها لـ List[str] لاستلام كل القيم
+    status: Optional[PreacherStatus] = Form(None),
+    languages: List[str] = Form([]),
     qualification_file: Optional[UploadFile] = File(None)
 ):
     """تحديث بيانات الداعية (يدعم لغات متعددة)"""
@@ -175,6 +176,7 @@ async def update_preacher(
     if preacher_email: update_dict["preacher_email"] = preacher_email
     if scientific_qualification: update_dict["scientific_qualification"] = scientific_qualification
     if gender: update_dict["gender"] = gender
+    if status: update_dict["status"] = status
     
     # معالجة اللغات (دعم حالتي النص الواحد أو القائمة)
     lang_ids = []

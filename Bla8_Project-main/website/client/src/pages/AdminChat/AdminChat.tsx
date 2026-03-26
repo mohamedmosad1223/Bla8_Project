@@ -1,75 +1,128 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Search, Send, Paperclip, MoreVertical, Phone, MessageCircle } from 'lucide-react';
+import { Search, Send, Paperclip, MoreVertical, Phone, MessageCircle, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 import './AdminChat.css';
 
 interface Message {
-  id: string;
-  senderId: string;
-  text: string;
-  timestamp: string;
+  message_id: number;
+  sender_id: number;
+  receiver_id: number;
+  message_text: string;
+  created_at: string;
+  is_mine: boolean;
 }
 
 interface Contact {
-  id: string;
-  name: string;
-  role: string;
+  other_user_id: number;
+  other_party_name: string;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
+  is_online: boolean;
   avatar: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  online: boolean;
 }
-
-const MOCK_CONTACTS: Contact[] = [
-  { id: '123451', name: 'جمعية الحضارة القديمة', role: 'Association', avatar: 'ج', lastMessage: 'تم إرسال التقارير الشهرية', time: '10:30 ص', unread: 2, online: true },
-  { id: '123452', name: 'جمعية مسلمون له', role: 'Association', avatar: 'م', lastMessage: 'هل يمكننا إضافة داعية جديد؟', time: 'أمس', unread: 0, online: false },
-  { id: '123456', name: 'عبدالرحمن الأصفر', role: 'Preacher', avatar: 'ج', lastMessage: 'شكراً جزيلاً', time: 'أمس', unread: 0, online: true },
-  { id: '123454', name: 'جمعية رسالة الاسلام', role: 'Association', avatar: 'ر', lastMessage: 'نحتاج لمراجعة طلب الأسبوع الماضي', time: 'الثلاثاء', unread: 1, online: false },
-];
-
-const MOCK_MESSAGES: Record<string, Message[]> = {
-  '123451': [
-    { id: 'm1', senderId: '123451', text: 'السلام عليكم ورحمة الله، هل يمكنني الاستفسار عن التقارير؟', timestamp: '10:15 ص' },
-    { id: 'm2', senderId: 'admin', text: 'وعليكم السلام، بالتأكيد تفضل.', timestamp: '10:20 ص' },
-    { id: 'm3', senderId: '123451', text: 'تم إرسال التقارير الشهرية', timestamp: '10:30 ص' },
-  ],
-  '123452': [
-    { id: 'm1', senderId: '123452', text: 'هل يمكننا إضافة داعية جديد؟', timestamp: 'أمس' },
-  ],
-  '123456': [
-    { id: 'm1', senderId: '123456', text: 'لقد تمت الموافقة على الطلب.', timestamp: 'أمس' },
-    { id: 'm2', senderId: '123456', text: 'شكراً جزيلاً', timestamp: 'أمس' },
-  ],
-};
 
 const AdminChat = () => {
   const { userId } = useParams();
-  const [activeContactId, setActiveContactId] = useState<string | null>(userId || null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [activeContactId, setActiveContactId] = useState<number | null>(userId ? parseInt(userId) : null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [partnerInfo, setPartnerInfo] = useState<{name: string, online: boolean} | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const activeContact = MOCK_CONTACTS.find(c => c.id === activeContactId);
-  const activeMessages = useMemo(() => 
-    activeContactId ? (MOCK_MESSAGES[activeContactId] || []) : []
-  , [activeContactId]);
+  const fetchContacts = useCallback(async () => {
+    try {
+      setLoadingContacts(true);
+      const response = await api.get('/messages/my-chats');
+      const mapped = response.data.data.map((c: any) => ({
+        ...c,
+        avatar: c.other_party_name.charAt(0)
+      }));
+      setContacts(mapped);
+    } catch (err) {
+      console.error('Error fetching contacts:', err);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, []);
 
-  const filteredContacts = MOCK_CONTACTS.filter(contact => 
-    contact.name.includes(searchQuery)
-  );
+  const fetchHistory = useCallback(async (otherId: number) => {
+    try {
+      setLoadingMessages(true);
+      const response = await api.get(`/messages/dm-history/${otherId}`);
+      setMessages(response.data.data);
+      
+      if (response.data.partner) {
+        setPartnerInfo({
+          name: response.data.partner.other_party_name,
+          online: response.data.partner.is_online
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching history:', err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, []);
 
-  // Auto scroll to bottom of messages
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
+
+  useEffect(() => {
+    if (activeContactId) {
+      fetchHistory(activeContactId);
+      // Poll for new messages every 5 seconds
+      const interval = setInterval(() => fetchHistory(activeContactId), 5000);
+      return () => clearInterval(interval);
+    } else {
+      setPartnerInfo(null);
+      setMessages([]);
+    }
+  }, [activeContactId, fetchHistory]);
+
+  const activeContact = useMemo(() => {
+    const fromList = contacts.find(c => c.other_user_id === activeContactId);
+    if (fromList) return fromList;
+    if (partnerInfo && activeContactId) {
+      return {
+        other_user_id: activeContactId,
+        other_party_name: partnerInfo.name,
+        avatar: partnerInfo.name.charAt(0),
+        is_online: partnerInfo.online
+      } as Contact;
+    }
+    return activeContactId ? { other_user_id: activeContactId, other_party_name: 'جاري التحميل...', avatar: '؟' } : null;
+  }, [activeContactId, contacts, partnerInfo]);
+
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeContactId, activeMessages]);
+  }, [messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeContactId) return;
-    // In a real app, this would send to an API. 
-    // Here we just clear the input for demo purposes.
-    setMessageInput('');
+    
+    try {
+      const payload = {
+        receiver_id: activeContactId,
+        message_text: messageInput,
+        message_type: 'text'
+      };
+      await api.post('/messages/', payload);
+      setMessageInput('');
+      fetchHistory(activeContactId);
+      fetchContacts(); // Refresh sidebar to include the new contact
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('فشل إرسال الرسالة');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -78,6 +131,30 @@ const AdminChat = () => {
       handleSendMessage();
     }
   };
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Ensure the active contact is always part of the list for display
+  const allDisplayContacts = useMemo(() => {
+    const list = [...contacts];
+    if (activeContact && !list.find(c => c.other_user_id === activeContactId)) {
+      list.push({
+        ...activeContact,
+        last_message: '',
+        last_message_at: new Date().toISOString(),
+        unread_count: 0,
+        is_online: partnerInfo?.online || false
+      } as Contact);
+    }
+    return list;
+  }, [contacts, activeContact, activeContactId]);
+
+  const filteredContacts = allDisplayContacts.filter(contact => 
+    contact.other_party_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="admin-chat-page">
@@ -101,28 +178,32 @@ const AdminChat = () => {
         </div>
 
         <div className="chat-contact-list">
-          {filteredContacts.map(contact => (
-            <div 
-              key={contact.id} 
-              className={`chat-contact-item ${activeContactId === contact.id ? 'active' : ''}`}
-              onClick={() => setActiveContactId(contact.id)}
-            >
-              <div className="contact-avatar">
-                {contact.avatar}
+          {loadingContacts ? (
+             <div className="chat-loading-center"><Loader2 className="animate-spin text-gold" /></div>
+          ) : (
+            filteredContacts.map(contact => (
+              <div 
+                key={contact.other_user_id} 
+                className={`chat-contact-item ${activeContactId === contact.other_user_id ? 'active' : ''}`}
+                onClick={() => setActiveContactId(contact.other_user_id)}
+              >
+                <div className="contact-avatar">
+                  {contact.avatar}
+                </div>
+                <div className="contact-info">
+                  <div className="contact-name">{contact.other_party_name}</div>
+                  <div className="contact-preview">{contact.last_message}</div>
+                </div>
+                <div className="contact-meta">
+                  <span className="contact-time">{formatTime(contact.last_message_at)}</span>
+                  {contact.unread_count > 0 && (
+                    <span className="contact-unread">{contact.unread_count}</span>
+                  )}
+                </div>
               </div>
-              <div className="contact-info">
-                <div className="contact-name">{contact.name}</div>
-                <div className="contact-preview">{contact.lastMessage}</div>
-              </div>
-              <div className="contact-meta">
-                <span className="contact-time">{contact.time}</span>
-                {contact.unread > 0 && (
-                  <span className="contact-unread">{contact.unread}</span>
-                )}
-              </div>
-            </div>
-          ))}
-          {filteredContacts.length === 0 && (
+            ))
+          )}
+          {!loadingContacts && filteredContacts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '24px', color: '#a0aec0', fontSize: '0.9rem' }}>
               لا يوجد نتائج
             </div>
@@ -131,18 +212,18 @@ const AdminChat = () => {
       </div>
 
       {/* ── Main Chat Window ── */}
-      {activeContact ? (
+      {activeContactId ? (
         <div className="chat-window">
           {/* Active Chat Header */}
           <div className="chat-header">
             <div className="chat-header-info">
               <div className="chat-header-avatar">
-                {activeContact.avatar}
+                {activeContact?.avatar}
               </div>
               <div>
-                <h3 className="chat-header-name">{activeContact.name}</h3>
+                <h3 className="chat-header-name">{activeContact?.other_party_name}</h3>
                 <div className="chat-header-status">
-                  {activeContact.online ? (
+                  {(activeContact as any)?.is_online ? (
                     <>
                       <span className="status-dot"></span> متصل الآن
                     </>
@@ -158,12 +239,14 @@ const AdminChat = () => {
 
           {/* Messages */}
           <div className="chat-messages">
-            {activeMessages.length > 0 ? (
-              activeMessages.map(msg => (
-                <div key={msg.id} className={`message-wrapper ${msg.senderId === 'admin' ? 'sent' : 'received'}`}>
+            {loadingMessages && messages.length === 0 ? (
+               <div className="chat-loading-center"><Loader2 className="animate-spin text-gold" /></div>
+            ) : messages.length > 0 ? (
+              messages.map(msg => (
+                <div key={msg.message_id} className={`message-wrapper ${msg.is_mine ? 'sent' : 'received'}`}>
                   <div className="message-bubble">
-                    {msg.text}
-                    <span className="message-time">{msg.timestamp}</span>
+                    {msg.message_text}
+                    <span className="message-time">{formatTime(msg.created_at)}</span>
                   </div>
                 </div>
               ))

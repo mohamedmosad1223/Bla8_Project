@@ -463,9 +463,9 @@ const Callers = () => {
                             <button className="action-icon-btn chat-icon" title="محادثة" onClick={() => navigate(`/conversations?user_id=${preacher.user_id}&name=${preacher.full_name}`)}>
                               <MessageCircle size={16} />
                             </button>
-                            <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/awqaf/associations/current/preachers/${preacher.preacher_id}`)}>
-                            <Eye size={16} />
-                          </button>
+                            <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/callers/view/${preacher.preacher_id}`)}>
+                             <Eye size={16} />
+                           </button>
                              <button className="action-icon-btn edit-icon" title="تعديل" onClick={() => navigate(`/callers/edit/${preacher.preacher_id}`)}>
                                <Edit size={16} />
                              </button>

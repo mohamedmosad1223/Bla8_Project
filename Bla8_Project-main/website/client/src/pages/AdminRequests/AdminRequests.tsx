@@ -1,70 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, SlidersHorizontal, Eye, Check, X } from 'lucide-react';
+import { Search, Filter, SlidersHorizontal, Eye, Check, X, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 import './AdminRequests.css';
-
-const MOCK_ASSOC_REQUESTS = [
-  { 
-    id: '101', 
-    name: 'جمعية النور', 
-    licenseNumber: '1234567',
-    managerName: 'أحمد محمود',
-    country: 'الكويت',
-    governorate: 'محافظة العاصمة',
-    phone: '+965 12345678',
-    email: 'noor@test.com',
-    date: '22/02/2023' 
-  },
-  { 
-    id: '102', 
-    name: 'جمعية الهدى', 
-    licenseNumber: '7654321',
-    managerName: 'سيد علي',
-    country: 'الكويت',
-    governorate: 'محافظة حولي',
-    phone: '+965 87654321',
-    email: 'hoda@test.com',
-    date: '23/02/2023' 
-  },
-];
-
-const MOCK_PREACHER_REQUESTS = [
-  { 
-    id: '201', 
-    fullName: 'أحمد محمود', 
-    nationality: 'مصري',
-    qualification: 'ليسانس أصول الدين',
-    phone: '+20 1099887766',
-    email: 'ahmed@test.com',
-    date: '24/02/2023' 
-  },
-  { 
-    id: '202', 
-    fullName: 'سيد علي', 
-    nationality: 'سعودي',
-    qualification: 'بكالوريوس شريعة',
-    phone: '+966 501234567',
-    email: 'sayed@test.com',
-    date: '25/02/2023' 
-  },
-];
 
 const AdminRequests = () => {
   const [activeTab, setActiveTab] = useState<'associations' | 'preachers'>('associations');
+  const [assocRequests, setAssocRequests] = useState<any[]>([]);
+  const [preacherRequests, setPreacherRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   
   const navigate = useNavigate();
 
-  const onAccept = (id: string) => {
-    console.log('Selected for accept:', id);
-    setSuccessModalOpen(true);
+  const fetchRequests = async () => {
+    setLoading(true);
+    try {
+      if (activeTab === 'associations') {
+        const res = await api.get('/organizations/', { params: { approval: 'pending' } });
+        setAssocRequests(res.data.data);
+      } else {
+        const res = await api.get('/preachers/', { params: { approval_status: 'pending' } });
+        setPreacherRequests(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+    } finally {
+      setLoading(false);
+    }
   };
-  const onReject = (id: string) => {
-    console.log('Selected for reject:', id);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [activeTab]);
+
+  const onAccept = async (id: string) => {
+    try {
+      if (activeTab === 'associations') {
+        await api.patch(`/organizations/${id}`, { approval_status: 'approved' });
+      } else {
+        await api.patch(`/preachers/${id}`, { approval_status: 'approved' });
+      }
+      setSuccessModalOpen(true);
+      fetchRequests();
+    } catch (err) {
+      console.error('Error approving request:', err);
+    }
+  };
+
+  const onRejectInitiate = (id: string) => {
+    setSelectedId(id);
     setRejectModalOpen(true);
   };
+
+  const handleRejectConfirm = async () => {
+    if (!selectedId) return;
+    try {
+      if (activeTab === 'associations') {
+        await api.patch(`/organizations/${selectedId}`, { 
+          approval_status: 'rejected',
+          rejection_reason: rejectNote 
+        });
+      } else {
+        await api.patch(`/preachers/${selectedId}`, { 
+          approval_status: 'rejected',
+          rejection_reason: rejectNote 
+        });
+      }
+      setRejectModalOpen(false);
+      setRejectNote('');
+      fetchRequests();
+    } catch (err) {
+      console.error('Error rejecting request:', err);
+    }
+  };
+
   const onView = (id: string, type: 'association' | 'preacher') => {
     if (type === 'preacher') {
       navigate(`/admin/requests/preachers/${id}`);
@@ -117,87 +131,99 @@ const AdminRequests = () => {
       <div className="areq-body-wrapper">
         <div className="areq-content">
           <div className="areq-table-wrapper">
-            <table className="areq-table">
-              {activeTab === 'associations' ? (
-                <>
-                  <thead>
-                    <tr>
-                      <th>رقم الطلب <span className="sort-arrow">↕</span></th>
-                      <th>اسم الجمعية <span className="sort-arrow">↕</span></th>
-                      <th>اسم المدير <span className="sort-arrow">↕</span></th>
-                      <th>المحافظة <span className="sort-arrow">↕</span></th>
-                      <th>رقم الهاتف <span className="sort-arrow">↕</span></th>
-                      <th>تاريخ الطلب <span className="sort-arrow">↕</span></th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_ASSOC_REQUESTS.map((req) => (
-                      <tr key={req.id}>
-                        <td>{req.id}</td>
-                        <td>{req.name}</td>
-                        <td>{req.managerName}</td>
-                        <td>{req.governorate}</td>
-                        <td dir="ltr">{req.phone}</td>
-                        <td className="areq-date-cell">{req.date}</td>
-                        <td>
-                          <div className="areq-actions-cell">
-                            <button className="areq-action-btn areq-accept-btn" title="قبول" onClick={() => onAccept(req.id)}>
-                              <Check size={18} />
-                            </button>
-                            <button className="areq-action-btn areq-reject-btn" title="رفض" onClick={() => onReject(req.id)}>
-                              <X size={18} />
-                            </button>
-                            <button className="areq-action-btn areq-eye-btn" onClick={() => onView(req.id, 'association')} title="عرض التفاصيل">
-                              <Eye size={18} />
-                            </button>
-                          </div>
-                        </td>
+            {loading ? (
+              <div className="areq-loading">
+                <Loader2 className="animate-spin" size={40} />
+              </div>
+            ) : (
+              <table className="areq-table">
+                {activeTab === 'associations' ? (
+                  <>
+                    <thead>
+                      <tr>
+                        <th>رقم الطلب </th>
+                        <th>اسم الجمعية </th>
+                        <th>اسم المدير </th>
+                        <th>المحافظة </th>
+                        <th>رقم الهاتف </th>
+                        <th>تاريخ الطلب </th>
+                        <th></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </>
-              ) : (
-                <>
-                  <thead>
-                    <tr>
-                      <th>رقم الطلب <span className="sort-arrow">↕</span></th>
-                      <th>اسم الداعية <span className="sort-arrow">↕</span></th>
-                      <th>الجنسية <span className="sort-arrow">↕</span></th>
-                      <th>المؤهل <span className="sort-arrow">↕</span></th>
-                      <th>رقم الهاتف <span className="sort-arrow">↕</span></th>
-                      <th>تاريخ الطلب <span className="sort-arrow">↕</span></th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_PREACHER_REQUESTS.map((req) => (
-                      <tr key={req.id}>
-                        <td>{req.id}</td>
-                        <td>{req.fullName}</td>
-                        <td>{req.nationality}</td>
-                        <td>{req.qualification}</td>
-                        <td dir="ltr">{req.phone}</td>
-                        <td className="areq-date-cell">{req.date}</td>
-                        <td>
-                          <div className="areq-actions-cell">
-                            <button className="areq-action-btn areq-accept-btn" title="قبول" onClick={() => onAccept(req.id)}>
-                              <Check size={18} />
-                            </button>
-                            <button className="areq-action-btn areq-reject-btn" title="رفض" onClick={() => onReject(req.id)}>
-                              <X size={18} />
-                            </button>
-                            <button className="areq-action-btn areq-eye-btn" onClick={() => onView(req.id, 'preacher')} title="عرض التفاصيل">
-                              <Eye size={18} />
-                            </button>
-                          </div>
-                        </td>
+                    </thead>
+                    <tbody>
+                      {assocRequests.map((req) => (
+                        <tr key={req.org_id}>
+                          <td>{req.org_id}</td>
+                          <td>{req.organization_name}</td>
+                          <td>{req.manager_name}</td>
+                          <td>{req.governorate}</td>
+                          <td dir="ltr">{req.phone}</td>
+                          <td className="areq-date-cell">{new Date(req.created_at).toLocaleDateString('en-GB')}</td>
+                          <td>
+                            <div className="areq-actions-cell">
+                              <button className="areq-action-btn areq-accept-btn" title="قبول" onClick={() => onAccept(req.org_id)}>
+                                <Check size={18} />
+                              </button>
+                              <button className="areq-action-btn areq-reject-btn" title="رفض" onClick={() => onRejectInitiate(req.org_id)}>
+                                <X size={18} />
+                              </button>
+                              <button className="areq-action-btn areq-eye-btn" onClick={() => onView(req.org_id, 'association')} title="عرض التفاصيل">
+                                <Eye size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {assocRequests.length === 0 && (
+                        <tr><td colSpan={7} style={{textAlign: 'center', padding: '40px'}}>لا توجد طلبات جمعيات حالياً</td></tr>
+                      )}
+                    </tbody>
+                  </>
+                ) : (
+                  <>
+                    <thead>
+                      <tr>
+                        <th>رقم الطلب </th>
+                        <th>اسم الداعية </th>
+                        <th>الجنسية </th>
+                        <th>المؤهل </th>
+                        <th>رقم الهاتف </th>
+                        <th>تاريخ الطلب </th>
+                        <th></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </>
-              )}
-            </table>
+                    </thead>
+                    <tbody>
+                      {preacherRequests.map((req) => (
+                        <tr key={req.preacher_id}>
+                          <td>{req.preacher_id}</td>
+                          <td>{req.full_name}</td>
+                          <td>{req.nationality_name}</td>
+                          <td>{req.scientific_qualification}</td>
+                          <td dir="ltr">{req.phone}</td>
+                          <td className="areq-date-cell">{new Date(req.created_at).toLocaleDateString('en-GB')}</td>
+                          <td>
+                            <div className="areq-actions-cell">
+                              <button className="areq-action-btn areq-accept-btn" title="قبول" onClick={() => onAccept(req.preacher_id)}>
+                                <Check size={18} />
+                              </button>
+                              <button className="areq-action-btn areq-reject-btn" title="رفض" onClick={() => onRejectInitiate(req.preacher_id)}>
+                                <X size={18} />
+                              </button>
+                              <button className="areq-action-btn areq-eye-btn" onClick={() => onView(req.preacher_id, 'preacher')} title="عرض التفاصيل">
+                                <Eye size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {preacherRequests.length === 0 && (
+                        <tr><td colSpan={7} style={{textAlign: 'center', padding: '40px'}}>لا توجد طلبات دعاة حالياً</td></tr>
+                      )}
+                    </tbody>
+                  </>
+                )}
+              </table>
+            )}
           </div>
         </div>
       </div>
@@ -213,7 +239,7 @@ const AdminRequests = () => {
               <Check size={40} className="areq-modal-icon" />
             </div>
             <h2 className="areq-modal-title">تم بنجاح!</h2>
-            <p className="areq-modal-subtitle">تم استلام الطلب بنجاح</p>
+            <p className="areq-modal-subtitle">تم الموافقة على الطلب بنجاح</p>
             <button className="areq-modal-btn areq-success-btn" onClick={() => setSuccessModalOpen(false)}>
               تم
             </button>
@@ -247,10 +273,7 @@ const AdminRequests = () => {
               <button 
                 className="areq-modal-btn areq-confirm-btn" 
                 disabled={!rejectNote.trim()}
-                onClick={() => {
-                  setRejectModalOpen(false);
-                  setRejectNote('');
-                }}
+                onClick={handleRejectConfirm}
               >
                 تأكيد
               </button>

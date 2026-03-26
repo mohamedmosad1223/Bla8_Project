@@ -132,6 +132,14 @@
   border: 1px solid #edf2f7;
 }
 
+.areq-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px;
+  color: #DBA841;
+}
+
 .areq-table {
   width: 100%;
   border-collapse: collapse;

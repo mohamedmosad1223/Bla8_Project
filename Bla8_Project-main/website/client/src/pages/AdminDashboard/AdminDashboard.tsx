@@ -1,83 +1,147 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect } from 'react';
+import { 
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer
+} from 'recharts';
 import StatCard from '../../components/StatCard/StatCard';
 import {
   Users,
   FileText,
-  MessageCircle,
   UserCheck,
   UserX,
-  BookOpen,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
+import api from '../../services/api';
+import WorldMap from '../../components/WorldMap/WorldMap';
 import './AdminDashboard.css';
 
-// ─── Kuwait Governorates Data ───────────────────────────────
-const governorates = [
-  { name: 'محافظة العاصمة',    count: '72 الف شخص', percentage: 72, color: '#F59E0B' },
-  { name: 'محافظة الأحمدي',   count: '60 الف شخص', percentage: 60, color: '#EC4899' },
-  { name: 'محافظة الفروانية', count: '50 الف شخص', percentage: 50, color: '#10B981' },
-  { name: 'محافظة حولي',      count: '40 الف شخص', percentage: 40, color: '#6366F1' },
-  { name: 'محافظة الجهراء',   count: '30 الف شخص', percentage: 30, color: '#3B82F6' },
-  { name: 'محافظة مبارك الكبير', count: '20 الف شخص', percentage: 20, color: '#E11D48' },
-];
-
-// ─── Stat Cards Data ───────────────────────────────────────
-const statCards = [
-  { id: 1, title: 'اجمالي عدد الجمعيات', value: '100', icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: '10.5%+' },
-  { id: 2, title: 'عدد المحادثات الجديدة', value: '100', icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'down' as const, trendValue: '10.5%-' },
-  { id: 3, title: 'عدد المحادثات المفتوحة', value: '100', icon: <MessageCircle size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'down' as const, trendValue: '10.5%-' },
-  { id: 4, title: 'عدد المستفيدين', value: '100', icon: <UserCheck size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '10.5%-' },
-  { id: 5, title: 'المحالون للتعليم و المتابعة', value: '100', icon: <BookOpen size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: '10.5%+' },
-  { id: 6, title: 'اجمالي عدد المحادثات', value: '100', icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'down' as const, trendValue: '10.5%-' },
-  { id: 7, title: 'من اسلموا', value: '100', icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'down' as const, trendValue: '10.5%-' },
-  { id: 8, title: 'من رفضوا', value: '100', icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '10.5%-' },
-];
-
-// ─── Associations Table Data ────────────────────────────────
-const associations = [
-  { id: '123456', name: 'جمعية رسالة الاسلام', count: 150 },
-  { id: '123456', name: 'جمعية الحضارة القديمة', count: 200 },
-  { id: '123456', name: 'جمعية دعاة الدين', count: 300 },
-  { id: '123456', name: 'جمعية أسلمي', count: 120 },
-  { id: '123456', name: 'جمعية معرفة الاسلام', count: 600 },
-  { id: '123456', name: 'جمعية الاسلام الحقيقي', count: 158 },
-  { id: '123456', name: 'جمعية مسلمون له', count: 220 },
-];
-
-// ─── Top Preachers Table Data ────────────────────────────────
-const topPreachers = [
-  { id: '123456', name: 'احمد عاطف', assoc: 'جمعية رسالة الاسلام', rate: 25 },
-  { id: '123456', name: 'محمد علي نصر', assoc: 'جمعية الحضارة القديمة', rate: 25 },
-  { id: '123456', name: 'سيد خميس', assoc: 'جمعية دعاة الدين', rate: 26 },
-  { id: '123456', name: 'صلاح السعدني', assoc: 'جمعية أسلمي', rate: 25 },
-  { id: '123456', name: 'احمد علي', assoc: 'جمعية معرفة الاسلام', rate: 25 },
-  { id: '123456', name: 'عاطف السيد', assoc: 'جمعية الاسلام الحقيقي', rate: 25 },
-  { id: '123456', name: 'حمدي خميس', assoc: 'جمعية مسلمون له', rate: 25 },
-];
-
-// ─── Presence Donut Chart ────────────────────────────────────
-const presenceData = [
-  { name: 'اونلاين', value: 20, color: '#10B981' },
-  { name: 'مشغول', value: 10, color: '#F59E0B' },
-  { name: 'اوفالاين', value: 5, color: '#EF4444' },
-];
-const totalPreachers = presenceData.reduce((sum, d) => sum + d.value, 0);
+interface DashboardData {
+  total_organizations: { title: string; value: number; is_positive: boolean };
+  total_preachers: { title: string; value: number; is_positive: boolean };
+  total_individuals: { title: string; value: number; is_positive: boolean };
+  total_cases: { title: string; value: number; is_positive: boolean };
+  total_converted: { title: string; value: number; is_positive: boolean };
+  total_rejected: { title: string; value: number; is_positive: boolean };
+  top_preachers: Array<{
+    preacher_id: number;
+    full_name: string;
+    organization_name: string;
+    success_rate: number;
+  }>;
+  organization_stats: Array<{
+    org_id: number;
+    organization_name: string;
+    preachers_count: number;
+  }>;
+  nationalities_distribution: Array<{ label: string; value: number }>;
+  preacher_presence: { online: number; busy: number; offline: number };
+  recent_activities: Array<{
+    id: number;
+    name: string;
+    action: string;
+    time: string;
+    timestamp: string;
+  }>;
+}
 
 const AdminDashboard = () => {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/dashboard/admin');
+        setData(response.data);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err);
+        setError('تعذر تحميل بيانات لوحة التحكم. يرجى المحاولة مرة أخرى لاحقاً.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="ad-loading-state">
+        <Loader2 className="animate-spin" size={48} color="#DBA841" />
+        <p>جاري تحميل البيانات...</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="ad-error-state">
+        <AlertTriangle size={48} color="#EF4444" />
+        <p>{error || 'حدث خطأ غير متوقع'}</p>
+        <button onClick={() => window.location.reload()} className="ad-retry-btn">
+          إعادة المحاولة
+        </button>
+      </div>
+    );
+  }
+
+  // ─── Stat Cards Mapping ───────────────────────────────────────
+  const statCards = [
+    { title: 'اجمالي عدد الجمعيات', value: data.total_organizations.value, icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: 'جديد' },
+    { title: 'اجمالي عدد الدعاة', value: data.total_preachers.value, icon: <Users size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'up' as const, trendValue: 'جديد' },
+    { title: 'إجمالي الأفراد المسجلين', value: data.total_individuals.value, icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'up' as const, trendValue: 'جديد' },
+    { title: 'اجمالي الحالات سجلت', value: data.total_cases.value, icon: <FileText size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'up' as const, trendValue: 'جديد' },
+    { title: 'عدد من أسلموا', value: data.total_converted.value, icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'up' as const, trendValue: 'بفضل الله' },
+    { title: 'إجمالي حالات الرفض', value: data.total_rejected.value, icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '-' },
+  ];
+
+  // ─── Presence Donut Chart Data ────────────────────────────────
+  const presenceData = [
+    { name: 'اونلاين', value: data.preacher_presence.online, color: '#10B981' },
+    { name: 'مشغول', value: data.preacher_presence.busy, color: '#F59E0B' },
+    { name: 'اوفالايين', value: data.preacher_presence.offline, color: '#EF4444' },
+  ];
+  const totalPreachers = data.preacher_presence.online + data.preacher_presence.busy + data.preacher_presence.offline;
+
+  // ─── Nationality Distribution Data ────────────────────────────
+  const nationalityStyles = [
+    { fill: '#FF4D4F', bg: '#FFF1F0' }, // Red
+    { fill: '#1890FF', bg: '#E6F7FF' }, // Blue
+    { fill: '#FFA940', bg: '#FFF7E6' }, // Orange
+    { fill: '#722ED1', bg: '#F9F0FF' }, // Purple
+    { fill: '#13C2C2', bg: '#E6FFFB' }, // Teal
+    { fill: '#52C41A', bg: '#F6FFED' }, // Green
+  ];
+
+  const governorates = data.nationalities_distribution.map((item, idx) => {
+    const style = nationalityStyles[idx % nationalityStyles.length];
+    return {
+      name: item.label,
+      count: `${item.value.toLocaleString()} شخص`,
+      percentage: Math.min(100, (item.value / (data.total_individuals.value || 1)) * 100),
+      color: style.fill,
+      bgColor: style.bg
+    };
+  });
+
   return (
     <div className="admin-dashboard">
       <h1 className="ad-title">الداشبورد</h1>
 
       {/* ── Stat Cards ── */}
       <div className="ad-stats-grid">
-        {statCards.map((stat) => (
+        {statCards.map((stat, idx) => (
           <StatCard
-            key={stat.id}
+            key={idx}
             title={stat.title}
-            value={stat.value}
+            value={stat.value.toString()}
             icon={stat.icon}
             iconBgColor={stat.bgColor}
             iconColor={stat.color}
-            trend={stat.trend as 'up' | 'down'}
+            trend={stat.trend}
             trendValue={stat.trendValue}
           />
         ))}
@@ -97,45 +161,51 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {associations.map((row, idx) => (
-                <tr key={idx}>
-                  <td>{row.id}</td>
-                  <td>{row.name}</td>
-                  <td>{row.count}</td>
+              {data.organization_stats.map((row) => (
+                <tr key={row.org_id}>
+                  <td>{row.org_id}</td>
+                  <td>{row.organization_name}</td>
+                  <td>{row.preachers_count}</td>
                 </tr>
               ))}
+              {data.organization_stats.length === 0 && (
+                <tr><td colSpan={3} style={{textAlign:'center', padding:'20px'}}>لا توجد بيانات متاحة</td></tr>
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Top 10 Preachers */}
+        {/* Top Preachers */}
         <div className="ad-card ad-table-card">
-          <h3 className="ad-card-title">نشاط افضل 10 دعاة</h3>
+          <h3 className="ad-card-title">نشاط أفضل 10 دعاة</h3>
           <table className="ad-table">
             <thead>
               <tr>
                 <th>رقم</th>
                 <th>اسم الداعية</th>
                 <th>اسم الجمعية</th>
-                <th>نسبة نجاح الداعية</th>
+                <th>نسبة النجاح</th>
               </tr>
             </thead>
             <tbody>
-              {topPreachers.map((row, idx) => (
-                <tr key={idx}>
-                  <td>{row.id}</td>
-                  <td>{row.name}</td>
-                  <td>{row.assoc}</td>
+              {data.top_preachers.map((row) => (
+                <tr key={row.preacher_id}>
+                  <td>{row.preacher_id}</td>
+                  <td>{row.full_name}</td>
+                  <td>{row.organization_name || 'غير محدد'}</td>
                   <td>
                     <div className="ad-progress-wrapper">
-                      <span className="ad-progress-label">{row.rate}%</span>
+                      <span className="ad-progress-label">{row.success_rate}%</span>
                       <div className="ad-progress-bg">
-                        <div className="ad-progress-fill" style={{ width: `${row.rate}%` }} />
+                        <div className="ad-progress-fill" style={{ width: `${row.success_rate}%` }} />
                       </div>
                     </div>
                   </td>
                 </tr>
               ))}
+              {data.top_preachers.length === 0 && (
+                <tr><td colSpan={4} style={{textAlign:'center', padding:'20px'}}>لا توجد بيانات متاحة</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -147,7 +217,7 @@ const AdminDashboard = () => {
         <div className="ad-card ad-chart-card">
           <h3 className="ad-card-title">حالة تواجد الدعاة الان</h3>
           <div className="ad-donut-wrapper">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
                   data={presenceData}
@@ -164,7 +234,7 @@ const AdminDashboard = () => {
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`${value} داعية`, '']} />
+                <Tooltip formatter={(value: any) => [`${value} داعية`, '']} />
               </PieChart>
             </ResponsiveContainer>
             <div className="ad-donut-center">
@@ -183,31 +253,30 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Kuwait Map */}
+        {/* Nationality Distribution Section */}
         <div className="ad-card ad-map-card">
-          <h3 className="ad-card-title">توزيع المدعوين بمحافظات الكويت</h3>
-          <div className="ad-kuwait-map-wrapper">
-            <img
-              src="/image 1.png"
-              alt="خريطة الكويت"
-              className="ad-kuwait-map-img"
-            />
+          <h3 className="ad-card-title">جنسية المدعوين</h3>
+          <div className="ad-world-map-wrapper">
+             <WorldMap data={data.nationalities_distribution} colors={nationalityStyles.map(s => s.fill)} />
           </div>
           <div className="ad-gov-list">
             {governorates.map((gov, idx) => (
-              <div key={idx} className="ad-gov-row">
-                <div className="ad-gov-header">
-                  <span className="ad-gov-name">{gov.name}</span>
-                  <span className="ad-gov-count">{gov.count}</span>
+              <div key={idx} className="ad-gov-row-modern">
+                <div className="ad-gov-header-modern">
+                  <span className="ad-gov-name-modern">{gov.name}</span>
+                  <span className="ad-gov-count-modern">{gov.count}</span>
                 </div>
-                <div className="ad-progress-bg">
+                <div className="ad-progress-bg-modern" style={{ backgroundColor: gov.bgColor }}>
                   <div
-                    className="ad-progress-fill"
+                    className="ad-progress-fill-modern"
                     style={{ width: `${gov.percentage}%`, backgroundColor: gov.color }}
                   />
                 </div>
               </div>
             ))}
+            {governorates.length === 0 && (
+              <p style={{textAlign:'center', color:'#94a3b8', marginTop:'20px'}}>لا توجد بيانات توزيع متاحة</p>
+            )}
           </div>
         </div>
       </div>

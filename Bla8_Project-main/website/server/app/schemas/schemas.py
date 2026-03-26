@@ -398,7 +398,10 @@ class OrganizationUpdate(BaseModel):
     manager_name:       Optional[str]       = Field(None, min_length=3, max_length=255)
     phone:              Optional[str]       = None
     email:              Optional[EmailStr]  = None
+    password:           Optional[str]       = Field(None, min_length=6, max_length=100)
+    password_confirm:   Optional[str]       = Field(None, min_length=6, max_length=100)
     approval_status:    Optional[ApprovalStatus] = None
+    is_active:          Optional[bool] = None
     rejection_reason:   Optional[str] = None
 
     @field_validator("phone")
@@ -717,22 +720,40 @@ class ChartDataPoint(BaseModel):
     label: str
     value: float
 
+class ResponseTimePoint(BaseModel):
+    name: str # Label on X axis
+    time: float # Value on Y axis (minutes)
+
+class PreacherInfoRead(BaseModel):
+    full_name: str
+    email: str
+    phone: str
+    gender: Optional[str]
+    nationality_name: str
+    language_names: List[str]
+    organization_name: str
+    status: str
+    religion: str = "إسلام"
+
 class PreacherDashboardRead(BaseModel):
+    # Basic Info
+    preacher_info: PreacherInfoRead
+
     # Top Stats
     total_requests: StatCard
     converted_count: StatCard
-    engagement_count: StatCard
+    in_progress_count: StatCard
     rejected_count: StatCard
     
     # Charts
-    response_speed_chart: list[ChartDataPoint] # Time in minutes per month/period
+    response_speed_chart: list[ResponseTimePoint] # Time in minutes per month/period
     requests_by_status: list[ChartDataPoint]  # Distribution for donut chart
     follow_up_24h_rate: float                 # Percentage
     ai_suggestions_rate: float                # Percentage
     governorates_distribution: list[ChartDataPoint]
     countries_distribution: list[ChartDataPoint]
     
-    # Activity over time (for the line graph)
+    # Activity over time
     activity_chart: list[ChartDataPoint]
     
     model_config = {"from_attributes": True}

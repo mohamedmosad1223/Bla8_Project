@@ -21,7 +21,7 @@ def run_setup():
     print("\n📦 Running Alembic migrations...")
     try:
         # بنشغل الأمر كـ subprocess عشان نتفادى مشاكل الـ PYTHONPATH في بعض الأنظمة
-        result = subprocess.run(["alembic", "upgrade", "head"], capture_output=True, text=True)
+        result = subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], capture_output=True, text=True)
         if result.returncode == 0:
             print("✅ Migrations applied successfully!")
             print(result.stdout)
