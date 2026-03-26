@@ -5,6 +5,7 @@ from typing import List
 
 from app.models.dawah_request import DawahRequest
 from app.models.preacher import Preacher
+from app.models.organization import Organization
 from app.models.message import Message
 from app.models.enums import RequestStatus, UserRole
 from app.models.user import User
@@ -20,7 +21,9 @@ class OrganizationDashboardController:
         ).filter(Preacher.org_id == org_id)
 
         # 1. Top Stats (8 Cards)
-        total_preachers = db.query(Preacher).filter(Preacher.org_id == org_id).count()
+        # Show total organizations count instead of total preachers count
+        # (title + value are for the first stats card on the supervisor dashboard)
+        total_organizations = db.query(Organization).count()
         
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         new_requests_today = org_requests_query.filter(DawahRequest.created_at >= today_start).count()
@@ -99,7 +102,7 @@ class OrganizationDashboardController:
             conversion_trends.append({"label": f"{month_label} - Rejects", "value": t.rejects})
 
         return {
-            "total_preachers": {"title": "إجمالي عدد الدعاة", "value": total_preachers, "change_percentage": 0.0, "is_positive": True},
+            "total_preachers": {"title": "إجمالي عدد الجمعيات", "value": total_organizations, "change_percentage": 0.0, "is_positive": True},
             "new_requests_today": {"title": "عدد المحادثات الجديدة", "value": new_requests_today, "change_percentage": 0.0, "is_positive": True},
             "active_conversations": {"title": "عدد المحادثات المفتوحة", "value": active_conversations, "change_percentage": 0.0, "is_positive": True},
             "total_beneficiaries": {"title": "عدد المستفيدين", "value": total_beneficiaries, "change_percentage": 0.0, "is_positive": True},

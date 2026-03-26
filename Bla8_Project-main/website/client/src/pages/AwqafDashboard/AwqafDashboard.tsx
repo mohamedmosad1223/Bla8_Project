@@ -17,6 +17,7 @@ import './AwqafDashboard.css';
 
 const STAT_ICONS_MAP: Record<string, { icon: JSX.Element; bgColor: string; color: string }> = {
   preachers: { icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1' },
+  organizations: { icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706' },
   requests: { icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706' },
   messages: { icon: <MessageCircle size={24} />, bgColor: '#D1FAE5', color: '#10B981' },
   referrals: { icon: <BookOpen size={24} />, bgColor: '#E0E7FF', color: '#6366F1' },
@@ -101,8 +102,8 @@ const AwqafDashboard = () => {
             </div>
             <div className="awqaf-gov-grid">
               {data.governorates.map((gov: { name: string; value: number }) => {
-                 const total = data.governorates[0]?.value || 1;
-                 return (
+                const total = data.governorates[0]?.value || 1;
+                return (
                   <div key={gov.name} className="awqaf-gov-item">
                     <span className="awqaf-gov-name">{gov.name}</span>
                     <div className="awqaf-gov-bar-wrap">
@@ -113,7 +114,7 @@ const AwqafDashboard = () => {
                     </div>
                     <span className="awqaf-gov-value">{gov.value} شخص</span>
                   </div>
-                 );
+                );
               })}
             </div>
           </div>

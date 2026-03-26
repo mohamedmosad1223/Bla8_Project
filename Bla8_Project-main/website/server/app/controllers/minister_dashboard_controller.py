@@ -18,8 +18,8 @@ class MinisterDashboardController:
 
     @staticmethod
     def get_dashboard_stats(db: Session):
-        # 1. Total Preachers
-        total_preachers = db.query(Preacher).count()
+        # 1. Total Organizations (الجمعيات)
+        total_organizations = db.query(Organization).count()
 
         # 2. Total Organization Requests
         # Assuming this refers to total dawah requests handled by organizations
@@ -81,7 +81,7 @@ class MinisterDashboardController:
 
         return {
             "top_cards": [
-                {"title": "إجمالي عدد الدعاة", "value": total_preachers, "icon": "preachers"},
+                {"title": "إجمالي عدد الجمعيات", "value": total_organizations, "icon": "organizations"},
                 {"title": "إجمالي عدد طلبات الجمعية", "value": total_org_requests, "icon": "requests"},
                 {"title": "إجمالي عدد المحادثات", "value": total_conversations, "icon": "messages"},
                 {"title": "المحالون للتعليم والمتابعة", "value": referred_count, "icon": "referrals"},
