@@ -31,6 +31,24 @@
 
 .assoc-search-input:focus { border-color: #17648B; }
 
+.assoc-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #475569;
+}
+
+.assoc-state-error {
+  color: #dc2626;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
 /* ── Grid ── */
 .assoc-grid {
   display: grid;
@@ -192,6 +210,11 @@
 }
 
 .assoc-empty-icon { margin-bottom: 12px; opacity: 0.3; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 /* ── Responsive ── */
 @media (max-width: 1200px) { .assoc-grid { grid-template-columns: repeat(3, 1fr); } }

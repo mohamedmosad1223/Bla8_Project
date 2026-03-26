@@ -9,14 +9,19 @@ import {
 } from 'recharts';
 import './AcceptanceRateChart.css';
 
-const data = [
-  { name: 'يوليو', value1: 58, value2: 32 },
-  { name: 'يونيو', value1: 66, value2: 41 },
-  { name: 'مايو', value1: 61, value2: 36 },
-  { name: 'ابريل', value1: 70, value2: 45 },
-  { name: 'مارس', value1: 79, value2: 54 },
-  { name: 'فبراير', value1: 74, value2: 49 },
-  { name: 'يناير', value1: 83, value2: 58 },
+interface AcceptanceRatePoint {
+  name: string;
+  value1: number;
+}
+
+interface AcceptanceRateChartProps {
+  data?: AcceptanceRatePoint[];
+}
+
+const fallbackData = [
+  { name: 'يناير', value1: 0 },
+  { name: 'فبراير', value1: 0 },
+  { name: 'مارس', value1: 0 },
 ];
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
@@ -24,20 +29,30 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
     return (
       <div className="chart-tooltip">
         <p className="tooltip-label">{label}</p>
-        <p className="tooltip-value red-text">{`القيمة 1: ${payload[0].value}%`}</p>
-        <p className="tooltip-value blue-text">{`القيمة 2: ${payload[1].value}%`}</p>
+        <p className="tooltip-value red-text">{`نسبة القبول: ${payload[0].value}%`}</p>
       </div>
     );
   }
   return null;
 };
 
-const AcceptanceRateChart = () => {
+const AcceptanceRateChart = ({ data }: AcceptanceRateChartProps) => {
+  const chartData = data && data.length > 0 ? data : fallbackData;
+  const hasData = chartData.some((d) => d.value1 > 0);
+
+  if (!hasData) {
+    return (
+      <div className="acceptance-rate-chart-container" style={{ width: '100%', height: '100%', minHeight: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#9CA3AF', textAlign: 'center' }}>لا يوجد بيانات حالياً</p>
+      </div>
+    );
+  }
+
   return (
     <div className="acceptance-rate-chart-container" style={{ width: '100%', height: '100%', minHeight: '250px' }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={data}
+          data={chartData}
           margin={{
             top: 20,
             right: 0,
@@ -64,21 +79,13 @@ const AcceptanceRateChart = () => {
             label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideLeft', fill: '#6B7280', fontSize: 12, fontFamily: 'Cairo', dx: -5 }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E5E7EB', strokeWidth: 1, strokeDasharray: '3 3' }} />
-          <Line 
+          <Line
             type="linear" 
             dataKey="value1" 
             stroke="#9f1239" 
             strokeWidth={2}
             dot={{ r: 4, fill: '#9f1239', strokeWidth: 0 }}
             activeDot={{ r: 6, fill: '#9f1239', stroke: '#fff', strokeWidth: 2 }}
-          />
-          <Line 
-            type="linear" 
-            dataKey="value2" 
-            stroke="#3b82f6" 
-            strokeWidth={2}
-            dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
-            activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
           />
         </LineChart>
       </ResponsiveContainer>
