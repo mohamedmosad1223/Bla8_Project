@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Plus, Send, MessageCircle, Calendar } from 'lucide-react';
+import api from '../../services/api';
 import './NonMuslimDashboard.css';
 
 interface Message {
@@ -21,7 +22,45 @@ const NonMuslimDashboard: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isGuest, setIsGuest] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. التحقق من حالة الدخول عند تحميل المكون
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const authStatus = !token;
+    setIsGuest(authStatus);
+
+    if (authStatus) {
+      // إذا كان زائراً: تحميل من sessionStorage (مؤقت)
+      const saved = sessionStorage.getItem('guest_nm_sessions');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const guestSessions = parsed.map((s: any) => ({ ...s, timestamp: new Date(s.timestamp) }));
+          setSessions(guestSessions);
+          setActiveChatId(sessionStorage.getItem('guest_nm_active_id'));
+        } catch { setSessions([]); }
+      }
+    } else {
+      // إذا كان مسجلاً: جلب الجلسات الحقيقية من الباكيند
+      api.get('/chat/conversations')
+        .then(res => {
+          const conversations = res.data?.conversations || [];
+          const userSessions: ChatSession[] = conversations.map((c: any) => ({
+            id: c.id.toString(),
+            title: c.title,
+            lastMessage: 'محادثة سابقة',
+            timestamp: new Date(c.created_at),
+            messages: []
+          }));
+          setSessions(userSessions);
+          if (userSessions.length > 0) setActiveChatId(userSessions[0].id);
+        })
+        .catch(err => console.error('Failed to fetch user conversations:', err));
+    }
+  }, []);
 
   const activeSession = sessions.find(s => s.id === activeChatId);
 
@@ -29,38 +68,97 @@ const NonMuslimDashboard: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 2. حفظ بيانات الضيف فقط في sessionStorage (تُمسح عند إغلاق التبويب)
   useEffect(() => {
-    if (activeChatId) scrollToBottom();
-  }, [sessions, activeChatId]);
+    if (isGuest && sessions.length > 0) {
+      sessionStorage.setItem('guest_nm_sessions', JSON.stringify(sessions));
+    }
+  }, [sessions, isGuest]);
 
-  const startNewChat = () => {
-    const newId = Date.now().toString();
-    const newSession: ChatSession = {
-      id: newId,
-      title: `محادثة ${sessions.length + 1}`,
-      lastMessage: 'أهلاً 👋 أنا مساعدك...',
-      timestamp: new Date(),
-      messages: [
-        {
-          id: '1',
+  useEffect(() => {
+    if (isGuest && activeChatId) {
+      sessionStorage.setItem('guest_nm_active_id', activeChatId);
+    }
+  }, [activeChatId, isGuest]);
+
+  // 3. جلب التاريخ عند تغيير المحادثة
+  useEffect(() => {
+    if (activeChatId) {
+      scrollToBottom();
+      
+      const historyUrl = isGuest 
+        ? `/chat/ai/guest/history/${activeChatId}`
+        : `/chat/ai/conversations/${activeChatId}/messages`;
+
+      api.get(historyUrl)
+        .then(res => {
+          const history = res.data?.history || [];
+          if (history.length > 0) {
+            const mappedMessages: Message[] = history.map((m: any) => ({
+              id: m.id.toString(),
+              sender: m.role === 'ai' ? 'bot' : 'user',
+              text: m.content,
+              timestamp: new Date(m.created_at)
+            }));
+
+            setSessions(prev => prev.map(s => {
+              if (s.id === activeChatId) {
+                return { ...s, messages: mappedMessages };
+              }
+              return s;
+            }));
+          }
+        })
+        .catch(err => console.error('Failed to fetch history:', err));
+    }
+  }, [activeChatId, isGuest]);
+
+  const startNewChat = async () => {
+    if (isGuest) {
+      const newId = Date.now().toString();
+      const newSession: ChatSession = {
+        id: newId,
+        title: `محادثة زائر ${sessions.length + 1}`,
+        lastMessage: 'أهلاً 👋 أنا مساعدك...',
+        timestamp: new Date(),
+        messages: [{
+          id: 'welcome-' + newId,
           sender: 'bot',
-          text: 'أهلاً 👋 أنا مساعدك. هل يمكنني طرح بعض الأسئلة للتعرف عليك أكثر؟',
+          text: 'أهلاً 👋 أنا مساعدك. كيف يمكنني مساعدتك اليوم؟',
           timestamp: new Date()
-        }
-      ]
-    };
-    setSessions(prev => [newSession, ...prev]);
-    setActiveChatId(newId);
+        }]
+      };
+      setSessions(prev => [newSession, ...prev]);
+      setActiveChatId(newId);
+    } else {
+      // إنشاء جلسة جديدة في الباكيند للمستخدم المسجل
+      try {
+        const res = await api.post('/chat/conversations', { title: `محادثة ${sessions.length + 1}` });
+        const newConv = res.data;
+        const newSession: ChatSession = {
+          id: newConv.id.toString(),
+          title: newConv.title,
+          lastMessage: 'بداية المحادثة',
+          timestamp: new Date(newConv.created_at),
+          messages: []
+        };
+        setSessions(prev => [newSession, ...prev]);
+        setActiveChatId(newSession.id);
+      } catch (err) {
+        console.error('Failed to create conversation:', err);
+      }
+    }
   };
 
-  const handleSend = (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputValue.trim() || !activeChatId) return;
+    if (!inputValue.trim() || !activeChatId || loading) return;
 
-    const newMessage: Message = {
+    const userText = inputValue.trim();
+    const userMessage: Message = {
       id: Date.now().toString(),
       sender: 'user',
-      text: inputValue.trim(),
+      text: userText,
       timestamp: new Date()
     };
 
@@ -68,14 +166,70 @@ const NonMuslimDashboard: React.FC = () => {
       if (session.id === activeChatId) {
         return {
           ...session,
-          messages: [...session.messages, newMessage],
-          lastMessage: newMessage.text,
+          messages: [...session.messages, userMessage],
+          lastMessage: userText,
           timestamp: new Date()
         };
       }
       return session;
     }));
     setInputValue('');
+    setLoading(true);
+
+    try {
+      const sendUrl = isGuest 
+        ? '/chat/ai/guest/send' 
+        : `/chat/ai/conversations/${activeChatId}/messages`;
+      
+      const payload = isGuest 
+        ? { session_id: activeChatId, message: userText }
+        : { content: userText }; 
+
+      const res = await api.post(sendUrl, payload);
+
+      const aiReply = res.data?.ai_response?.content;
+      const finalReply = aiReply || 'عذراً، لم أتمكن من الحصول على رد مفيد حالياً.';
+
+      // 3. إضافة رد الذكاء الاصطناعي للمحادثة
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'bot',
+        text: finalReply,
+        timestamp: new Date()
+      };
+
+      setSessions(prev => prev.map(session => {
+        if (session.id === activeChatId) {
+          return {
+            ...session,
+            messages: [...session.messages, botMessage],
+            lastMessage: finalReply,
+            timestamp: new Date()
+          };
+        }
+        return session;
+      }));
+    } catch (error: any) {
+      console.error('Error sending message to AI:', error);
+      const errorText = error.response?.data?.detail || 'حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.';
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'bot',
+        text: errorText,
+        timestamp: new Date()
+      };
+      setSessions(prev => prev.map(session => {
+        if (session.id === activeChatId) {
+          return {
+            ...session,
+            messages: [...session.messages, errorMessage],
+          };
+        }
+        return session;
+      }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
