@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Building2, 
@@ -11,7 +11,8 @@ import {
   Eye,
   ChevronLeft,
   Search,
-  Filter,
+  Loader2,
+  AlertCircle,
   Users,
   UserCheck,
   UserX
@@ -20,30 +21,132 @@ import StatCard from '../../components/StatCard/StatCard';
 import RequestsChart from '../../components/RequestsChart/RequestsChart';
 import ConversionsChart from '../../components/ConversionsChart/ConversionsChart';
 import NationalitiesChart from '../../components/NationalitiesChart/NationalitiesChart';
+import { ministerService } from '../../services/ministerService';
 import './AwqafAssociationDetails.css';
 
-const mockPreachers = Array.from({ length: 8 }, (_, i) => ({
-  id: i + 1,
-  number: '123456',
-  name: 'جون سميث',
-  nationality: i % 2 === 0 ? 'فرنسا' : 'انجلترا',
-  joinDate: '22/02/2023\n7:00 AM',
-  languages: 'الانجليزية، الفرنسية',
-  active: i % 2 === 0,
-}));
+interface OrganizationDetailsResponse {
+  organization_info: {
+    name: string;
+    license_number?: string;
+    email?: string;
+    phone?: string;
+    governorate?: string;
+    manager_name?: string;
+    status?: string;
+  };
+  performance_stats: Array<{ title: string; value: number; icon: string }>;
+  charts: {
+    requests_distribution: Array<{ label: string; value: number }>;
+    conversion_trends: Array<{ month: string; converts: number; rejects: number }>;
+    nationalities: Array<{ label: string; value: number }>;
+  };
+}
 
-const mockStats = [
-  { id: 1, title: 'اجمالي عدد الدعاة',          value: '100',  icon: <Users size={24} />,        bgColor: '#EDE9FE', color: '#7C3AED' },
-  { id: 2, title: 'اجمالي عدد طلبات الجمعية',   value: '100',  icon: <FileText size={24} />,     bgColor: '#FEF9C3', color: '#CA8A04' },
-  { id: 3, title: 'من اسلموا',                   value: '100',  icon: <UserCheck size={24} />,    bgColor: '#D1FAE5', color: '#059669' },
-  { id: 4, title: 'من رفضوا',                    value: '100',  icon: <UserX size={24} />,        bgColor: '#FEE2E2', color: '#DC2626' },
-];
+interface OrganizationPreacher {
+  preacher_id: number;
+  full_name: string;
+  nationality: string;
+  joining_date: string;
+  languages: string[];
+  status: string;
+}
+
+const STAT_ICON_CONFIG: Record<string, { icon: JSX.Element; bgColor: string; color: string }> = {
+  preachers: { icon: <Users size={24} />, bgColor: '#EDE9FE', color: '#7C3AED' },
+  requests: { icon: <FileText size={24} />, bgColor: '#FEF9C3', color: '#CA8A04' },
+  converted: { icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#059669' },
+  rejected: { icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#DC2626' }
+};
+
+const mapPreacherStatus = (status: string) => {
+  if (status === 'active') return 'مفعل';
+  if (status === 'inactive') return 'غير مفعل';
+  return status || 'غير محدد';
+};
 
 const AwqafAssociationDetails = () => {
   const navigate = useNavigate();
   const { id: assocId } = useParams();
   const [activeTab, setActiveTab] = useState<'data' | 'preachers'>('data');
   const [search, setSearch] = useState('');
+  const [details, setDetails] = useState<OrganizationDetailsResponse | null>(null);
+  const [preachers, setPreachers] = useState<OrganizationPreacher[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState(true);
+  const [loadingPreachers, setLoadingPreachers] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const orgId = Number(assocId);
+  const isValidOrgId = Number.isInteger(orgId) && orgId >= 0;
+
+  useEffect(() => {
+    if (!isValidOrgId) {
+      setError('معرف الجمعية غير صالح');
+      setLoadingDetails(false);
+      return;
+    }
+
+    const fetchDetails = async () => {
+      try {
+        setLoadingDetails(true);
+        setError(null);
+        const result = await ministerService.getOrganizationDetails(orgId);
+        setDetails(result);
+      } catch (err) {
+        console.error('Organization details fetch error:', err);
+        setError('تعذر تحميل تفاصيل الجمعية');
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    fetchDetails();
+  }, [isValidOrgId, orgId]);
+
+  useEffect(() => {
+    if (!isValidOrgId || activeTab !== 'preachers') return;
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setLoadingPreachers(true);
+        const result = await ministerService.getOrganizationPreachers(orgId, search.trim() || undefined);
+        setPreachers(Array.isArray(result) ? result : []);
+      } catch (err) {
+        console.error('Organization preachers fetch error:', err);
+        setPreachers([]);
+      } finally {
+        setLoadingPreachers(false);
+      }
+    }, 350);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeTab, isValidOrgId, orgId, search]);
+
+  const conversionChartData = useMemo(() => {
+    if (!details?.charts?.conversion_trends) return [];
+
+    return details.charts.conversion_trends.flatMap((item) => ([
+      { label: `${item.month} - Converts`, value: item.converts },
+      { label: `${item.month} - Rejects`, value: item.rejects }
+    ]));
+  }, [details]);
+
+  if (loadingDetails) {
+    return (
+      <div className="awqaf-assoc-details-page assoc-details-state">
+        <Loader2 size={38} className="spin-icon" />
+        <p>جاري تحميل تفاصيل الجمعية...</p>
+      </div>
+    );
+  }
+
+  if (error || !details) {
+    return (
+      <div className="awqaf-assoc-details-page assoc-details-state assoc-details-state-error">
+        <AlertCircle size={38} />
+        <p>{error || 'حدث خطأ غير متوقع'}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="awqaf-assoc-details-page">
@@ -86,19 +189,19 @@ const AwqafAssociationDetails = () => {
               <div className="data-grid-layout">
                 <div className="data-item">
                   <span className="data-label"><Building2 size={16}/> اسم الجمعية</span>
-                  <span className="data-value">جمعية رسالة الاسلام</span>
+                  <span className="data-value">{details.organization_info.name}</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label"><FileText size={16}/> رقم الترخيص</span>
-                  <span className="data-value with-icon" style={{ direction: 'ltr', justifyContent: 'flex-end', width: '100%' }}><Eye size={16}/> 12345678</span>
+                  <span className="data-value with-icon" style={{ direction: 'ltr', justifyContent: 'flex-end', width: '100%' }}><Eye size={16}/> {details.organization_info.license_number || 'غير متوفر'}</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label"><Mail size={16}/> البريد الألكتروني</span>
-                  <span className="data-value">John2025@gmail.com</span>
+                  <span className="data-value">{details.organization_info.email || 'غير متوفر'}</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label"><Phone size={16}/> رقم الهاتف</span>
-                  <span className="data-value" style={{direction: 'ltr', justifyContent: 'flex-end', width: '100%'}}>+2001155591759</span>
+                  <span className="data-value" style={{direction: 'ltr', justifyContent: 'flex-end', width: '100%'}}>{details.organization_info.phone || 'غير متوفر'}</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label"><MapPin size={16}/> البلد</span>
@@ -106,15 +209,15 @@ const AwqafAssociationDetails = () => {
                 </div>
                 <div className="data-item">
                   <span className="data-label"><MapPin size={16}/> المحافظة</span>
-                  <span className="data-value">المحافظة</span>
+                  <span className="data-value">{details.organization_info.governorate || 'غير محدد'}</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label"><MapPin size={16}/> العنوان</span>
-                  <span className="data-value">الكويت - شارع القادسية</span>
+                  <span className="data-value">{details.organization_info.governorate || 'غير محدد'}</span>
                 </div>
                 <div className="data-item">
                   <span className="data-label"><CheckCircle size={16}/> الحالة</span>
-                  <span className="data-value status-active">مفعل</span>
+                  <span className="data-value status-active">{details.organization_info.status || 'غير محدد'}</span>
                 </div>
               </div>
             </div>
@@ -125,21 +228,27 @@ const AwqafAssociationDetails = () => {
               <h3>بيانات مشرف الجمعية</h3>
               <div className="data-item single">
                 <span className="data-label"><User size={16}/> اسم مشرف الجمعية</span>
-                <span className="data-value">احمد عاطف</span>
+                <span className="data-value">{details.organization_info.manager_name || 'غير متوفر'}</span>
               </div>
             </div>
           </div>
 
           <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginTop: '24px' }}>
-            {mockStats.map((stat) => (
+            {details.performance_stats.map((stat, idx) => {
+              const iconCfg = STAT_ICON_CONFIG[stat.icon] || STAT_ICON_CONFIG.preachers;
+              return (
               <StatCard
-                key={stat.id}
+                key={idx}
                 title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                iconBgColor={stat.bgColor}
-                iconColor={stat.color} trend={'up'} trendValue={''}              />
-            ))}
+                value={String(stat.value)}
+                icon={iconCfg.icon}
+                iconBgColor={iconCfg.bgColor}
+                iconColor={iconCfg.color}
+                trend={'up'}
+                trendValue={''}
+              />
+              );
+            })}
           </div>
 
           <div className="charts-grid" style={{ marginTop: '24px' }}>
@@ -148,13 +257,13 @@ const AwqafAssociationDetails = () => {
                 <h3 style={{ textAlign: 'center', marginBottom: '16px', borderBottom: 'none' }}>جنسيات الاشخاص المدعوين</h3>
               </div>
               <div className="chart-content">
-                <NationalitiesChart />
+                <NationalitiesChart data={details.charts.nationalities} />
               </div>
             </div>
             <div className="chart-card">
               <h3>اجمالي الطلبات</h3>
               <div className="chart-content" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <RequestsChart />
+                <RequestsChart data={details.charts.requests_distribution} />
               </div>
             </div>
             <div className="chart-card">
@@ -165,7 +274,7 @@ const AwqafAssociationDetails = () => {
                 </select>
               </div>
               <div className="chart-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '250px' }}>
-                <ConversionsChart />
+                <ConversionsChart data={conversionChartData} />
               </div>
             </div>
           </div>
@@ -181,16 +290,11 @@ const AwqafAssociationDetails = () => {
                 <Search size={18} />
                 <input 
                   type="text" 
-                  placeholder="ابحث"
+                  placeholder="ابحث باسم الداعية"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <button className="filter-btn"><Filter size={18} /> فلتر</button>
-            </div>
-            <div className="sort-wrapper">
-              <span>تصنيف</span>
-              <Filter size={18} />
             </div>
           </div>
 
@@ -208,22 +312,27 @@ const AwqafAssociationDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {mockPreachers.map((preacher) => (
-                  <tr key={preacher.id}>
-                    <td>{preacher.number}</td>
-                    <td>{preacher.name}</td>
+                {preachers.map((preacher, index) => (
+                  <tr key={preacher.preacher_id}>
+                    <td>{index + 1}</td>
+                    <td>{preacher.full_name}</td>
                     <td>{preacher.nationality}</td>
-                    <td className="multiline-cell">{preacher.joinDate}</td>
-                    <td>{preacher.languages}</td>
-                    <td>
-                      <label className="switch">
-                        <input type="checkbox" defaultChecked={preacher.active} />
-                        <span className="slider round"></span>
-                      </label>
-                    </td>
-                    <td><button className="icon-btn" onClick={() => navigate(`/awqaf/associations/${assocId}/preachers/${preacher.id}`)}><Eye size={18}/></button></td>
+                    <td className="multiline-cell">{preacher.joining_date}</td>
+                    <td>{preacher.languages.join('، ') || 'غير محدد'}</td>
+                    <td><span className="status-chip">{mapPreacherStatus(preacher.status)}</span></td>
+                    <td><button className="icon-btn" onClick={() => navigate(`/awqaf/associations/${assocId}/preachers/${preacher.preacher_id}`)}><Eye size={18}/></button></td>
                   </tr>
                 ))}
+                {!loadingPreachers && preachers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="empty-row">لا يوجد دعاة مطابقين للبحث</td>
+                  </tr>
+                )}
+                {loadingPreachers && (
+                  <tr>
+                    <td colSpan={7} className="empty-row">جاري تحميل الدعاة...</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

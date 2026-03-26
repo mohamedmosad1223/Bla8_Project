@@ -48,6 +48,7 @@ const Header = () => {
     preacher: 'داعية',
     organization: 'جمعية',
     admin: 'مدير النظام',
+    minister: 'مشرف الأوقاف',
   };
 
   // Safely extract role and name depending on if the data is nested or flat

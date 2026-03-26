@@ -8,7 +8,7 @@ const Sidebar = () => {
   const userRole = localStorage.getItem('userRole') || 'organization';
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
-  const isAwqafManager = userRole === 'awqaf_manager';
+  const isAwqafManager = userRole === 'minister';
   const isAdmin = userRole === 'admin';
 
   const handleLogout = async () => {

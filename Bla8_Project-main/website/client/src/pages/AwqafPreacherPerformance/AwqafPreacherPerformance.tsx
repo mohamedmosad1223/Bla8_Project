@@ -1,61 +1,54 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Users,
   Heart,
   TrendingUp,
   Activity,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
   LineChart, Line, CartesianGrid,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { ministerService } from '../../services/ministerService';
 import './AwqafPreacherPerformance.css';
 
-/* ── mock data ── */
-const performanceStats = [
-  { id: 1, title: 'عدد الدعاة',            value: '142',  icon: <Users size={24} />,       bgColor: '#FEF3C7', color: '#D97706' },
-  { id: 2, title: 'عدد الانشطة المنجزة',    value: '856',  icon: <Activity size={24} />,    bgColor: '#D1FAE5', color: '#059669' },
-  { id: 3, title: 'عدد المهتدين الجدد',     value: '324',  icon: <Heart size={24} />,       bgColor: '#DBEAFE', color: '#2563EB' },
-  { id: 4, title: 'نسبة الأداء العام',      value: '%87',  icon: <TrendingUp size={24} />,  bgColor: '#FEE2E2', color: '#DC2626' },
-];
+interface OrgOption {
+  org_id: number;
+  organization_name: string;
+}
 
-const barData = [
-  { name: 'محمد العتيبي',     value: 45 },
-  { name: 'خالد الاحمد',      value: 38 },
-  { name: 'عبدالرحمن المطيري', value: 32 },
-  { name: 'سعد القحطاني',     value: 28 },
-  { name: 'فهد الشمري',       value: 22 },
-];
+interface GlobalDashboardResponse {
+  top_cards: Array<{ title: string; value: number | string; icon: string }>;
+  charts: {
+    status_distribution: Array<{ label: string; value: number }>;
+    acceptance_rate_trend: Array<{ month: string; rate: number }>;
+    preacher_comparison: Array<{ name: string; value: number }>;
+  };
+  top_preachers: Array<{
+    rank: number;
+    name: string;
+    organization: string;
+    activities_count: number;
+    converts_count: number;
+    performance_pct: string;
+    status_label: string;
+    account_status?: string;
+  }>;
+}
 
-const lineData = [
-  { name: 'يناير',  value1: 58, value2: 72 },
-  { name: 'فبراير', value1: 66, value2: 65 },
-  { name: 'مارس',   value1: 61, value2: 80 },
-  { name: 'ابريل',  value1: 70, value2: 68 },
-  { name: 'مايو',   value1: 79, value2: 74 },
-  { name: 'يونيو',  value1: 65, value2: 82 },
-  { name: 'يوليو',  value1: 72, value2: 78 },
-];
-
-const pieData = [
-  { name: 'محاضرات', value: 35, color: '#DBA841' },
-  { name: 'ورش عمل', value: 25, color: '#166088' },
-  { name: 'ندوات',   value: 15, color: '#CA8A04' },
-  { name: 'لقاءات',  value: 15, color: '#E5E7EB' },
-  { name: 'أخرى',    value: 10, color: '#9CA3AF' },
-];
-
-const topPreachers = [
-  { id: 1, name: 'أحمد محمد السالم',       assoc: 'جمعية البر والتقوى', activities: 45, converts: 12, rate: '%92',  status: 'نشط' },
-  { id: 2, name: 'محمد عبدالله الخالدي',    assoc: 'جمعية الهداية',      activities: 38, converts: 9,  rate: '%88',  status: 'نشط' },
-  { id: 3, name: 'عبدالرحمن صالح المطيري',  assoc: 'جمعية النور',        activities: 42, converts: 15, rate: '%95',  status: 'نشط' },
-  { id: 4, name: 'خالد أحمد الزهراني',      assoc: 'جمعية التوحيد',      activities: 28, converts: 6,  rate: '%76',  status: 'متوسط' },
-  { id: 5, name: 'سعد محمد القحطاني',       assoc: 'جمعية البر والتقوى', activities: 35, converts: 11, rate: '%85',  status: 'نشط' },
-  { id: 6, name: 'فهد عبدالعزيز الشمري',    assoc: 'جمعية الهداية',      activities: 22, converts: 4,  rate: '%68',  status: 'غير نشط' },
-];
+const toArabicAccountStatus = (value: string) => {
+  const key = (value || '').toLowerCase();
+  if (key === 'active' || key === 'enabled') return 'مفعل';
+  if (key === 'inactive' || key === 'disabled' || key === 'suspended') return 'غير مفعل';
+  return value || 'غير محدد';
+};
 
 const getStatusClass = (status: string) => {
+  if (status === 'مفعل') return 'status-badge active';
+  if (status === 'غير مفعل') return 'status-badge inactive';
   if (status === 'نشط') return 'status-badge active';
   if (status === 'متوسط') return 'status-badge medium';
   return 'status-badge inactive';
@@ -63,35 +56,139 @@ const getStatusClass = (status: string) => {
 
 const AwqafPreacherPerformance = () => {
   const [association, setAssociation] = useState('all');
-  const [period, setPeriod] = useState('month');
+  const [period, setPeriod] = useState<'all_time' | 'this_month' | 'last_month'>('all_time');
+  const [appliedAssociation, setAppliedAssociation] = useState('all');
+  const [appliedPeriod, setAppliedPeriod] = useState<'all_time' | 'this_month' | 'last_month'>('all_time');
+  const [organizations, setOrganizations] = useState<OrgOption[]>([]);
+  const [data, setData] = useState<GlobalDashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const result = await ministerService.getOrganizations();
+        const options = (Array.isArray(result) ? result : []).map((org: any) => ({
+          org_id: org.org_id,
+          organization_name: org.organization_name
+        }));
+        setOrganizations(options);
+      } catch (err) {
+        console.error('Organizations fetch error:', err);
+      }
+    };
+    fetchOrganizations();
+  }, []);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const orgId = appliedAssociation === 'all' ? undefined : Number(appliedAssociation);
+        const result = await ministerService.getGlobalDashboardStats(orgId, appliedPeriod);
+        setData(result);
+      } catch (err) {
+        console.error('Global dashboard fetch error:', err);
+        setError('تعذر تحميل بيانات أداء الدعاة');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, [appliedAssociation, appliedPeriod]);
+
+  const performanceStats = useMemo(() => {
+    if (!data?.top_cards) return [];
+    const iconMap: Record<string, JSX.Element> = {
+      preachers: <Users size={24} />,
+      activities: <Activity size={24} />,
+      converts: <Heart size={24} />,
+      performance: <TrendingUp size={24} />
+    };
+    const colorMap: Record<string, { bgColor: string; color: string }> = {
+      preachers: { bgColor: '#FEF3C7', color: '#D97706' },
+      activities: { bgColor: '#D1FAE5', color: '#059669' },
+      converts: { bgColor: '#DBEAFE', color: '#2563EB' },
+      performance: { bgColor: '#FEE2E2', color: '#DC2626' }
+    };
+    return data.top_cards.map((item, idx) => ({
+      id: idx + 1,
+      title: item.title,
+      value: String(item.value),
+      icon: iconMap[item.icon] || <TrendingUp size={24} />,
+      bgColor: colorMap[item.icon]?.bgColor || '#F3F4F6',
+      color: colorMap[item.icon]?.color || '#6B7280'
+    }));
+  }, [data]);
+
+  const barData = data?.charts?.preacher_comparison || [];
+  const lineData = (data?.charts?.acceptance_rate_trend || []).map((item) => ({ name: item.month, value1: item.rate }));
+  const pieData = (data?.charts?.status_distribution || []).map((item, idx) => {
+    const colors = ['#DBA841', '#166088', '#CA8A04', '#E5E7EB', '#9CA3AF'];
+    const labels: Record<string, string> = {
+      converted: 'من أسلموا',
+      rejected: 'من رفضوا',
+      in_progress: 'قيد المتابعة',
+      pending: 'قيد الانتظار',
+      cancelled: 'تم الإلغاء'
+    };
+    return { name: labels[item.label] || item.label, value: item.value, color: colors[idx % colors.length] };
+  });
+  const topPreachers = data?.top_preachers || [];
+
+  if (loading && !data) {
+    return (
+      <div className="perf-page perf-state">
+        <Loader2 size={38} className="spin-icon" />
+        <p>جاري تحميل بيانات الأداء...</p>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="perf-page perf-state perf-state-error">
+        <AlertCircle size={38} />
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="perf-page">
       <h1 className="page-title">الداشبورد</h1>
 
-      {/* Filter Bar */}
       <div className="perf-filters">
         <div className="filter-group">
           <label>اختيار الجمعية</label>
           <select value={association} onChange={(e) => setAssociation(e.target.value)}>
             <option value="all">جميع الجمعيات</option>
-            <option value="1">جمعية البر والتقوى</option>
-            <option value="2">جمعية الهداية</option>
-            <option value="3">جمعية النور</option>
+            <option value="0">الدعاة المتطوعين</option>
+            {organizations.map((org) => (
+              <option key={org.org_id} value={String(org.org_id)}>{org.organization_name}</option>
+            ))}
           </select>
         </div>
         <div className="filter-group">
           <label>الفترة الزمنية</label>
-          <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-            <option value="month">هذا الشهر</option>
-            <option value="quarter">هذا الربع</option>
-            <option value="year">هذا العام</option>
+          <select value={period} onChange={(e) => setPeriod(e.target.value as 'all_time' | 'this_month' | 'last_month')}>
+            <option value="all_time">كل الوقت</option>
+            <option value="this_month">هذا الشهر</option>
+            <option value="last_month">الشهر السابق</option>
           </select>
         </div>
-        <button className="apply-btn">تطبيق</button>
+        <button
+          className="apply-btn"
+          onClick={() => {
+            setAppliedAssociation(association);
+            setAppliedPeriod(period);
+          }}
+        >
+          تطبيق
+        </button>
       </div>
 
-      {/* Stat Cards */}
       <div className="perf-stats-grid">
         {performanceStats.map((stat) => (
           <div key={stat.id} className="perf-stat-card">
@@ -106,9 +203,7 @@ const AwqafPreacherPerformance = () => {
         ))}
       </div>
 
-      {/* Charts Grid */}
       <div className="perf-charts-grid">
-        {/* Bar Chart: مقارنة أداء الدعاة */}
         <div className="chart-card">
           <h3>مقارنة أداء الدعاة</h3>
           <div className="chart-content" style={{ minHeight: '280px' }}>
@@ -123,7 +218,6 @@ const AwqafPreacherPerformance = () => {
           </div>
         </div>
 
-        {/* Line Chart: نسبة قبول الطلبات الشهرية */}
         <div className="chart-card">
           <h3>نسبة قبول الطلبات الشهرية</h3>
           <div className="chart-content" style={{ minHeight: '280px' }}>
@@ -131,16 +225,14 @@ const AwqafPreacherPerformance = () => {
               <LineChart data={lineData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} domain={[40, 100]} orientation="right" label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} domain={[0, 100]} orientation="right" label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }} />
                 <Line type="linear" dataKey="value1" stroke="#9f1239" strokeWidth={2} dot={{ r: 4, fill: '#9f1239', strokeWidth: 0 }} />
-                <Line type="linear" dataKey="value2" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Pie/Donut Chart: حالة الطلبات */}
         <div className="chart-card">
           <h3>حالة الطلبات</h3>
           <div className="chart-content" style={{ minHeight: '280px' }}>
@@ -166,9 +258,8 @@ const AwqafPreacherPerformance = () => {
         </div>
       </div>
 
-      {/* Top 6 Preachers Table */}
       <div className="perf-table-section">
-        <h3>افضل 6 دعاه لهذا الشهر</h3>
+        <h3>افضل 6 دعاه</h3>
         <div className="perf-table-container">
           <table className="perf-table">
             <thead>
@@ -184,16 +275,25 @@ const AwqafPreacherPerformance = () => {
             </thead>
             <tbody>
               {topPreachers.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
+                <tr key={p.rank}>
+                  <td>{p.rank}</td>
                   <td>{p.name}</td>
-                  <td>{p.assoc}</td>
-                  <td>{p.activities}</td>
-                  <td>{p.converts}</td>
-                  <td>{p.rate}</td>
-                  <td><span className={getStatusClass(p.status)}>{p.status}</span></td>
+                  <td>{p.organization}</td>
+                  <td>{p.activities_count}</td>
+                  <td>{p.converts_count}</td>
+                  <td>{p.performance_pct}</td>
+                  <td>
+                    <span className={getStatusClass(toArabicAccountStatus(p.account_status || ''))}>
+                      {toArabicAccountStatus(p.account_status || '')}
+                    </span>
+                  </td>
                 </tr>
               ))}
+              {topPreachers.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', color: '#9CA3AF' }}>لا يوجد بيانات حالياً</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

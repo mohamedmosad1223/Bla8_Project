@@ -5,63 +5,56 @@ import {
 } from 'lucide-react';
 import StatCard from '../../components/StatCard/StatCard';
 import ResponseTimeChart from '../../components/ResponseTimeChart/ResponseTimeChart';
-import { preacherService } from '../../services/preacherService';
-import api from '../../services/api'; // لطلب الداش بورد مباشرة
+import { ministerService } from '../../services/ministerService';
 import './AwqafPreacherDetails.css';
 
-interface PreacherProfile {
-  full_name: string;
-  email: string;
-  phone: string;
-  status: string;
-  nationality_name: string;
-  language_names: string[];
-  organization_name: string;
-}
-
-interface PreacherDashboard {
-  total_requests: { value: number };
-  converted_count: { value: number };
-  rejected_count: { value: number };
-  engagement_count: { value: number };
-  governorates_distribution: { label: string; value: number }[];
-  response_speed_chart: { label: string; value: number }[];
+interface MinisterPreacherDetailsResponse {
+  preacher_info: {
+    preacher_id: number;
+    full_name: string;
+    email: string;
+    phone: string;
+    languages: string[];
+    organization_name: string;
+    status: string;
+  };
+  performance_stats: Array<{ title: string; value: number; icon: string }>;
+  charts: {
+    nationalities: { label: string; value: number }[];
+    response_time_trend: { month: string; value: number }[];
+  };
 }
 
 const AwqafPreacherDetails = () => {
   const navigate = useNavigate();
-  const { preacherId } = useParams(); // سحب رقم الداعية من الرابط
+  const { preacherId } = useParams();
   
-  const [profile, setProfile] = useState<PreacherProfile | null>(null);
-  const [dash, setDash] = useState<PreacherDashboard | null>(null);
+  const [data, setData] = useState<MinisterPreacherDetailsResponse | null>(null);
+  const [trendGranularity, setTrendGranularity] = useState<'daily' | 'monthly'>('monthly');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!preacherId) return;
+      if (!preacherId) {
+        setError('رقم الداعية غير صالح');
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
-
-        // طلب البيانات باستخدام preacherId
-        const [profileRes, dashRes] = await Promise.all([
-          preacherService.getById(preacherId),
-          api.get(`/dashboard/preacher/${preacherId}`)
-        ]);
-
-
-        setProfile(profileRes.data || profileRes);
-        setDash(dashRes.data);
+        const response = await ministerService.getPreacherDetails(Number(preacherId), trendGranularity);
+        setData(response);
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setError('تعذّر تحميل بيانات الداعية حالياً.');
+        setError('تعذر الوصول لمعلومات الداعية');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [preacherId]);
+  }, [preacherId, trendGranularity]);
 
   if (loading) {
     return (
@@ -72,7 +65,7 @@ const AwqafPreacherDetails = () => {
     );
   }
 
-  if (error || !profile || !dash) {
+  if (error || !data) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', gap: '15px', color: '#EF4444' }}>
         <AlertCircle size={48} />
@@ -87,9 +80,9 @@ const AwqafPreacherDetails = () => {
   const allGovs = ["محافظة العاصمة", "محافظة الأحمدي", "محافظة الفروانية", "محافظة حولي", "محافظة الجهراء", "محافظة مبارك الكبير"];
   
   // تجهيز بيانات المحافظات
-  const totalGovReqs = dash.governorates_distribution.reduce((acc, curr) => acc + curr.value, 0) || 1;
+  const totalGovReqs = data.charts.nationalities.reduce((acc, curr) => acc + curr.value, 0) || 1;
   const govList = allGovs.map((name, i) => {
-    const found = dash.governorates_distribution.find(g => g.label === name);
+    const found = data.charts.nationalities.find(g => g.label === name);
     const count = found ? found.value : 0;
     return {
       name,
@@ -116,11 +109,11 @@ const AwqafPreacherDetails = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-item-header"><User size={16} /> <span className="info-label">اسم الداعية</span></div>
-            <span className="info-value">{profile.full_name}</span>
+            <span className="info-value">{data.preacher_info.full_name}</span>
           </div>
           <div className="info-item">
             <div className="info-item-header"><Globe size={16} /> <span className="info-label">اللغة</span></div>
-            <span className="info-value">{profile.language_names.join('، ') || '—'}</span>
+            <span className="info-value">{data.preacher_info.languages.join('، ') || '—'}</span>
           </div>
           <div className="info-item">
             <div className="info-item-header"><BookOpen size={16} /> <span className="info-label">الديانة</span></div>
@@ -128,43 +121,70 @@ const AwqafPreacherDetails = () => {
           </div>
           <div className="info-item">
             <div className="info-item-header"><CheckCircle size={16} /> <span className="info-label">الحالة</span></div>
-            <span className={`info-value ${profile.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-              {profile.status === 'active' ? 'مفعل' : 'غير مفعل'}
+            <span className={`info-value ${data.preacher_info.status === 'active' ? 'status-active' : 'status-inactive'}`}>
+              {data.preacher_info.status === 'active' ? 'مفعل' : 'غير مفعل'}
             </span>
           </div>
         </div>
         <div className="info-row">
           <div className="info-item">
             <div className="info-item-header"><Mail size={16} /> <span className="info-label">البريد الألكتروني</span></div>
-            <span className="info-value">{profile.email || '—'}</span>
+            <span className="info-value">{data.preacher_info.email || '—'}</span>
           </div>
           <div className="info-item">
             <div className="info-item-header"><Phone size={16} /> <span className="info-label">رقم الهاتف</span></div>
-            <span className="info-value" style={{ direction: 'ltr', textAlign: 'right' }}>{profile.phone || '—'}</span>
+            <span className="info-value" style={{ direction: 'ltr', textAlign: 'right' }}>{data.preacher_info.phone || '—'}</span>
           </div>
           <div className="info-item">
             <div className="info-item-header"><Users size={16} /> <span className="info-label">اسم الجمعية</span></div>
-            <span className="info-value">{profile.organization_name}</span>
+            <span className="info-value">{data.preacher_info.organization_name}</span>
           </div>
         </div>
       </div>
 
       {/* Stat Cards */}
       <div className="preacher-stats-row">
-        <StatCard title="إجمالي عدد الطلبات" value={dash.total_requests.value.toString()} icon={<FileText size={24} />} iconBgColor="#D1FAE5" iconColor="#059669" trend="up" trendValue="+0%" />
-        <StatCard title="عدد من أسلموا" value={dash.converted_count.value.toString()} icon={<UserCheck size={24} />} iconBgColor="#D1FAE5" iconColor="#059669" trend="up" trendValue="+0%" />
-        <StatCard title="إجمالي قيد الاقناع" value={dash.engagement_count.value.toString()} icon={<BookOpen size={24} />} iconBgColor="#FEE2E2" iconColor="#DC2626" trend="down" trendValue="+0%" />
-        <StatCard title="عدد من رفضوا" value={dash.rejected_count.value.toString()} icon={<UserX size={24} />} iconBgColor="#FEE2E2" iconColor="#DC2626" trend="down" trendValue="+0%" />
+        {data.performance_stats.map((stat, idx) => {
+          const iconMap: Record<string, JSX.Element> = {
+            requests: <FileText size={24} />,
+            converted: <UserCheck size={24} />,
+            in_progress: <BookOpen size={24} />,
+            rejected: <UserX size={24} />
+          };
+          const isPositive = stat.icon === 'requests' || stat.icon === 'converted';
+          return (
+            <StatCard
+              key={idx}
+              title={stat.title}
+              value={String(stat.value)}
+              icon={iconMap[stat.icon] || <FileText size={24} />}
+              iconBgColor={isPositive ? '#D1FAE5' : '#FEE2E2'}
+              iconColor={isPositive ? '#059669' : '#DC2626'}
+              trend={isPositive ? 'up' : 'down'}
+              trendValue="+0%"
+            />
+          );
+        })}
       </div>
 
       {/* Charts */}
       <div className="preacher-charts-grid">
         <div className="chart-card preacher-chart-wide">
-          <h3>سرعة الاستجابة الاولي</h3>
+          <div className="chart-header">
+            <h3>سرعة الاستجابة الاولي</h3>
+            <select
+              className="chart-select"
+              value={trendGranularity}
+              onChange={(e) => setTrendGranularity(e.target.value as 'daily' | 'monthly')}
+            >
+              <option value="daily">يومي</option>
+              <option value="monthly">شهري</option>
+            </select>
+          </div>
           <div className="chart-content" style={{ minHeight: '300px' }}>
             <ResponseTimeChart 
-              data={dash.response_speed_chart.map(item => ({
-                name: item.label,
+              data={data.charts.response_time_trend.map(item => ({
+                name: item.month,
                 time: item.value
               }))} 
             />

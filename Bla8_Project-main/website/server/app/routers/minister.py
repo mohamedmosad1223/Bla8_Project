@@ -104,11 +104,12 @@ def get_minister_all_preachers(
 @router.get("/preachers/{preacher_id}")
 def get_minister_preacher_details(
     preacher_id: int,
+    trend_granularity: Optional[str] = "monthly",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
     """جلب تفاصيل داعية معين شاملة البيانات والإحصائيات (لوزير الأوقاف)"""
-    details = MinisterDashboardController.get_preacher_details(db, preacher_id)
+    details = MinisterDashboardController.get_preacher_details(db, preacher_id, trend_granularity=trend_granularity)
     if not details:
         raise HTTPException(status_code=404, detail="الداعية غير موجود")
     return details
