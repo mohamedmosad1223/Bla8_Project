@@ -59,7 +59,7 @@ const RoleDashboard = ({ role }: { role: string | null }) => {
   if (role === 'preacher') return <PreacherDashboard />;
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
   if (role === 'non_muslim' || role === 'interested') return <NonMuslimDashboard />;
-  if (role === 'awqaf_manager') return <AwqafDashboard />;
+  if (role === 'minister') return <AwqafDashboard />;
   if (role === 'admin') return <AdminDashboard />;
   if (role === 'organization') return <Dashboard />;
   

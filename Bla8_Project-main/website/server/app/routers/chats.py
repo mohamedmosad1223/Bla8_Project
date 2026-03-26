@@ -28,6 +28,11 @@ def send_guest_ai_message(payload: GuestAIChatCreate, db: Session = Depends(get_
     """إرسال رسالة للمساعد الذكي للزوار (بدون تسجيل)"""
     return ChatsController.send_guest_ai_message(db, payload)
 
+@router.get("/ai/guest/history/{session_id}")
+def get_guest_ai_chat_history(session_id: str, db: Session = Depends(get_db)):
+    """جلب تاريخ المحادثة للزائر باستخدام session_id"""
+    return ChatsController.get_guest_ai_chat_history(db, session_id)
+
 @router.delete("/ai/guest/cleanup")
 def cleanup_guest_chats(days: int = 30, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """حذف رسائل الزوار الأقدم من 30 يوم (للمدراء)"""

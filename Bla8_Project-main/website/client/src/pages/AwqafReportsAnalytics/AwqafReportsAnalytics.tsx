@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FileText,
   Users,
   UserCheck,
   TrendingUp,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
@@ -11,73 +13,180 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import StatCard from '../../components/StatCard/StatCard';
+import { ministerService } from '../../services/ministerService';
 import './AwqafReportsAnalytics.css';
 
-/* ── mock data ── */
-const reportStats = [
-  { id: 1, title: 'اجمالي الطلبات',       value: '1,247', icon: <Users size={24} />,       bgColor: '#EDE9FE', color: '#7C3AED', trend: 'up'   as const, trendValue: '+10.5%' },
-  { id: 2, title: 'اجمالي المسلمين الجدد', value: '342',   icon: <FileText size={24} />,    bgColor: '#D1FAE5', color: '#059669', trend: 'up'   as const, trendValue: '+10.5%' },
-  { id: 3, title: 'عدد الدعاة النشطين',    value: '89',    icon: <UserCheck size={24} />,   bgColor: '#DBEAFE', color: '#2563EB', trend: 'up'   as const, trendValue: '+10.5%' },
-  { id: 4, title: 'نسبة القبول العامة',    value: '27.4%', icon: <TrendingUp size={24} />,  bgColor: '#FEE2E2', color: '#DC2626', trend: 'down' as const, trendValue: '+10.5%' },
-];
+interface OrgOption {
+  org_id: number;
+  organization_name: string;
+}
 
-const conversionBarData = [
-  { name: 'يناير', conversions: 4000, refusals: 2400 },
-  { name: 'فبراير', conversions: 3000, refusals: 1398 },
-  { name: 'مارس', conversions: 2000, refusals: 9800 },
-  { name: 'ابريل', conversions: 2780, refusals: 3908 },
-  { name: 'مايو', conversions: 1890, refusals: 4800 },
-  { name: 'يونيو', conversions: 2390, refusals: 3800 },
-  { name: 'يوليو', conversions: 3490, refusals: 4300 },
-];
-
-const pieData = [
-  { name: 'جمعية الهداية', value: 35, color: '#166088' },
-  { name: 'جمعية النور',   value: 28, color: '#059669' },
-  { name: 'جمعية الرسالة', value: 22, color: '#DBA841' },
-  { name: 'جمعية الإيمان', value: 15, color: '#3B82F6' },
-];
-
-const lineData = [
-  { name: 'يناير', value1: 58, value2: 72, value3: 65 },
-  { name: 'فبراير', value1: 66, value2: 65, value3: 60 },
-  { name: 'مارس', value1: 61, value2: 80, value3: 70 },
-  { name: 'ابريل', value1: 70, value2: 68, value3: 75 },
-  { name: 'مايو', value1: 79, value2: 74, value3: 68 },
-  { name: 'يونيو', value1: 65, value2: 82, value3: 78 },
-  { name: 'يوليو', value1: 72, value2: 78, value3: 72 },
-];
-
-const geoData = [
-  { name: 'محافظة الحديقة',   rate: 85, color: '#10B981' },
-  { name: 'محافظة الحمراء',   rate: 72, color: '#3B82F6' },
-  { name: 'محافظة العاصمة',   rate: 91, color: '#F59E0B' },
-  { name: 'محافظة أب الكبير',  rate: 64, color: '#8B5CF6' },
-  { name: 'محافظة النورانية',  rate: 78, color: '#EF4444' },
-];
-
-const assocTable = [
-  { name: 'جمعية الهداية', requests: 320, newMuslims: 120, preachers: 15, rate: 'ممتاز', updated: 'قبل يومين' },
-  { name: 'جمعية النور',   requests: 270, newMuslims: 90,  preachers: 12, rate: 'ممتاز', updated: 'قبل اسبوع' },
-  { name: 'جمعية الرسالة', requests: 198, newMuslims: 67,  preachers: 9,  rate: 'ممتاز', updated: 'قبل يومين' },
-  { name: 'جمعية الإيمان', requests: 165, newMuslims: 42,  preachers: 8,  rate: 'ممتاز', updated: 'قبل يوم' },
-  { name: 'جمعية المودة',  requests: 142, newMuslims: 38,  preachers: 6,  rate: 'ممتاز', updated: 'قبل ثلاث اسابيع' },
-];
+interface ReportsAnalyticsResponse {
+  top_cards: Array<{ title: string; value: number | string; icon: string; change?: string }>;
+  charts: {
+    converted_rejected_trend: Array<{ month: string; converts: number; rejects: number }>;
+    acceptance_trend: Array<{ month: string; rate: number }>;
+    org_performance_donut: Array<{ label: string; value: number }>;
+  };
+  geographic_distribution: Array<{ name: string; count: number; percentage: string }>;
+  organization_performance_table: Array<{
+    org_name: string;
+    requests_count: number;
+    converts_count: number;
+    preachers_count: number;
+    acceptance_level: string;
+    last_update: string;
+  }>;
+}
 
 const AwqafReportsAnalytics = () => {
-  const [filter, setFilter] = useState('all');
+  const [association, setAssociation] = useState('all');
+  const [period, setPeriod] = useState<'all_time' | 'this_month' | 'last_month'>('all_time');
+  const [appliedAssociation, setAppliedAssociation] = useState('all');
+  const [appliedPeriod, setAppliedPeriod] = useState<'all_time' | 'this_month' | 'last_month'>('all_time');
+  const [organizations, setOrganizations] = useState<OrgOption[]>([]);
+  const [data, setData] = useState<ReportsAnalyticsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const result = await ministerService.getOrganizations();
+        const options = (Array.isArray(result) ? result : []).map((org: any) => ({
+          org_id: org.org_id,
+          organization_name: org.organization_name
+        }));
+        setOrganizations(options);
+      } catch (err) {
+        console.error('Organizations fetch error:', err);
+      }
+    };
+    fetchOrganizations();
+  }, []);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const orgId = appliedAssociation === 'all' ? undefined : Number(appliedAssociation);
+        const result = await ministerService.getReportsAnalytics(orgId, appliedPeriod);
+        setData(result);
+      } catch (err) {
+        console.error('Reports analytics fetch error:', err);
+        setError('تعذر تحميل بيانات التقارير والتحليلات');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, [appliedAssociation, appliedPeriod]);
+
+  const reportStats = useMemo(() => {
+    if (!data?.top_cards) return [];
+    const iconMap: Record<string, JSX.Element> = {
+      requests: <Users size={24} />,
+      converts: <FileText size={24} />,
+      active_preachers: <UserCheck size={24} />,
+      acceptance: <TrendingUp size={24} />
+    };
+    const colorMap: Record<string, { bgColor: string; color: string; trend: 'up' | 'down' }> = {
+      requests: { bgColor: '#EDE9FE', color: '#7C3AED', trend: 'up' },
+      converts: { bgColor: '#D1FAE5', color: '#059669', trend: 'up' },
+      active_preachers: { bgColor: '#DBEAFE', color: '#2563EB', trend: 'up' },
+      acceptance: { bgColor: '#FEE2E2', color: '#DC2626', trend: 'down' }
+    };
+
+    return data.top_cards.map((card, idx) => ({
+      id: idx + 1,
+      title: card.title,
+      value: String(card.value),
+      icon: iconMap[card.icon] || <TrendingUp size={24} />,
+      iconBgColor: colorMap[card.icon]?.bgColor || '#F3F4F6',
+      iconColor: colorMap[card.icon]?.color || '#6B7280',
+      trend: colorMap[card.icon]?.trend || 'up',
+      trendValue: card.change || ''
+    }));
+  }, [data]);
+
+  const conversionBarData = (data?.charts?.converted_rejected_trend || []).map((item) => ({
+    name: item.month,
+    conversions: item.converts,
+    refusals: item.rejects
+  }));
+
+  const pieData = (data?.charts?.org_performance_donut || []).map((item, idx) => {
+    const colors = ['#166088', '#059669', '#DBA841', '#3B82F6', '#8B5CF6', '#9CA3AF'];
+    return { name: item.label, value: item.value, color: colors[idx % colors.length] };
+  });
+  const fallbackPieData = (data?.organization_performance_table || []).map((row, idx) => {
+    const colors = ['#166088', '#059669', '#DBA841', '#3B82F6', '#8B5CF6', '#9CA3AF'];
+    return { name: row.org_name, value: row.converts_count, color: colors[idx % colors.length] };
+  });
+  const fallbackPieByRequests = (data?.organization_performance_table || []).map((row, idx) => {
+    const colors = ['#166088', '#059669', '#DBA841', '#3B82F6', '#8B5CF6', '#9CA3AF'];
+    return { name: row.org_name, value: row.requests_count, color: colors[idx % colors.length] };
+  });
+  const hasPieValues = pieData.some((item) => item.value > 0);
+  const hasFallbackConvertValues = fallbackPieData.some((item) => item.value > 0);
+  const hasFallbackRequestValues = fallbackPieByRequests.some((item) => item.value > 0);
+  const safePieData = hasPieValues
+    ? pieData
+    : hasFallbackConvertValues
+      ? fallbackPieData
+      : hasFallbackRequestValues
+        ? fallbackPieByRequests
+        : [];
+
+  const lineData = (data?.charts?.acceptance_trend || []).map((item) => ({
+    name: item.month,
+    value1: item.rate
+  }));
+
+  const geoData = data?.geographic_distribution || [];
+  const assocTable = data?.organization_performance_table || [];
+  const totalConversions = conversionBarData.reduce((acc, curr) => acc + curr.conversions, 0);
+  const totalRefusals = conversionBarData.reduce((acc, curr) => acc + curr.refusals, 0);
+
+  if (loading && !data) {
+    return (
+      <div className="reports-analytics-page ra-state">
+        <Loader2 size={38} className="spin-icon" />
+        <p>جاري تحميل التقارير والتحليلات...</p>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="reports-analytics-page ra-state ra-state-error">
+        <AlertCircle size={38} />
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="reports-analytics-page">
       {/* Header */}
       <div className="reports-top">
         <h1 className="page-title">التقارير و التحليلات</h1>
-        <select className="assoc-filter-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="all">كل الجمعيات</option>
-          <option value="1">جمعية الهداية</option>
-          <option value="2">جمعية النور</option>
-          <option value="3">جمعية الرسالة</option>
-        </select>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <select className="assoc-filter-select" value={association} onChange={(e) => setAssociation(e.target.value)}>
+            <option value="all">كل الجمعيات</option>
+            <option value="0">الدعاة المتطوعين</option>
+            {organizations.map((org) => (
+              <option key={org.org_id} value={String(org.org_id)}>{org.organization_name}</option>
+            ))}
+          </select>
+          <select className="assoc-filter-select" value={period} onChange={(e) => setPeriod(e.target.value as 'all_time' | 'this_month' | 'last_month')}>
+            <option value="all_time">كل الوقت</option>
+            <option value="this_month">هذا الشهر</option>
+            <option value="last_month">الشهر السابق</option>
+          </select>
+          <button className="apply-filter-btn" onClick={() => { setAppliedAssociation(association); setAppliedPeriod(period); }}>تطبيق</button>
+        </div>
       </div>
 
       {/* 4 Stat Cards */}
@@ -102,9 +211,6 @@ const AwqafReportsAnalytics = () => {
         <div className="chart-card">
           <div className="chart-header">
             <h3>من اسلموا / رفضوا</h3>
-            <select className="chart-select">
-              <option>الشهر</option>
-            </select>
           </div>
           <div className="chart-content" style={{ minHeight: '280px' }}>
             <ResponsiveContainer width="100%" height={280}>
@@ -118,9 +224,9 @@ const AwqafReportsAnalytics = () => {
             </ResponsiveContainer>
             <div className="chart-legend-row">
               <span className="legend-dot" style={{ background: '#166088' }}></span><span>من اسلم</span>
-              <span className="legend-value">1000</span>
+              <span className="legend-value">{totalConversions}</span>
               <span className="legend-dot" style={{ background: '#DBA841' }}></span><span>رفضوا</span>
-              <span className="legend-value">1000</span>
+              <span className="legend-value">{totalRefusals}</span>
             </div>
           </div>
         </div>
@@ -129,24 +235,30 @@ const AwqafReportsAnalytics = () => {
         <div className="chart-card">
           <h3 style={{ textAlign: 'center' }}>نسب الأداء حسب الجمعيات</h3>
           <div className="chart-content" style={{ minHeight: '280px' }}>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value" paddingAngle={2}>
-                  {pieData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  align="right"
-                  verticalAlign="middle"
-                  layout="vertical"
-                  iconType="circle"
-                  iconSize={10}
-                  formatter={(value) => <span style={{ color: '#374151', fontSize: '13px', fontFamily: 'Cairo' }}>{value}</span>}
-                />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontFamily: 'Cairo' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {safePieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={safePieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value" paddingAngle={2}>
+                    {safePieData.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Legend
+                    align="right"
+                    verticalAlign="middle"
+                    layout="vertical"
+                    iconType="circle"
+                    iconSize={10}
+                    formatter={(value) => <span style={{ color: '#374151', fontSize: '13px', fontFamily: 'Cairo' }}>{value}</span>}
+                  />
+                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontFamily: 'Cairo' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ width: '100%', minHeight: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+                لا يوجد بيانات حالياً
+              </div>
+            )}
           </div>
         </div>
 
@@ -163,11 +275,9 @@ const AwqafReportsAnalytics = () => {
               <LineChart data={lineData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} domain={[40, 100]} orientation="right" label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} domain={[0, 100]} orientation="right" label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontFamily: 'Cairo' }} />
                 <Line type="linear" dataKey="value1" stroke="#9f1239" strokeWidth={2} dot={{ r: 4, fill: '#9f1239', strokeWidth: 0 }} />
-                <Line type="linear" dataKey="value2" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} />
-                <Line type="linear" dataKey="value3" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4, fill: '#8B5CF6', strokeWidth: 0 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -180,9 +290,9 @@ const AwqafReportsAnalytics = () => {
         <div className="geo-container">
           {geoData.map((geo, idx) => (
             <div key={idx} className="geo-row">
-              <span className="geo-rate-label">{geo.rate}%</span>
+              <span className="geo-rate-label">{geo.percentage}</span>
               <div className="geo-progress-bar-bg">
-                <div className="geo-progress-bar-fill" style={{ width: `${geo.rate}%`, backgroundColor: geo.color }} />
+                <div className="geo-progress-bar-fill" style={{ width: geo.percentage, backgroundColor: '#10B981' }} />
               </div>
               <span className="geo-name">{geo.name}</span>
             </div>
@@ -208,14 +318,19 @@ const AwqafReportsAnalytics = () => {
             <tbody>
               {assocTable.map((row, idx) => (
                 <tr key={idx}>
-                  <td className="assoc-name-cell">{row.name}</td>
-                  <td>{row.requests}</td>
-                  <td>{row.newMuslims}</td>
-                  <td>{row.preachers}</td>
-                  <td><span className="rate-badge">{row.rate}</span></td>
-                  <td className="updated-cell">{row.updated}</td>
+                  <td className="assoc-name-cell">{row.org_name}</td>
+                  <td>{row.requests_count}</td>
+                  <td>{row.converts_count}</td>
+                  <td>{row.preachers_count}</td>
+                  <td><span className="rate-badge">{row.acceptance_level}</span></td>
+                  <td className="updated-cell">{row.last_update}</td>
                 </tr>
               ))}
+              {assocTable.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', color: '#9CA3AF' }}>لا يوجد بيانات حالياً</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

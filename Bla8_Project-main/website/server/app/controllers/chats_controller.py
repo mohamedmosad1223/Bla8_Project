@@ -139,10 +139,11 @@ class ChatsController:
         db.commit()
         db.refresh(ai_msg)
         
-        return {
-            "user_message": user_msg,
-            "ai_response": ai_msg
-        }
+    @staticmethod
+    def get_guest_ai_chat_history(db: Session, session_id: str):
+        """جلب تاريخ المحادثة للزائر باستخدام session_id"""
+        history = db.query(AIChatMessage).filter(AIChatMessage.session_id == session_id).order_by(AIChatMessage.created_at.asc()).all()
+        return {"history": history}
 
     @staticmethod
     def cleanup_guest_chats(db: Session, user=None, days: int = 30, system_run: bool = False):

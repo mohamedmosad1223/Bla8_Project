@@ -5,6 +5,21 @@
   font-family: 'Cairo', sans-serif;
 }
 
+.perf-state {
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+}
+
+.perf-state-error {
+  color: #dc2626;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
 /* ── Filter Bar ── */
 .perf-filters {
   background: white;
@@ -187,4 +202,9 @@
 .status-badge.inactive {
   background: #FEE2E2;
   color: #DC2626;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
