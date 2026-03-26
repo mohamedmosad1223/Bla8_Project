@@ -54,7 +54,7 @@ const Header = () => {
   const userRole = userData?.user?.role || userData?.role || '';
   const fullName = userData?.profile?.full_name || userData?.profile?.name || userData?.full_name || userData?.name || 'مستخدم';
 
-  const displayName = fullName;
+  const displayName = fullName.split(' ')[0];
   const displayRole = roleLabels[userRole] || userRole || '';
   const initials = displayName
     .split(' ')

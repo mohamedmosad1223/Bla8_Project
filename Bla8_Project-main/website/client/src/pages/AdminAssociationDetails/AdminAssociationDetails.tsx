@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Building2, 
@@ -13,15 +13,21 @@ import {
   ChevronLeft,
   Users,
   UserCheck,
-  Eye
+  Eye,
+  Search,
+  Filter,
+  X,
+  ChevronDown,
+  MessageCircle,
+  Loader2
 } from 'lucide-react';
 import StatCard from '../../components/StatCard/StatCard';
 import RequestsChart from '../../components/RequestsChart/RequestsChart';
 import ConversionsChart from '../../components/ConversionsChart/ConversionsChart';
-import { Search, Filter, X, ChevronDown } from 'lucide-react';
+import api from '../../services/api';
 import './AdminAssociationDetails.css';
 
-const governorates = [
+const governoratesList = [
   { name: 'محافظة العاصمة',    count: '72 الف شخص', percentage: 72, color: '#F59E0B' },
   { name: 'محافظة الأحمدي',   count: '60 الف شخص', percentage: 60, color: '#EC4899' },
   { name: 'محافظة الفروانية', count: '50 الف شخص', percentage: 50, color: '#10B981' },
@@ -30,40 +36,99 @@ const governorates = [
   { name: 'محافظة مبارك الكبير', count: '20 الف شخص', percentage: 20, color: '#E11D48' },
 ];
 
-const mockStats = [
-  { id: 1, title: 'اجمالي عدد الدعاة',          value: '100',  icon: <Users size={24} />,        bgColor: '#F3E8FF', color: '#A855F7' },
-  { id: 2, title: 'اجمالي عدد طلبات الجمعية',   value: '100',  icon: <FileText size={24} />,     bgColor: '#FEF3C7', color: '#F59E0B' },
-  { id: 3, title: 'من اسلموا',                   value: '100',  icon: <UserCheck size={24} />,    bgColor: '#D1FAE5', color: '#10B981' },
-  { id: 4, title: 'من رفضوا',                    value: '100',  icon: <FileText size={24} />,     bgColor: '#FEE2E2', color: '#EF4444' },
-];
-
-const mockPreachers = Array.from({ length: 8 }, (_, i) => ({
-  id: i + 1,
-  number: '123456',
-  name: 'جون سميث',
-  nationality: i % 2 === 0 ? 'فرنسا' : 'انجلترا',
-  joinDate: '22/02/2023\n7:00 AM',
-  languages: 'الانجليزية، الفرنسية',
-  active: i % 2 === 0,
-}));
-
 const AdminAssociationDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState<'data' | 'preachers'>('data');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [orgData, setOrgData] = useState<any>(null);
+  const [preachers, setPreachers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const confirmDelete = () => {
-    // Delete logic here
-    setShowDeleteModal(false);
-    navigate('/admin/associations');
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/organizations/${id}`);
+      setOrgData(res.data.data);
+      
+      const preachersRes = await api.get('/preachers/', {
+        params: { org_id: id }
+      });
+      setPreachers(preachersRes.data.data);
+    } catch (err) {
+      console.error('Error fetching association details:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/organizations/${id}`);
+      setShowDeleteModal(false);
+      navigate('/admin/associations');
+    } catch (err) {
+      console.error('Error deleting organization:', err);
+      alert('تعذر حذف الجمعية');
+    }
   };
 
-  const confirmDeletePreacher = () => {
+  const handleDeletePreacherClick = (preacherId: number) => {
+    setItemToDelete(preacherId);
+    setShowDeletePreacherModal(true);
+  };
+
+  const confirmDeletePreacher = async () => {
+    if (itemToDelete) {
+      try {
+        await api.delete(`/preachers/${itemToDelete}`);
+        fetchData();
+      } catch (err) {
+        console.error('Error deleting preacher:', err);
+        alert('تعذر حذف الداعية');
+      }
+    }
     setShowDeletePreacherModal(false);
+    setItemToDelete(null);
   };
+
+  const togglePreacherActive = async (preacherId: number, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+      const formData = new FormData();
+      formData.append('status', newStatus);
+      await api.patch(`/preachers/${preacherId}`, formData);
+      fetchData();
+    } catch (err) {
+      console.error('Error toggling preacher status:', err);
+    }
+  };
+
+  if (loading && !orgData) {
+    return (
+      <div className="aadmin-loading-state">
+        <Loader2 className="animate-spin" size={48} color="#DBA841" />
+        <p>جاري تحميل البيانات...</p>
+      </div>
+    );
+  }
+
+  if (!orgData) return null;
+
+  const stats = [
+    { id: 1, title: 'اجمالي عدد الدعاة',          value: orgData.preachers_count,  icon: <Users size={24} />,        bgColor: '#F3E8FF', color: '#A855F7' },
+    { id: 2, title: 'اجمالي عدد طلبات الجمعية',   value: orgData.cases_count,      icon: <FileText size={24} />,     bgColor: '#FEF3C7', color: '#F59E0B' },
+    { id: 3, title: 'من اسلموا',                   value: orgData.converted_count,  icon: <UserCheck size={24} />,    bgColor: '#D1FAE5', color: '#10B981' },
+    { id: 4, title: 'من رفضوا',                    value: orgData.rejected_count,   icon: <FileText size={24} />,     bgColor: '#FEE2E2', color: '#EF4444' },
+  ];
 
   return (
     <div className="adetails-page">
@@ -109,6 +174,14 @@ const AdminAssociationDetails = () => {
                 <h3>بيانات الجمعية</h3>
                 <div className="adetails-actions">
                   <button 
+                    className="adetails-icon-btn chat-btn" 
+                    title="محادثة"
+                    onClick={() => navigate(`/admin/chat/${orgData.user_id}`)}
+                    style={{ color: '#dba841' }}
+                  >
+                    <MessageCircle size={18} />
+                  </button>
+                  <button 
                     className="adetails-icon-btn edit-btn" 
                     title="تعديل"
                     onClick={() => navigate(`/admin/associations/${id}/edit`)}
@@ -128,35 +201,37 @@ const AdminAssociationDetails = () => {
               <div className="adetails-grid">
                 <div className="adetails-item">
                   <span className="adetails-label"><Building2 size={16}/> اسم الجمعية</span>
-                  <span className="adetails-value">جمعية رسالة الاسلام</span>
+                  <span className="adetails-value">{orgData.organization_name}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><FileText size={16}/> رقم الترخيص</span>
-                  <span className="adetails-value ltr-fix">12345678</span>
+                  <span className="adetails-value ltr-fix">{orgData.license_number}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><Mail size={16}/> البريد الالكتروني</span>
-                  <span className="adetails-value ltr-fix">john2025@gmail.com</span>
+                  <span className="adetails-value ltr-fix">{orgData.email}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><Phone size={16}/> رقم الهاتف</span>
-                  <span className="adetails-value ltr-fix">+2001155591759</span>
+                  <span className="adetails-value ltr-fix">{orgData.phone}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><MapPin size={16}/> البلد</span>
-                  <span className="adetails-value">الكويت</span>
+                  <span className="adetails-value">{orgData.country_name}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><MapPin size={16}/> المدينة</span>
-                  <span className="adetails-value">الكويت</span>
+                  <span className="adetails-value">{orgData.governorate}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><MapPin size={16}/> العنوان</span>
-                  <span className="adetails-value">الكويت - شارع القادسية</span>
+                  <span className="adetails-value">{orgData.address || '—'}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><CheckCircle size={16}/> الحالة</span>
-                  <span className="adetails-value status-active">مفعل</span>
+                  <span className={`adetails-value ${orgData.account_status === 'active' ? 'status-active' : 'status-inactive'}`}>
+                    {orgData.account_status === 'active' ? 'مفعل' : 'معطل'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -169,7 +244,7 @@ const AdminAssociationDetails = () => {
               <div className="adetails-grid single">
                 <div className="adetails-item">
                   <span className="adetails-label"><User size={16}/> اسم مشرف الجمعية</span>
-                  <span className="adetails-value">احمد عاطف</span>
+                  <span className="adetails-value">{orgData.manager_name}</span>
                 </div>
               </div>
             </div>
@@ -177,16 +252,16 @@ const AdminAssociationDetails = () => {
 
           {/* ── Stats Row ── */}
           <div className="adetails-stats-grid">
-            {mockStats.map((stat) => (
+            {stats.map((stat) => (
               <StatCard
                 key={stat.id}
                 title={stat.title}
-                value={stat.value}
+                value={stat.value?.toString() || '0'}
                 icon={stat.icon}
                 iconBgColor={stat.bgColor}
                 iconColor={stat.color}
                 trend="up"
-                trendValue="الشهر الماضي 10.5% ^"
+                trendValue="الشهر الماضي 0% ^"
               />
             ))}
           </div>
@@ -204,20 +279,27 @@ const AdminAssociationDetails = () => {
                   className="adetails-kuwait-map"
                 />
                 <div className="adetails-gov-list">
-                  {governorates.map((gov, idx) => (
-                    <div key={idx} className="adetails-gov-row">
-                      <div className="adetails-gov-header">
-                        <span className="adetails-gov-name">{gov.name}</span>
-                        <span className="adetails-gov-count">{gov.count}</span>
+                  {(orgData.governorates_distribution || governoratesList).map((gov: any, idx: number) => {
+                    // Try to find matching color/percentage from governoratesList if not provided by backend
+                    const staticInfo = governoratesList.find(g => g.name === gov.label) || { percentage: 0, color: '#94a3b8' };
+                    return (
+                      <div key={idx} className="adetails-gov-row">
+                        <div className="adetails-gov-header">
+                          <span className="adetails-gov-name">{gov.label || gov.name}</span>
+                          <span className="adetails-gov-count">{gov.value} شخص</span>
+                        </div>
+                        <div className="adetails-gov-progress">
+                          <div
+                            className="adetails-gov-fill"
+                            style={{ 
+                              width: `${(gov.value / (orgData.cases_count || 1)) * 100}%`, 
+                              backgroundColor: staticInfo.color 
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="adetails-gov-progress">
-                        <div
-                          className="adetails-gov-fill"
-                          style={{ width: `${gov.percentage}%`, backgroundColor: gov.color }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -226,7 +308,7 @@ const AdminAssociationDetails = () => {
                 <h3>اجمالي الطلبات</h3>
               </div>
               <div className="adetails-chart-content">
-                <RequestsChart />
+                <RequestsChart data={orgData.requests_distribution} />
               </div>
             </div>
             <div className="adetails-chart-card">
@@ -237,7 +319,7 @@ const AdminAssociationDetails = () => {
                 </select>
               </div>
               <div className="adetails-chart-content">
-                <ConversionsChart />
+                <ConversionsChart data={orgData.conversion_trends} />
               </div>
             </div>
           </div>
@@ -259,7 +341,7 @@ const AdminAssociationDetails = () => {
             </div>
             <button className="adetails-filter-btn">
               <span>فلتر</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+              <FilterIcon size={18} />
             </button>
             <button className="adetails-sort-btn">
               <span>تصنيف</span>
@@ -271,26 +353,34 @@ const AdminAssociationDetails = () => {
             <table className="adetails-table">
               <thead>
                 <tr>
-                  <th>رقم <ChevronDown size={14} style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4, cursor: 'pointer', color: '#9CA3AF'}} /></th>
-                  <th>اسم الداعية <ChevronDown size={14} style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4, cursor: 'pointer', color: '#9CA3AF'}} /></th>
-                  <th>الجنسية <ChevronDown size={14} style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4, cursor: 'pointer', color: '#9CA3AF'}} /></th>
-                  <th>تاريخ الانضمام <ChevronDown size={14} style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4, cursor: 'pointer', color: '#9CA3AF'}} /></th>
-                  <th>اللغة <ChevronDown size={14} style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4, cursor: 'pointer', color: '#9CA3AF'}} /></th>
-                  <th>مفعل / غير مفعل <ChevronDown size={14} style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4, cursor: 'pointer', color: '#9CA3AF'}} /></th>
+                  <th>رقم</th>
+                  <th>اسم الداعية</th>
+                  <th>الجنسية</th>
+                  <th>تاريخ الانضمام</th>
+                  <th>اللغة</th>
+                  <th>مفعل / غير مفعل</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {mockPreachers.map((preacher) => (
-                  <tr key={preacher.id}>
-                    <td>{preacher.number}</td>
-                    <td>{preacher.name}</td>
-                    <td>{preacher.nationality}</td>
-                    <td className="multiline-cell">{preacher.joinDate}</td>
-                    <td>{preacher.languages}</td>
+                {preachers.map((preacher) => (
+                  <tr key={preacher.preacher_id}>
+                    <td>{preacher.preacher_id}</td>
+                    <td>{preacher.full_name}</td>
+                    <td>{preacher.nationality_name}</td>
+                    <td className="multiline-cell">
+                      {new Date(preacher.created_at).toLocaleDateString('ar-EG')}
+                      <br/>
+                      {new Date(preacher.created_at).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})}
+                    </td>
+                    <td>{preacher.language_names.join(', ')}</td>
                     <td>
                       <label className="switch">
-                        <input type="checkbox" defaultChecked={preacher.active} />
+                        <input 
+                          type="checkbox" 
+                          checked={preacher.status === 'active'} 
+                          onChange={() => togglePreacherActive(preacher.preacher_id, preacher.status)}
+                        />
                         <span className="slider round"></span>
                       </label>
                     </td>
@@ -298,16 +388,37 @@ const AdminAssociationDetails = () => {
                       <div className="adetails-table-actions">
                         <button 
                           className="adetails-icon-btn view-btn"
-                          onClick={() => navigate(`/admin/associations/${id}/preachers/${preacher.id}`)}
-                        ><Eye size={18}/></button>
+                          title="عرض"
+                          onClick={() => navigate(`/admin/associations/${id}/preachers/${preacher.preacher_id}`)}
+                        >
+                          <Eye size={18}/>
+                        </button>
+                        <button 
+                          className="adetails-icon-btn chat-btn"
+                          title="محادثة"
+                          onClick={() => navigate(`/admin/chat/${preacher.user_id}`)}
+                          style={{ color: '#dba841', marginRight: '8px' }}
+                        >
+                          <MessageCircle size={18}/>
+                        </button>
                         <button 
                           className="adetails-icon-btn delete-btn"
-                          onClick={() => setShowDeletePreacherModal(true)}
-                        ><Trash2 size={18} color="#EF4444" /></button>
+                          title="حذف"
+                          onClick={() => handleDeletePreacherClick(preacher.preacher_id)}
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {!loading && preachers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} style={{textAlign: 'center', padding: '40px', color: '#64748b'}}>
+                      لا يوجد دعاة مسجلين لهذه الجمعية حالياً
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -322,13 +433,13 @@ const AdminAssociationDetails = () => {
               className="aadmin-modal-close" 
               onClick={() => setShowDeleteModal(false)}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <X size={20} />
             </button>
             <div className="aadmin-delete-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <Trash2 size={32} color="#fff" />
             </div>
             <h2 className="aadmin-delete-title">حذف الجمعية</h2>
-            <p className="aadmin-delete-text">هل تود ان تتخذ هذا الاجراء ؟</p>
+            <p className="aadmin-delete-text">هل تود ان تتخذ هذا الاجراء ؟ سيتم حذف جميع بيانات الجمعية بشكل نهائي.</p>
             <div className="aadmin-delete-actions">
               <button 
                 className="aadmin-btn-cancel"
@@ -337,7 +448,7 @@ const AdminAssociationDetails = () => {
               <button 
                 className="aadmin-btn-confirm"
                 onClick={confirmDelete}
-              >تأكيد</button>
+              >تأكيد الحذف</button>
             </div>
           </div>
         </div>
@@ -353,10 +464,10 @@ const AdminAssociationDetails = () => {
               <X size={20} />
             </button>
             <div className="aadmin-delete-icon">
-              <X size={32} color="#fff" strokeWidth={2.5} />
+              <Trash2 size={32} color="#fff" />
             </div>
             <h2 className="aadmin-delete-title">حذف الداعية</h2>
-            <p className="aadmin-delete-text">هل تود ان تتخذ هذا الاجراء ؟</p>
+            <p className="aadmin-delete-text">هل تود ان تتخذ هذا الاجراء ؟ سيتم حذف جميع بيانات الداعية بشكل نهائي.</p>
             <div className="aadmin-delete-actions">
               <button 
                 className="aadmin-btn-cancel"
@@ -365,7 +476,7 @@ const AdminAssociationDetails = () => {
               <button 
                 className="aadmin-btn-confirm"
                 onClick={confirmDeletePreacher}
-              >تأكيد</button>
+              >تأكيد الحذف</button>
             </div>
           </div>
         </div>
@@ -375,3 +486,8 @@ const AdminAssociationDetails = () => {
 };
 
 export default AdminAssociationDetails;
+
+// Helper to avoid name conflict with Filter (lucide-react)
+const FilterIcon = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+);

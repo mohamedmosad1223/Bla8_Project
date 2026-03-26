@@ -44,7 +44,11 @@ export const authService = {
       const response = await api.get('/profile/me');
       if (response.data) {
         localStorage.setItem('userData', JSON.stringify(response.data));
-        window.dispatchEvent(new Event('auth-change')); // Tell header to update
+        // Sync userRole as well to prevent desync bugs
+        if (response.data.user?.role) {
+          localStorage.setItem('userRole', response.data.user.role);
+        }
+        window.dispatchEvent(new Event('auth-change'));
       }
       return response.data;
     } catch (error) {

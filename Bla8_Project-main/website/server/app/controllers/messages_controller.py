@@ -78,18 +78,9 @@ class MessagesController:
                 raise HTTPException(status_code=400, detail="يجب تحديد المستلم للمراسلة المباشرة")
             
             # Validation: Organizations can only message their own preachers
-            if sender.role == UserRole.organization:
-                preacher = db.query(Preacher).filter(Preacher.user_id == receiver_id).first()
-                if not preacher or preacher.org_id != sender.organization.org_id:
-                    raise HTTPException(status_code=403, detail="لا يمكنك مراسلة داعية لا ينتمي لجمعيتك")
-            elif sender.role == UserRole.preacher:
-                receiver_user = db.query(User).filter(User.user_id == receiver_id).first()
-                if receiver_user and receiver_user.role == UserRole.organization:
-                    if sender.preacher.org_id != receiver_user.organization.org_id:
-                        raise HTTPException(status_code=403, detail="لا يمكنك مراسلة جمعية أخرى غير التي تنتمي إليها")
-                else:
-                    # For now, only Org-Preacher DM is supported as requested
-                    raise HTTPException(status_code=403, detail="المراسلة المباشرة متاحة حالياً بين الداعية وجمعيته فقط")
+            elif sender.role == UserRole.admin:
+                # Admin can message anyone
+                pass
             else:
                 raise HTTPException(status_code=403, detail="نوع حسابك لا يدعم المراسلة المباشرة")
 
@@ -184,6 +175,25 @@ class MessagesController:
         if unread_msgs:
             db.commit()
 
+        # Include Partner Metadata (Useful for new chats without history)
+        partner_info = {}
+        if other_user_id:
+            partner_user = db.query(User).filter(User.user_id == other_user_id).first()
+            if partner_user:
+                p_name = "مستخدم"
+                if partner_user.role == UserRole.organization:
+                    p_name = partner_user.organization.organization_name
+                elif partner_user.role == UserRole.preacher:
+                    p_name = partner_user.preacher.full_name
+                elif partner_user.role == UserRole.admin:
+                    p_name = "الإدارة العامة"
+                
+                partner_info = {
+                    "other_party_name": p_name,
+                    "is_online": manager.is_online(other_user_id),
+                    "last_seen": partner_user.last_seen.isoformat() if partner_user.last_seen else None
+                }
+
         from app.schemas.schemas import MessageRead
         serialized = []
         for m in messages:
@@ -191,7 +201,11 @@ class MessagesController:
             d['is_mine'] = (m.sender_id == user_id)
             serialized.append(d)
 
-        return {"message": "تم جلب تاريخ المحادثة", "data": serialized}
+        return {
+            "message": "تم جلب تاريخ المحادثة", 
+            "data": serialized,
+            "partner": partner_info
+        }
 
     @staticmethod
     def get_my_chats_preview(db: Session, user_id: int, role: UserRole):
@@ -294,6 +308,8 @@ class MessagesController:
                 partner_name = f"مشرف جمعية {partner_user.organization.organization_name}"
             elif partner_user.role == UserRole.preacher:
                 partner_name = partner_user.preacher.full_name
+            elif partner_user.role == UserRole.admin:
+                partner_name = "الإدارة العامة"
 
             previews.append({
                 "request_id": None,

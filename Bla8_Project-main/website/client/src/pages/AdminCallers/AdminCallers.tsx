@@ -1,40 +1,85 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye, MessageCircle } from 'lucide-react';
+import { Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye, MessageCircle, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 import './AdminCallers.css';
 
 interface Preacher {
-  id: number;
+  preacher_id: number;
+  user_id: number;
   code: string;
-  name: string;
-  nationality: string;
-  joinDate: string;
-  language: string;
-  active: boolean;
+  full_name: string;
+  nationality_name: string;
+  created_at: string;
+  language_names: string[];
+  status: string;
 }
-
-const mockPreachers: Preacher[] = [
-  { id: 1, code: '123456', name: 'جون سميث',   nationality: 'فرنسا',          joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 2, code: '123456', name: 'جون سميث',   nationality: 'انجلترا',        joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-  { id: 3, code: '123456', name: 'جون سميث',   nationality: 'البرتغال',       joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 4, code: '123456', name: 'جون سميث',   nationality: 'المانيا',         joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 5, code: '123456', name: 'جون سميث',   nationality: 'بلجيكا',         joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-  { id: 6, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 7, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-  { id: 8, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 9, code: '123456', name: 'جون سميث',   nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: true },
-  { id: 10, code: '123456', name: 'جون سميث',  nationality: 'الاتحاد الروسي', joinDate: '22/02/2023 7:00 AM', language: 'الانجليزية, الفرنسية', active: false },
-];
 
 const AdminCallers = () => {
   const navigate = useNavigate();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [preachers, setPreachers] = useState(mockPreachers);
+  const [preachers, setPreachers] = useState<Preacher[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
-  const toggleActive = (id: number) => {
-    setPreachers(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+  const [search, setSearch] = useState('');
+
+  const fetchPreachers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/preachers/', {
+        params: {
+          search: search || undefined,
+          approval_status: 'approved'
+        }
+      });
+      setPreachers(response.data.data);
+    } catch (err: any) {
+      console.error('Error fetching preachers:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchPreachers();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [fetchPreachers]);
+
+  const toggleActive = async (id: number, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+      const formData = new FormData();
+      formData.append('status', newStatus);
+      await api.patch(`/preachers/${id}`, formData);
+      fetchPreachers();
+    } catch (err) {
+      console.error('Error toggling status:', err);
+      alert('تعذر تحديث حالة الداعية');
+    }
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setItemToDelete(id);
+    setShowDeletePreacherModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (itemToDelete) {
+      try {
+        await api.delete(`/preachers/${itemToDelete}`);
+        fetchPreachers();
+      } catch (err) {
+        console.error('Error deleting preacher:', err);
+        alert('تعذر حذف الداعية');
+      }
+    }
+    setShowDeletePreacherModal(false);
+    setItemToDelete(null);
   };
   
   // Filter states
@@ -77,6 +122,15 @@ const AdminCallers = () => {
     }
   };
 
+  if (loading && preachers.length === 0) {
+    return (
+      <div className="aadmin-loading-state">
+        <Loader2 className="animate-spin" size={48} color="#DBA841" />
+        <p>جاري تحميل البيانات...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="callers-page">
       <div className="callers-header-area">
@@ -90,6 +144,8 @@ const AdminCallers = () => {
                 type="text" 
                 placeholder="بحث" 
                 className="search-input-outlined"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             
@@ -173,7 +229,7 @@ const AdminCallers = () => {
                             >
                                <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked-gold' : ''}`}>
                                   {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={3} color="white" />}
-                              </div>
+                               </div>
                               <span>غير ذلك</span>
                             </label>
                           </div>
@@ -306,38 +362,53 @@ const AdminCallers = () => {
             </thead>
             <tbody>
               {preachers.map((preacher) => (
-                <tr key={preacher.id}>
-                  <td>{preacher.code}</td>
-                  <td>{preacher.name}</td>
-                  <td>{preacher.nationality}</td>
-                  <td>{preacher.joinDate}</td>
-                  <td>{preacher.language}</td>
+                <tr key={preacher.preacher_id}>
+                  <td>{preacher.preacher_id}</td>
+                  <td>{preacher.full_name}</td>
+                  <td>{preacher.nationality_name}</td>
+                  <td className="aadmin-date">
+                    {new Date(preacher.created_at).toLocaleDateString('ar-EG')}
+                    <br/>
+                    {new Date(preacher.created_at).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})}
+                  </td>
+                  <td>{preacher.language_names.join(', ')}</td>
                   <td>
                     <label className="toggle-switch">
-                      <input type="checkbox" checked={preacher.active} onChange={() => toggleActive(preacher.id)} />
+                      <input 
+                        type="checkbox" 
+                        checked={preacher.status === 'active'} 
+                        onChange={() => toggleActive(preacher.preacher_id, preacher.status)} 
+                      />
                     <span className="toggle-slider"></span>
                     </label>
                   </td>
                   <td>
                     <div className="actions-cell">
-                      <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/admin/callers/${preacher.id}`)}>
+                      <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/admin/callers/${preacher.preacher_id}`)}>
                         <Eye size={16} />
                       </button>
                       <button 
                         className="action-icon-btn chat-icon" 
                         title="محادثة" 
-                        onClick={() => navigate(`/admin/chat/${preacher.id}`)}
+                        onClick={() => navigate(`/admin/chat/${preacher.user_id}`)}
                         style={{ color: '#dba841' }}
                       >
                         <MessageCircle size={16} />
                       </button>
-                      <button className="action-icon-btn delete-icon" title="حذف" onClick={() => setShowDeletePreacherModal(true)}>
+                      <button className="action-icon-btn delete-icon" title="حذف" onClick={() => handleDeleteClick(preacher.preacher_id)}>
                         <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {!loading && preachers.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{textAlign: 'center', padding: '40px', color: '#64748b'}}>
+                    لا يوجد دعاة مسجلين حالياً
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -357,26 +428,25 @@ const AdminCallers = () => {
             </div>
             
             <h3 className="new-delete-title">حذف الداعية</h3>
-            <p className="new-delete-desc">هل تود ان تتخذ هذا الاجراء ؟</p>
+            <p className="new-delete-desc">هل تود ان تتخذ هذا الاجراء ؟ سيتم حذف جميع بيانات الداعية بشكل نهائي.</p>
             
             <div className="new-modal-actions">
-              <button 
-                className="new-btn-confirm"
-                onClick={() => setShowDeletePreacherModal(false)}
-              >
-                تأكيد
-              </button>
               <button 
                 className="new-btn-cancel"
                 onClick={() => setShowDeletePreacherModal(false)}
               >
-                الغاء
+                الالغاء
+              </button>
+              <button 
+                className="new-btn-confirm"
+                onClick={confirmDelete}
+              >
+                تأكيد الحذف
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };

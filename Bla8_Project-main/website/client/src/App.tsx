@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import RegistrationSelection from './pages/RegistrationSelection/RegistrationSelection';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
@@ -47,20 +48,27 @@ import AdminRequests from './pages/AdminRequests/AdminRequests';
 import AdminPreacherRequestDetails from './pages/AdminPreacherRequestDetails/AdminPreacherRequestDetails';
 import AdminAssociationRequestDetails from './pages/AdminAssociationRequestDetails/AdminAssociationRequestDetails';
 import AdminChat from './pages/AdminChat/AdminChat';
+import AdminAddSupervisor from './pages/AdminAddSupervisor/AdminAddSupervisor';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import { authService } from './services/authService';
 
 
-const RoleDashboard = () => {
-  const role = localStorage.getItem('userRole') || 'organization';
+const RoleDashboard = ({ role }: { role: string | null }) => {
+  if (!role) return <Navigate to="/login" replace />;
+  
   if (role === 'preacher') return <PreacherDashboard />;
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
   if (role === 'non_muslim' || role === 'interested') return <NonMuslimDashboard />;
   if (role === 'awqaf_manager') return <AwqafDashboard />;
   if (role === 'admin') return <AdminDashboard />;
-  return <Dashboard />;
+  if (role === 'organization') return <Dashboard />;
+  
+  return <Navigate to="/login" replace />;
 };
 
-const RoleConversations = () => {
-  const role = localStorage.getItem('userRole') || 'organization';
+const RoleConversations = ({ role }: { role: string | null }) => {
+  if (!role) return <Navigate to="/login" replace />;
+  
   if (role === 'non_muslim' || role === 'interested') return <NonMuslimConversation />;
   if (role === 'muslim_caller') return <div style={{ padding: '2rem', textAlign: 'center' }}>عذراً، هذه الخاصية غير متاحة لنوع حسابك</div>;
   return <Conversations />;
@@ -68,6 +76,39 @@ const RoleConversations = () => {
 
 
 function App() {
+  const [role, setRole] = useState<string | null>(localStorage.getItem('userRole'));
+
+  // Global initialization to sync session on load/refresh
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setRole(localStorage.getItem('userRole'));
+    };
+
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+
+    const syncSession = async () => {
+      const currentRole = localStorage.getItem('userRole');
+      if (currentRole) {
+        try {
+          await authService.getMe();
+        } catch (err: any) {
+          if (err.response?.status === 401) {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userData');
+            setRole(null);
+          }
+        }
+      }
+    };
+    syncSession();
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
+
   return (
     <Router>
       <Routes>
@@ -90,37 +131,45 @@ function App() {
 
         {/* Dashboard Routes wrapper */}
         <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<RoleDashboard />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/callers" element={<Callers />} />
-          <Route path="/callers/add" element={<AddCaller />} />
-          <Route path="/callers/edit/:id" element={<EditPreacher />} />
-          <Route path="/profile" element={<Profile />} />
-          {/* Add other dashboard routes here later, e.g., /requests */}
-          <Route path="/requests/new" element={<NewRequests />} />
-          <Route path="/requests/current" element={<CurrentRequests />} />
-          <Route path="/conversations" element={<RoleConversations />} />
-          <Route path="/reports" element={<PreacherReports />} />
-          <Route path="/submissions" element={<MuslimCallerSubmissions />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/awqaf-dashboard" element={<AwqafDashboard />} />
-          <Route path="/awqaf/associations" element={<AwqafAssociations />} />
-          <Route path="/awqaf/associations/:id/details" element={<AwqafAssociationDetails />} />
-          <Route path="/awqaf/associations/:id/reports" element={<AwqafAssociationReports />} />
-          <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<AwqafPreacherDetails />} />
-          <Route path="/awqaf/preacher-performance" element={<AwqafPreacherPerformance />} />
-          <Route path="/awqaf/reports" element={<AwqafReportsAnalytics />} />
-          <Route path="/ai" element={<AwqafAICenter />} />
-          <Route path="/admin/associations" element={<AdminAssociations />} />
-          <Route path="/admin/associations/add" element={<AdminAddAssociation />} />
-          <Route path="/admin/associations/:id" element={<AdminAssociationDetails />} />
-          <Route path="/admin/associations/:id/edit" element={<AdminEditAssociation />} />
-          <Route path="/admin/associations/:id/preachers/:preacherId" element={<AdminPreacherDetails />} />
-          <Route path="/admin/callers" element={<AdminCallers />} />
-          <Route path="/admin/requests" element={<AdminRequests />} />
-          <Route path="/admin/requests/preachers/:id" element={<AdminPreacherRequestDetails />} />
-          <Route path="/admin/requests/associations/:id" element={<AdminAssociationRequestDetails />} />
-          <Route path="/admin/chat/:userId?" element={<AdminChat />} />
+          <Route path="/dashboard" element={<RoleDashboard role={role} />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+
+          {/* Association Routes */}
+          <Route path="/callers" element={<ProtectedRoute allowedRoles={['organization']}><Callers /></ProtectedRoute>} />
+          <Route path="/callers/add" element={<ProtectedRoute allowedRoles={['organization']}><AddCaller /></ProtectedRoute>} />
+          <Route path="/callers/edit/:id" element={<ProtectedRoute allowedRoles={['organization']}><EditPreacher /></ProtectedRoute>} />
+          <Route path="/callers/view/:preacherId" element={<ProtectedRoute allowedRoles={['organization', 'admin']}><AdminPreacherDetails /></ProtectedRoute>} />
+          <Route path="/requests/new" element={<ProtectedRoute allowedRoles={['organization', 'preacher']}><NewRequests /></ProtectedRoute>} />
+          <Route path="/requests/current" element={<ProtectedRoute allowedRoles={['organization', 'preacher']}><CurrentRequests /></ProtectedRoute>} />
+          <Route path="/conversations" element={<ProtectedRoute allowedRoles={['organization', 'preacher', 'non_muslim', 'interested']}><RoleConversations role={role} /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute allowedRoles={['preacher']}><PreacherReports /></ProtectedRoute>} />
+          <Route path="/submissions" element={<ProtectedRoute allowedRoles={['muslim_caller']}><MuslimCallerSubmissions /></ProtectedRoute>} />
+
+          {/* Awqaf Routes */}
+          <Route path="/awqaf-dashboard" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafDashboard /></ProtectedRoute>} />
+          <Route path="/awqaf/associations" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAssociations /></ProtectedRoute>} />
+          <Route path="/awqaf/associations/:id/details" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAssociationDetails /></ProtectedRoute>} />
+          <Route path="/awqaf/associations/:id/reports" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAssociationReports /></ProtectedRoute>} />
+          <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafPreacherDetails /></ProtectedRoute>} />
+          <Route path="/awqaf/preacher-performance" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafPreacherPerformance /></ProtectedRoute>} />
+          <Route path="/awqaf/reports" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafReportsAnalytics /></ProtectedRoute>} />
+          <Route path="/ai" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAICenter /></ProtectedRoute>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/associations" element={<ProtectedRoute allowedRoles={['admin']}><AdminAssociations /></ProtectedRoute>} />
+          <Route path="/admin/associations/add" element={<ProtectedRoute allowedRoles={['admin']}><AdminAddAssociation /></ProtectedRoute>} />
+          <Route path="/admin/associations/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminAssociationDetails /></ProtectedRoute>} />
+          <Route path="/admin/associations/:id/edit" element={<ProtectedRoute allowedRoles={['admin']}><AdminEditAssociation /></ProtectedRoute>} />
+          <Route path="/admin/associations/:id/preachers/:preacherId" element={<ProtectedRoute allowedRoles={['admin']}><AdminPreacherDetails /></ProtectedRoute>} />
+          <Route path="/admin/callers/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminPreacherDetails /></ProtectedRoute>} />
+          <Route path="/admin/callers" element={<ProtectedRoute allowedRoles={['admin']}><AdminCallers /></ProtectedRoute>} />
+          <Route path="/admin/requests" element={<ProtectedRoute allowedRoles={['admin']}><AdminRequests /></ProtectedRoute>} />
+          <Route path="/admin/requests/preachers/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminPreacherRequestDetails /></ProtectedRoute>} />
+          <Route path="/admin/requests/associations/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminAssociationRequestDetails /></ProtectedRoute>} />
+          <Route path="/admin/chat/:userId?" element={<ProtectedRoute allowedRoles={['admin']}><AdminChat /></ProtectedRoute>} />
+          <Route path="/admin/add-supervisor" element={<ProtectedRoute allowedRoles={['admin']}><AdminAddSupervisor /></ProtectedRoute>} />
         </Route>
       </Routes>
     </Router>

@@ -70,12 +70,41 @@ class OrganizationsController:
         created_before: Optional[datetime] = None,
         order_by: str = "latest"
     ):
-        q = db.query(Organization)
+        from sqlalchemy import func, or_
+        from app.models.preacher import Preacher
+        from app.models.dawah_request import DawahRequest
+        from app.models.enums import RequestStatus
+
+        # Subquery for preachers count per org
+        preachers_sub = db.query(
+            Preacher.org_id,
+            func.count(Preacher.preacher_id).label("preachers_count")
+        ).group_by(Preacher.org_id).subquery()
+
+        # Subquery for dawah request stats per org
+        stats_sub = db.query(
+            Preacher.org_id,
+            func.count(DawahRequest.request_id).label("cases_count"),
+            func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label("converted_count"),
+            func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.in_progress).label("pending_count"),
+            func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.rejected).label("rejected_count")
+        ).join(DawahRequest, Preacher.preacher_id == DawahRequest.assigned_preacher_id) \
+         .group_by(Preacher.org_id).subquery()
+
+        q = db.query(
+            Organization,
+            func.coalesce(preachers_sub.c.preachers_count, 0).label("preachers_count"),
+            func.coalesce(stats_sub.c.cases_count, 0).label("cases_count"),
+            func.coalesce(stats_sub.c.converted_count, 0).label("converted_count"),
+            func.coalesce(stats_sub.c.pending_count, 0).label("pending_count"),
+            func.coalesce(stats_sub.c.rejected_count, 0).label("rejected_count")
+        ).outerjoin(preachers_sub, Organization.org_id == preachers_sub.c.org_id) \
+         .outerjoin(stats_sub, Organization.org_id == stats_sub.c.org_id)
         
         # 1. Search (Name/ID)
         if search:
             if search.isdigit():
-                 q = q.filter(sa.or_(
+                 q = q.filter(or_(
                      Organization.org_id == int(search),
                      Organization.organization_name.ilike(f"%{search}%")
                  ))
@@ -98,15 +127,56 @@ class OrganizationsController:
         else:
             q = q.order_by(Organization.created_at.desc())
 
-        orgs = q.offset(skip).limit(limit).all()
-        return {"message": OrganizationMessages.LISTED, "data": orgs}
+        results = q.offset(skip).limit(limit).all()
+        
+        data = []
+        for row in results:
+            org, p_count, c_count, con_count, pen_count, rej_count = row
+            # Convert model to dict and add extra fields
+            org_dict = {column.name: getattr(org, column.name) for column in org.__table__.columns}
+            org_dict["user_id"] = org.user_id
+            org_dict["account_status"] = org.user.status if org.user else AccountStatus.pending
+            org_dict["preachers_count"] = p_count
+            org_dict["cases_count"] = c_count
+            org_dict["converted_count"] = con_count
+            org_dict["pending_count"] = pen_count
+            org_dict["rejected_count"] = rej_count
+            data.append(org_dict)
+
+        return {"message": OrganizationMessages.LISTED, "data": data}
 
     @staticmethod
     def get_organization(db: Session, org_id: int):
+        from app.models.reference import Country
+        from app.controllers.organization_dashboard_controller import OrganizationDashboardController
+
         org = db.query(Organization).filter(Organization.org_id == org_id).first()
         if not org:
             raise HTTPException(status_code=404, detail=OrganizationMessages.NOT_FOUND)
-        return {"message": OrganizationMessages.FETCHED, "data": org}
+        
+        # Get basic stats and trends from dashboard controller
+        stats_data = OrganizationDashboardController.get_dashboard_stats(db, org_id)
+        
+        # Get country name
+        country = db.query(Country).filter(Country.country_id == org.country_id).first()
+        
+        org_dict = {column.name: getattr(org, column.name) for column in org.__table__.columns}
+        org_dict["account_status"] = org.user.status if org.user else AccountStatus.pending
+        org_dict["country_name"] = country.country_name if country else "—"
+        
+        # Merge stats
+        org_dict["preachers_count"] = stats_data["total_preachers"]["value"]
+        org_dict["cases_count"] = stats_data["total_beneficiaries"]["value"]
+        org_dict["converted_count"] = stats_data["total_converts"]["value"]
+        org_dict["pending_count"] = stats_data["active_conversations"]["value"]
+        org_dict["rejected_count"] = stats_data["total_rejections"]["value"]
+        
+        # charts
+        org_dict["requests_distribution"] = stats_data["requests_distribution"]
+        org_dict["conversion_trends"] = stats_data["conversion_trends"]
+        org_dict["governorates_distribution"] = stats_data["top_nationalities"]
+
+        return {"message": OrganizationMessages.FETCHED, "data": org_dict}
 
     @staticmethod
     def update_organization(db: Session, org_id: int, payload: OrganizationUpdate):
@@ -114,7 +184,20 @@ class OrganizationsController:
         if not org:
             raise HTTPException(status_code=404, detail=OrganizationMessages.NOT_FOUND)
 
+        from app.auth import get_password_hash
+        
         for field, value in payload.model_dump(exclude_unset=True).items():
+            if field == "is_active":
+                if org.user:
+                    org.user.status = AccountStatus.active if value else AccountStatus.suspended
+                continue
+            if field == "password":
+                if org.user:
+                    org.user.password_hash = get_password_hash(value)
+                continue
+            if field == "password_confirm":
+                continue # Handled by frontend/schema validation
+            
             setattr(org, field, value)
 
         # مزامنة حالة الحساب وإرسال إشعارات

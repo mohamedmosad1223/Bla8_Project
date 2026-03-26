@@ -32,6 +32,10 @@ class ProfilesController:
         
         if user.role in [UserRole.admin, UserRole.minister]:
             profile_record = user.admin
+            if profile_record:
+                extra_data = {
+                    "level": profile_record.level
+                }
         elif user.role == UserRole.preacher:
             profile_record = user.preacher
             if profile_record:

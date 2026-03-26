@@ -76,6 +76,9 @@
   font-weight: 700;
   color: var(--text-dark);
 }
+.apreach-value.status-active {
+  color: #10B981;
+}
 .apreach-value.status-inactive {
   color: #EF4444; 
 }
@@ -93,7 +96,7 @@
 /* ── Charts ── */
 .apreach-charts-grid {
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 1fr 2.5fr;
   gap: 24px;
 }
 .apreach-chart-card {
@@ -136,8 +139,14 @@
 
 /* Kuwait Map specific */
 .apreach-chart-content.map-wrapper {
-  gap: 16px;
-  align-items: center;
+  gap: 24px;
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+}
+.wm-container {
+    height: 180px;
+    width: 100%;
 }
 .apreach-kuwait-map {
   max-width: 140px;

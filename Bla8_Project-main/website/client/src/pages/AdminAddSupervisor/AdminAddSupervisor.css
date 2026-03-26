@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════
-   Admin Add Association Page
+   Admin Add Supervisor Page
+   (reuses aadd-* classes from AdminAddAssociation)
 ═══════════════════════════════════════ */
 .aadd-page {
   padding: 0;
@@ -62,6 +63,19 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
 }
 
+.aadd-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #dc2626;
+  font-size: 0.9rem;
+  direction: rtl;
+}
+
 .aadd-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -84,6 +98,7 @@
 
 .aadd-input {
   width: 100%;
+  box-sizing: border-box;
   padding: 12px 16px;
   border: 1px solid var(--border-gray, #E5E7EB);
   border-radius: 10px;
@@ -97,77 +112,32 @@
 .aadd-input:focus {
   border-color: var(--primary-gold, #C9A84C);
 }
-
 .aadd-input::placeholder {
   color: #D1D5DB;
 }
 
-/* Select */
-.aadd-select-wrapper {
-  position: relative;
-}
-.aadd-select {
-  appearance: none;
-  cursor: pointer;
-}
-.aadd-select-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9CA3AF;
-  pointer-events: none;
-}
-
-/* Input with Icon on Left */
+/* Input with Icon on Left (password toggle) */
 .aadd-input-with-icon {
   position: relative;
 }
-.aadd-input-with-icon .aadd-icon-left {
+.aadd-input-with-icon .aadd-input {
+  padding-left: 42px;
+}
+.aadd-icon-left-btn {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
+  background: none;
+  border: none;
   color: #9CA3AF;
   cursor: pointer;
-}
-.aadd-input-with-icon .aadd-input {
-  padding-left: 40px; /* space for icon */
-}
-
-/* File Upload */
-.aadd-file-upload {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px dashed var(--border-gray, #E5E7EB);
-  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  color: #9CA3AF;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-  background: #f9fafb;
+  padding: 0;
+  z-index: 1;
 }
-.aadd-file-upload:hover {
-  border-color: var(--primary-gold, #C9A84C);
-  background: #fff;
-}
-.aadd-file-upload.active {
-  border-color: #10B981;
-  color: #10B981;
-  background: #ecfdf5;
-}
-
-/* Animations */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
+.aadd-icon-left-btn:hover { color: #6B7280; }
 
 /* Action Area */
 .aadd-actions {
@@ -188,8 +158,12 @@
   transition: opacity 0.2s;
   min-width: 140px;
 }
-.aadd-save-btn:hover {
+.aadd-save-btn:hover:not(:disabled) {
   opacity: 0.9;
+}
+.aadd-save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* ── Status Modals ── */
@@ -239,12 +213,8 @@
   margin-bottom: 24px;
   color: #fff;
 }
-.aadd-status-icon.success {
-  background: #10B981;
-}
-.aadd-status-icon.error {
-  background: red;
-}
+.aadd-status-icon.success { background: #10B981; }
+.aadd-status-icon.error   { background: #EF4444; }
 
 .aadd-status-title {
   font-size: 1.4rem;
@@ -271,12 +241,61 @@
   font-family: inherit;
   transition: opacity 0.2s;
 }
-.aadd-status-btn.success {
-  background: #10B981;
+.aadd-status-btn.success { background: #10B981; }
+.aadd-status-btn.error   { background: #EF4444; }
+.aadd-status-btn:hover   { opacity: 0.9; }
+
+/* ── areq-modal classes (shared with AdminRequests) ── */
+.areq-modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
-.aadd-status-btn.error {
-  background: red;
+.areq-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  width: 400px;
+  max-width: 90%;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
-.aadd-status-btn:hover {
-  opacity: 0.9;
+.areq-modal-close {
+  position: absolute;
+  top: 16px; left: 16px;
+  background: none; border: none;
+  cursor: pointer; color: #4a5568;
 }
+.areq-modal-icon-wrapper {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center; align-items: center;
+  margin: 0 auto 24px;
+}
+.areq-modal-icon-wrapper.success { background-color: #0bd16f; color: white; }
+.areq-modal-icon-wrapper.reject  { background-color: #ff0000; color: white; }
+.areq-modal-title {
+  font-size: 1.5rem; font-weight: 700;
+  color: #1A1A2E; margin-bottom: 8px;
+}
+.areq-modal-subtitle {
+  color: #8A8A8A; font-size: 0.95rem;
+  margin-bottom: 32px;
+}
+.areq-modal-btn {
+  width: 100%; padding: 12px;
+  border-radius: 8px; border: none;
+  font-size: 1rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  height: 48px; display: flex;
+  justify-content: center; align-items: center;
+}
+.areq-modal-btn.areq-success-btn { background-color: #0bd16f; color: white; }
+.areq-modal-btn:hover { opacity: 0.9; }

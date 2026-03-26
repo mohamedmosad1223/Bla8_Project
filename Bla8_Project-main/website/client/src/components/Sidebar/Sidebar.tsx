@@ -1,15 +1,37 @@
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen, BarChart2, Bot, ClipboardList } from 'lucide-react';
 import { authService } from '../../services/authService';
+
 import './Sidebar.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('userRole') || 'organization';
+  const userRole = localStorage.getItem('userRole');
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
   const isAwqafManager = userRole === 'awqaf_manager';
   const isAdmin = userRole === 'admin';
+  
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchAdminLevel = async () => {
+      try {
+        const res = await fetch('/api/admins/me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setIsSuperAdmin(data?.level === 'super_admin');
+        }
+      } catch (e) {
+        console.error('Could not fetch admin level', e);
+      }
+    };
+
+    fetchAdminLevel();
+  }, [isAdmin]);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -130,6 +152,14 @@ const Sidebar = () => {
           {/* Admin-only */}
           {isAdmin && (
             <>
+              {isSuperAdmin && (
+                <li className="nav-item">
+                  <NavLink to="/admin/add-supervisor" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                    <User size={20} className="nav-icon" />
+                    إضافة مشرف
+                  </NavLink>
+                </li>
+              )}
               <li className="nav-item">
                 <NavLink to="/admin/associations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <Users size={20} className="nav-icon" />
