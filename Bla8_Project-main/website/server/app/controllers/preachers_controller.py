@@ -227,6 +227,7 @@ class PreachersController:
         for p in preachers:
             data.append({
                 "preacher_id":              p.preacher_id,
+                "user_id":                  p.user_id,
                 "full_name":                p.full_name,
                 "email":                    p.email,
                 "phone":                    p.phone,
@@ -285,6 +286,7 @@ class PreachersController:
 
         data = {
             "preacher_id": preacher.preacher_id,
+            "user_id": preacher.user_id,
             "full_name": preacher.full_name,
             "email": preacher.user.email if preacher.user else preacher.email,
             "preacher_email": preacher.email,

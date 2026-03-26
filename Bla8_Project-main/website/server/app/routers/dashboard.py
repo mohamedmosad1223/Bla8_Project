@@ -20,15 +20,17 @@ def get_admin_dashboard(db: Session = Depends(get_db)):
 
 @router.get("/preacher", response_model=PreacherDashboardRead)
 def get_preacher_dashboard_self(
+    interval: str = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.preacher]))
 ):
     """جلب إحصائيات لوحة التحكم والرسوم البيانية للداعية (لنفسه)"""
-    return PreacherDashboardController.get_dashboard_stats(db, current_user.preacher.preacher_id, current_user.user_id)
+    return PreacherDashboardController.get_dashboard_stats(db, current_user.preacher.preacher_id, current_user.user_id, interval)
 
 @router.get("/preacher/{preacher_id}", response_model=PreacherDashboardRead)
 def get_preacher_dashboard_for_org(
     preacher_id: int,
+    interval: str = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.admin, UserRole.organization]))
 ):
@@ -42,7 +44,7 @@ def get_preacher_dashboard_for_org(
         if preacher.org_id != current_user.organization.org_id:
             raise HTTPException(status_code=403, detail="لا يمكنك عرض إحصائيات داعية لا ينتمي لجمعيتك")
             
-    return PreacherDashboardController.get_dashboard_stats(db, preacher.preacher_id, preacher.user_id)
+    return PreacherDashboardController.get_dashboard_stats(db, preacher.preacher_id, preacher.user_id, interval)
 
 @router.get("/organization", response_model=OrganizationDashboardRead)
 def get_organization_dashboard(

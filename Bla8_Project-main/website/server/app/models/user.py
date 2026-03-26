@@ -17,6 +17,7 @@ class User(Base):
     role:          Mapped[UserRole]      = mapped_column(user_role_enum, nullable=False)
     status:        Mapped[AccountStatus] = mapped_column(account_status_enum, nullable=False, default=AccountStatus.pending)
     last_login:    Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
+    last_seen:     Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
     reset_otp:     Mapped[str|None]      = mapped_column(sa.String(10))
     reset_otp_expires_at: Mapped[datetime|None] = mapped_column(sa.TIMESTAMP(timezone=True))
     app_language:  Mapped[str]           = mapped_column(sa.String(10), nullable=False, default="ar")

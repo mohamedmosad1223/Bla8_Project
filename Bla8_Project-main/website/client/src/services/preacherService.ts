@@ -79,8 +79,10 @@ export const preacherService = {
    * Get the preacher's own dashboard stats & charts
    * Calls: GET /api/dashboard/preacher
    */
-  getDashboard: async (): Promise<PreacherDashboardData> => {
-    const response = await api.get('/dashboard/preacher');
+  getDashboard: async (interval: string = 'month'): Promise<PreacherDashboardData> => {
+    const response = await api.get('/dashboard/preacher', {
+      params: { interval }
+    });
     return response.data;
   },
 

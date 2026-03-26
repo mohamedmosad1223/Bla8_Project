@@ -82,12 +82,13 @@ const RejectModal = ({ onClose }: { onClose: () => void }) => (
 
 // ─── Table View ───────────────────────────────────────────────────────────────
 const TableView = ({
-  requests, onView, onAccept, onSkip,
+  requests, onView, onAccept, onSkip, userRole
 }: {
   requests: PoolRequest[];
   onView: (r: PoolRequest) => void;
   onAccept: (r: PoolRequest) => void;
   onSkip: (r: PoolRequest) => void;
+  userRole: string | null;
 }) => (
   <div className="nreq-table-wrapper">
     <table className="nreq-table">
@@ -117,12 +118,16 @@ const TableView = ({
             <td><span className="nreq-comment-text">{req.notes || 'لا يوجد'}</span></td>
             <td>
               <div className="nreq-actions-cell">
-                <button className="nreq-action-btn nreq-accept-btn" title="قبول" onClick={() => onAccept(req)}>
-                  <Check size={18} />
-                </button>
-                <button className="nreq-action-btn nreq-reject-btn" title="تخطي" onClick={() => onSkip(req)}>
-                  <X size={18} />
-                </button>
+                {userRole === 'preacher' && (
+                  <>
+                    <button className="nreq-action-btn nreq-accept-btn" title="قبول" onClick={() => onAccept(req)}>
+                      <Check size={18} />
+                    </button>
+                    <button className="nreq-action-btn nreq-reject-btn" title="تخطي" onClick={() => onSkip(req)}>
+                      <X size={18} />
+                    </button>
+                  </>
+                )}
                 <button className="nreq-action-btn nreq-eye-btn" onClick={() => onView(req)} title="عرض التفاصيل">
                   <Eye size={18} />
                 </button>
@@ -145,12 +150,13 @@ const NField = ({ label, icon, children }: { label: string; icon: React.ReactNod
 
 // ─── Detail View ──────────────────────────────────────────────────────────────
 const DetailView = ({
-  detail, onBack, onAccept, onSkip,
+  detail, onBack, onAccept, onSkip, userRole
 }: {
   detail: PoolRequest;
   onBack: () => void;
   onAccept: () => void;
   onSkip: () => void;
+  userRole: string | null;
 }) => (
   <div className="nreq-detail-page" dir="rtl">
     <div className="nreq-detail-header-wrapper">
@@ -162,12 +168,16 @@ const DetailView = ({
         <h1 className="nreq-detail-title">عرض الطلب #{detail.request_id}</h1>
       </div>
       <div className="nreq-detail-actions">
-        <button className="nreq-detail-btn nreq-detail-accept" onClick={onAccept}>
-          استلام الطلب <Check size={18} />
-        </button>
-        <button className="nreq-detail-btn nreq-detail-reject" onClick={onSkip}>
-          تخطي <X size={18} />
-        </button>
+        {userRole === 'preacher' && (
+          <>
+            <button className="nreq-detail-btn nreq-detail-accept" onClick={onAccept}>
+              استلام الطلب <Check size={18} />
+            </button>
+            <button className="nreq-detail-btn nreq-detail-reject" onClick={onSkip}>
+              تخطي <X size={18} />
+            </button>
+          </>
+        )}
       </div>
     </div>
 
@@ -249,6 +259,7 @@ const DetailView = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewRequests = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('userRole');
 
   // ── Data state ───────────────────────────────────────────────────────────
   const [allRequests, setAllRequests] = useState<PoolRequest[]>([]);
@@ -444,6 +455,7 @@ const NewRequests = () => {
           onBack={handleBack}
           onAccept={() => openAccept(selectedRequest)}
           onSkip={() => openSkip(selectedRequest)}
+          userRole={userRole}
         />
       ) : (
         <>
@@ -675,6 +687,7 @@ const NewRequests = () => {
                   onView={handleView}
                   onAccept={openAccept}
                   onSkip={openSkip}
+                  userRole={userRole}
                 />
               )}
             </div>
