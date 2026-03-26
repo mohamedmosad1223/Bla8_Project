@@ -62,6 +62,7 @@ const RoleDashboard = () => {
 const RoleConversations = () => {
   const role = localStorage.getItem('userRole') || 'organization';
   if (role === 'non_muslim' || role === 'interested') return <NonMuslimConversation />;
+  if (role === 'muslim_caller') return <div style={{ padding: '2rem', textAlign: 'center' }}>عذراً، هذه الخاصية غير متاحة لنوع حسابك</div>;
   return <Conversations />;
 };
 

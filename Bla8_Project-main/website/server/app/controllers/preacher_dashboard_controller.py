@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import List
 
-from app.models.dawah_request import DawahRequest
+from app.models.dawah_request import DawahRequest, ContactAttempt
 from app.models.message import Message
 from app.models.enums import RequestStatus, UserRole
 from app.models.user import User
@@ -11,7 +12,7 @@ from app.models.user import User
 class PreacherDashboardController:
 
     @staticmethod
-    def get_dashboard_stats(db: Session, preacher_id: int, user_id: int):
+    def get_dashboard_stats(db: Session, preacher_id: int, user_id: int, interval: str = "month"):
         # 1. Basic Counts
         total_requests = db.query(DawahRequest).filter(DawahRequest.assigned_preacher_id == preacher_id).count()
         converted_count = db.query(DawahRequest).filter(
@@ -35,21 +36,73 @@ class PreacherDashboardController:
             {"label": s.value, "value": count} for s, count in status_counts
         ]
 
-        # 3. Response Speed (Line Chart) - Last 6 months
-        # Grouping by month
+        # 3. Response Speed (Line Chart)
+        # Grouping by interval (month or day)
+        trunc_unit = 'month' if interval == 'month' else 'day'
+        label_format = "%b %Y" if interval == 'month' else "%d %b"
+        
+        # We want to measure the time *after* the preacher accepted the request until their first action.
+        # First Action = First Message or First Contact Click.
+        
+        # Subquery for first message per request by this preacher
+        first_msg_sq = db.query(
+            Message.request_id,
+            func.min(Message.created_at).label('first_msg')
+        ).filter(Message.sender_id == user_id).group_by(Message.request_id).subquery()
+
+        # Subquery for first contact click per request by this preacher
+        first_contact_sq = db.query(
+            ContactAttempt.request_id,
+            func.min(ContactAttempt.clicked_at).label('first_click')
+        ).filter(ContactAttempt.preacher_id == preacher_id).group_by(ContactAttempt.request_id).subquery()
+
+        # Final query: (Least of first_msg, first_click) - accepted_at
         response_data = db.query(
-            func.date_trunc('month', DawahRequest.accepted_at).label('month'),
-            # قسّمنا على 3600 للحصول على الساعات بدلاً من الدقائق
-            func.avg(func.extract('epoch', DawahRequest.accepted_at - DawahRequest.submission_date) / 3600).label('avg_speed')
+            func.date_trunc(trunc_unit, DawahRequest.accepted_at).label('period'),
+            func.avg(
+                func.extract('epoch', 
+                    func.least(
+                        func.coalesce(first_msg_sq.c.first_msg, sa.literal(datetime(9999, 12, 31, tzinfo=timezone.utc))),
+                        func.coalesce(first_contact_sq.c.first_click, sa.literal(datetime(9999, 12, 31, tzinfo=timezone.utc)))
+                    ) - DawahRequest.accepted_at
+                ) / 3600
+            ).label('avg_speed')
+        ).outerjoin(first_msg_sq, DawahRequest.request_id == first_msg_sq.c.request_id
+        ).outerjoin(first_contact_sq, DawahRequest.request_id == first_contact_sq.c.request_id
         ).filter(
             DawahRequest.assigned_preacher_id == preacher_id,
-            DawahRequest.accepted_at.isnot(None)
-        ).group_by('month').order_by('month').all()
+            DawahRequest.accepted_at.isnot(None),
+            # Only include requests that have actually been responded to
+            or_(first_msg_sq.c.request_id.isnot(None), first_contact_sq.c.request_id.isnot(None))
+        ).group_by('period').order_by('period').all()
 
-        response_speed_chart = [
-            {"label": r.month.strftime("%b %Y") if r.month else "Unknown", "value": round(r.avg_speed, 1)} 
-            for r in response_data
-        ]
+        # Build final chart data with gap filling
+        raw_map = {r.period.date(): round(r.avg_speed, 1) for r in response_data if r.period}
+        
+        final_chart = []
+        now_dt = datetime.now(timezone.utc)
+        if interval == 'day':
+            # Last 7 days
+            for i in range(6, -1, -1):
+                d = (now_dt - timedelta(days=i)).date()
+                final_chart.append({"label": d.strftime("%d %b"), "value": raw_map.get(d, 0)})
+        else:
+            # Last 6 months
+            for i in range(5, -1, -1):
+                # Approximation of month start
+                first_of_this_month = now_dt.replace(day=1)
+                m_dt = first_of_this_month - timedelta(days=i*30) # Rough, but good enough for labels
+                m_dt = m_dt.replace(day=1)
+                d = m_dt.date()
+                # Find matching month in raw_map (by year and month)
+                found_val = 0
+                for rd, rv in raw_map.items():
+                    if rd.year == d.year and rd.month == d.month:
+                        found_val = rv
+                        break
+                final_chart.append({"label": d.strftime("%b %Y"), "value": found_val})
+
+        response_speed_chart = final_chart
 
         # 4. Activity Chart (Messages over time)
         activity_data = db.query(
@@ -59,9 +112,13 @@ class PreacherDashboardController:
             or_(Message.sender_id == user_id, Message.receiver_id == user_id)
         ).group_by('day').order_by('day').limit(30).all()
 
-        activity_chart = [
-            {"label": a.day.strftime("%d %b"), "value": a.count} for a in activity_data
-        ]
+        # Gap filling for activity chart (last 7 days)
+        activity_raw_map = {a.day.date(): a.count for a in activity_data}
+        activity_chart_filled = []
+        for i in range(6, -1, -1): # Last 7 days
+            d = (now_dt - timedelta(days=i)).date()
+            activity_chart_filled.append({"label": d.strftime("%d %b"), "value": activity_raw_map.get(d, 0)})
+        activity_chart = activity_chart_filled
 
         # 5. Governorates Distribution
         gov_data = db.query(

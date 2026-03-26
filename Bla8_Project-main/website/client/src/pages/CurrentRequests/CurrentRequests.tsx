@@ -265,9 +265,35 @@ const DetailView = ({
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-5.23l.11-.14"/></svg>
                 تحديث الحالة
               </button>
-              <button className="creq-dtl-btn creq-btn-chat" onClick={() => navigate(`/conversations?request_id=${detail.request_id}&name=${encodeURIComponent(invitedName(detail))}`)}>
+              <button 
+                className="creq-dtl-btn creq-btn-chat" 
+                onClick={() => {
+                  if (detail.submitted_by_person_id) {
+                    // Internal chat for Interested Persons
+                    navigate(`/conversations?request_id=${detail.request_id}&name=${encodeURIComponent(invitedName(detail))}`);
+                  } else if (detail.deep_link) {
+                    // Direct link provided by caller
+                    window.open(detail.deep_link, '_blank');
+                  } else if (detail.communication_channel === 'email' && detail.invited_email) {
+                    // Optimized for Gmail as requested
+                    const invitedNameStr = `${detail.invited_first_name || ''} ${detail.invited_last_name || ''}`.trim() || 'Friend';
+                    const subject = encodeURIComponent(`Hello ${invitedNameStr}!`);
+                    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${detail.invited_email}&su=${subject}`, '_blank');
+                  } else if (detail.communication_channel === 'whatsapp' && detail.invited_phone) {
+                    // Fallback for WhatsApp
+                    const cleanPhone = detail.invited_phone.replace(/\+/g, '');
+                    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+                  } else {
+                    alert('لا يوجد رابط تواصل مباشر متاح لهذا الطلب. يرجى استخدام بيانات التواصل الموضحة.');
+                  }
+                }}
+              >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                المحادثة
+                {detail.submitted_by_caller_id || (detail.communication_channel && detail.communication_channel !== 'internal') ? (
+                  detail.communication_channel === 'email' ? 'المراسلة عبر الإيميل' :
+                  detail.communication_channel === 'whatsapp' ? 'المحادثة (واتساب)' :
+                  'المحادثة (رابط خارجي)'
+                ) : 'المحادثة'}
               </button>
             </>)}
           </>)}

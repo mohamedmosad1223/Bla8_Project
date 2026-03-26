@@ -10,6 +10,7 @@ import './Callers.css';
 // ── Types ──────────────────────────────────────────────────────────────────
 interface PreacherAPI {
   preacher_id:              number;
+  user_id:                  number;
   full_name:                string;
   type:                     string;
   status:                   string;   // 'active' | 'suspended'
@@ -459,7 +460,7 @@ const Callers = () => {
                         </td>
                         <td>
                           <div className="actions-cell">
-                            <button className="action-icon-btn chat-icon" title="محادثة" onClick={() => navigate('/conversations')}>
+                            <button className="action-icon-btn chat-icon" title="محادثة" onClick={() => navigate(`/conversations?user_id=${preacher.user_id}&name=${preacher.full_name}`)}>
                               <MessageCircle size={16} />
                             </button>
                             <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/awqaf/associations/current/preachers/${preacher.preacher_id}`)}>
