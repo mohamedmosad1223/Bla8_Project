@@ -694,12 +694,15 @@ class MessageRead(BaseModel):
     model_config = {"from_attributes": True}
 
 class ChatPreviewRead(BaseModel):
-    request_id:   int
+    request_id:      Optional[int] = None
+    other_user_id:   Optional[int] = None
     other_party_name: str
-    last_message: Optional[str]
+    last_message:    Optional[str]
     last_message_at: Optional[datetime]
-    unread_count: int
-    status: RequestStatus
+    unread_count:    int
+    status:          Optional[RequestStatus] = None
+    is_online:       bool = False
+    last_seen:       Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 # ─── Dashboard ───────────────────────────────────────────────────────────────

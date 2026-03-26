@@ -56,6 +56,14 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise HTTPException(status_code=401, detail="مستخدم غير موجود")
+    
+    # Update last_seen (Optional: if DB migration was run)
+    try:
+        user.last_seen = datetime.now(timezone.utc)
+        db.commit()
+    except Exception:
+        db.rollback()
+    
     return user
 
 async def get_optional_current_user(request: Request, db: Session = Depends(get_db)):

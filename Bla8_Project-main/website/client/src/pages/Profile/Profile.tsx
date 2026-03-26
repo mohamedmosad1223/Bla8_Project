@@ -8,16 +8,35 @@ import './Profile.css';
 type ActiveSection = 'account-info' | 'change-password' | 'language' | 'help-center' | 'help-center-faq' | 'customer-service' | 'privacy-policy';
 
 const faqItems = [
-  { q: 'يكتب السؤال هنا', a: 'إليك بعض النصوص النموذجية التي قد تجيب على سؤال متكرر أو تقدم نصيحة مفيدة للمستخدم. لقد استحوذت علي هدوء رائع يمتلك روحي بالكامل، مثل هذه الصباحات العذبة في الربيع التي أستمتع بها بكل قلبي.' },
-  { q: 'يكتب السؤال هنا في تلك المنطقة', a: 'إليك بعض النصوص النموذجية التي قد تجيب على سؤال متكرر أو تقدم نصيحة مفيدة للمستخدم. لقد استحوذت علي هدوء رائع يمتلك روحي بالكامل، مثل هذه الصباحات العذبة في الربيع التي أستمتع بها بكل قلبي.' },
-  { q: 'يكتب السؤال هنا', a: 'إليك بعض النصوص النموذجية التي قد تجيب على سؤال متكرر أو تقدم نصيحة مفيدة للمستخدم.' },
-  { q: 'يكتب السؤال هنا', a: 'إليك بعض النصوص النموذجية التي قد تجيب على سؤال متكرر أو تقدم نصيحة مفيدة للمستخدم.' },
+  { q: 'ما هي منصة "بلاغ"؟', a: 'منصة تهدف لتسهيل عملية التعريف بالإسلام وربط الدعاة بالمهتمين عبر أدوات ذكية ومتابعة احترافية.' },
+  { q: 'من أين تأتي المعلومات الدينية في المنصة؟', a: 'نعتمد على مكتبة دينية شاملة تضم أمهات الكتب الإسلامية، ونسخاً كاملة من الأحاديث النبوية والقراّن الكريم لضمان دقة المعلومة المقدمة.' },
+  { q: 'هل يمكنني الوصول للمصادر الدعوية؟', a: 'نعم، توفر المنصة قسماً خاصاً للمصادر يضم كتباً ومقالات بالعديد من اللغات العالمية لتسهيل عملية التعلم والتعليم.' },
+  { q: 'هل التواصل مع المهتمين آمن؟', a: 'نعم، المنصة تضمن خصوصية بياناتك وتوفر قنوات تواصل مهيئة للعمل الدعوى بشكل منظم.' },
+  { q: 'ماذا أفعل إذا واجهت مشكلة تقنية؟', a: 'يمكنك التواصل مع الدعم الفني عبر الضغط على "خدمة العملاء" ومراسلتنا مباشرة.' },
 ];
 
-const privacySections = Array(5).fill({
-  title: 'معلومات هنا',
-  body: 'نقوم بجمع معلومات مثل أسماء قائد الفريق وأعضاء الفريق وتفاصيل الاتصال وسجلات التفتيش لتسهيل إدارة سلامة مكافحة الحرائق.',
-});
+const privacySections = [
+  {
+    title: 'جمع البيانات الشخصية',
+    body: 'نقوم بجمع البيانات الضرورية لربط الدعاة بالمهتمين، مثل الاسم، البريد الإلكتروني، ورقم الهاتف، واللغات، لضمان تقديم أفضل تجربة دعوية.',
+  },
+  {
+    title: 'استخدام المعلومات',
+    body: 'تُستخدم بياناتك فقط لتنسيق طلبات الدعوة، وتحسين جودة الخدمة، والتواصل معك بشأن تحديثات النظام أو الطلبات المسندة إليك.',
+  },
+  {
+    title: 'حماية البيانات وخصوصيتها',
+    body: 'لا نقوم بمشاركة أو بيع بياناتك لأي جهة خارجية. البيانات متاحة فقط للأطراف المعنية داخل المنصة (الداعية، الجمعية المشرفة، والمسؤولين).',
+  },
+  {
+    title: 'أمن المعلومات',
+    body: 'نستخدم تقنيات تشفير متقدمة وبروتوكولات أمنية صارمة لحماية معلوماتك من الوصول غير المصرح به أو التلاعب.',
+  },
+  {
+    title: 'حقوق المستخدم وصلاحيات الحذف',
+    body: 'يمكنك تعديل بياناتك أو حذف حسابك بشكل كامل في أي وقت. عند حذف الحساب، يتم إزالة كافة بياناتك الشخصية من قواعد بياناتنا النشطة.',
+  },
+];
 
 // ── Help Center (3-card layout) ─────────────────────────
 const HelpCenter: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = ({ onSectionChange }) => {
@@ -47,20 +66,25 @@ const HelpCenter: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = 
           <ChevronLeft size={20} className="help-card-arrow" />
         </button>
 
-        <button className="help-card" onClick={() => onSectionChange('customer-service')}>
+        <a 
+          href="https://mail.google.com/mail/?view=cm&fs=1&to=balagh.ai2026@gmail.com&su=Support%20Request" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="help-card"
+        >
           <div className="help-card-right">
             <div className="help-card-icon-wrap green">
-              <MessageSquare size={24} />
+              <Mail size={24} />
             </div>
             <div className="help-card-info">
               <h4>خدمة العملاء</h4>
-              <p>راسل مساعدنا الافتراضي أو أحد ممثلينا مباشرة</p>
+              <p>balagh.ai2026@gmail.com</p>
             </div>
           </div>
           <ChevronLeft size={20} className="help-card-arrow" />
-        </button>
+        </a>
 
-        <a href="tel:+20123232323" className="help-card no-btn">
+        <a href="tel:+20123232323" className="help-card">
           <div className="help-card-right">
             <div className="help-card-icon-wrap blue-light">
               <PhoneCall size={24} />
@@ -121,10 +145,10 @@ const FAQSection: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = 
   );
 };
 
-// ── Customer Service Chat ──────────────────────────────────
 const CustomerServiceChat: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = ({ onSectionChange }) => {
   const [messages, setMessages] = useState([
-    { id: 1, text: 'مرحباً بك! كيف يمكننا مساعدتك اليوم؟', sender: 'bot', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) },
+    { id: 1, text: 'مرحباً بك في دعم منصة بلاغ! كيف يمكننا مساعدتك اليوم؟', sender: 'bot', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) },
+    { id: 2, text: 'يمكنك أيضاً مراسلتنا مباشرة عبر البريد الإلكتروني: balagh.ai2026@gmail.com', sender: 'bot', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) },
   ]);
   const [inputText, setInputText] = useState('');
 

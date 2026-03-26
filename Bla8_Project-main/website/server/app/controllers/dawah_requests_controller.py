@@ -314,27 +314,35 @@ class DawahRequestsController:
             request.notes = payload.note
             
         if request.status == RequestStatus.converted and old_status != RequestStatus.converted:
-            submitter_user_id = None
+            # 1. Notify the Submitter (Muslim Caller) - Celebratory message
             if request.submitted_by_caller_id:
                 from app.models.muslim_caller import MuslimCaller
                 caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
-                if caller: submitter_user_id = caller.user_id
-            elif request.submitted_by_person_id:
+                if caller:
+                    invited_name = f"{request.invited_first_name or ''} {request.invited_last_name or ''}".strip()
+                    name_display = f"المدعو '{invited_name}'" if invited_name else "الحالة"
+                    body = (f"بشائر الخير! {name_display} نطق الشهادة بفضل الله ثم بجهدك.\n"
+                            f"نسأل الله أن يجعله في ميزان حسناتك، استمر في طريق الدعوة المبارك! 🌟🕌")
+                    
+                    NotificationsController.create_notification(
+                        db, caller.user_id, NotificationType.status_changed,
+                        "الحمد لله على نعمة الإسلام! 🕋✨", 
+                        body
+                    )
+            
+            # 2. Notify the Interested Person (The New Muslim) - Welcoming message
+            if request.submitted_by_person_id:
                 from app.models.interested_person import InterestedPerson
                 person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
-                if person: submitter_user_id = person.user_id
-                
-            if submitter_user_id:
-                invited_name = f"{request.invited_first_name or ''} {request.invited_last_name or ''}".strip()
-                name_display = f"المدعو '{invited_name}'" if invited_name else "الحالة"
-                body = (f"بشائر الخير! {name_display} نطق الشهادة بفضل الله ثم بجهدك.\n"
-                        f"نسأل الله أن يجعله في ميزان حسناتك، استمر في طريق الدعوة المبارك! 🌟🕌")
-                
-                NotificationsController.create_notification(
-                    db, submitter_user_id, NotificationType.status_changed,
-                    "الحمد لله على نعمة الإسلام! 🕋✨", 
-                    body
-                )
+                if person:
+                    welcome_body = ("مرحباً بك في رحاب الإسلام! 🕋✨\n"
+                                   "نسأل الله أن يثبتك على الحق ويوفقك لكل خير. نحن سعداء جداً بانضمامك إلينا ونسأل الله لك حياة مليئة بالإيمان والسكينة.")
+                    
+                    NotificationsController.create_notification(
+                        db, person.user_id, NotificationType.status_changed,
+                        "مرحباً بك في الإسلام! ✨🌙", 
+                        welcome_body
+                    )
             
         # v4: Enforce report/feedback when closing a request
         terminal_statuses = [RequestStatus.converted, RequestStatus.rejected, RequestStatus.no_response]
@@ -483,10 +491,73 @@ class DawahRequestsController:
 
     @staticmethod
     def get_request(db: Session, request_id: int):
-        request = db.query(DawahRequest).filter(DawahRequest.request_id == request_id).first()
-        if not request:
+        from app.models.reference import Country, Language
+        from app.models.religion import Religion
+        
+        result = db.query(
+            DawahRequest, Preacher, Country, Language, Religion
+        ).outerjoin(
+            Preacher, DawahRequest.assigned_preacher_id == Preacher.preacher_id
+        ).outerjoin(
+            Country, DawahRequest.invited_nationality_id == Country.country_id
+        ).outerjoin(
+            Language, DawahRequest.invited_language_id == Language.language_id
+        ).outerjoin(
+            Religion, DawahRequest.invited_religion_id == Religion.religion_id
+        ).filter(
+            DawahRequest.request_id == request_id
+        ).first()
+
+        if not result:
             raise HTTPException(status_code=404, detail="الطلب غير موجود")
-        return {"message": "تم جلب بيانات الطلب", "data": request}
+        
+        req, p, c, l, rel = result
+        
+        invited_name = f"{req.invited_first_name or ''} {req.invited_last_name or ''}".strip() or "غير محدد"
+        
+        rel_display = rel.religion_name if rel else None
+        if not rel_display and req.invited_religion: rel_display = req.invited_religion
+        if not rel_display: rel_display = "—"
+
+        data = {
+            "request_id":            req.request_id,
+            "status":                req.status.value,
+            "request_type":          req.request_type.value if req.request_type else None,
+            "invited_name":          invited_name,
+            "invited_first_name":    req.invited_first_name,
+            "invited_last_name":     req.invited_last_name,
+            "invited_gender":        req.invited_gender.value if req.invited_gender else None,
+            "invited_country_name":  c.country_name if c else "—",
+            "invited_language_name": l.language_name if l else "—",
+            "invited_religion":      rel_display,
+            "invited_phone":         req.invited_phone,
+            "invited_email":         req.invited_email,
+            "communication_channel": req.communication_channel.value if req.communication_channel else None,
+            "deep_link":             req.deep_link,
+            "preacher_id":           req.assigned_preacher_id,
+            "preacher_name":         p.full_name if p else "غير محدد",
+            "submission_date":       req.submission_date,
+            "accepted_at":           req.accepted_at,
+            "created_at":            req.created_at,
+            "updated_at":            req.updated_at,
+            "notes":                 req.notes or "لا يوجد",
+            "preacher_feedback":     req.preacher_feedback
+        }
+        
+        # Submitter info
+        submitted_by_name = "طلب ذاتي"
+        if req.submitted_by_caller_id:
+            from app.models.muslim_caller import MuslimCaller
+            mc = db.query(MuslimCaller).filter(MuslimCaller.caller_id == req.submitted_by_caller_id).first()
+            if mc: submitted_by_name = mc.full_name
+        elif req.submitted_by_person_id:
+            from app.models.interested_person import InterestedPerson
+            ip = db.query(InterestedPerson).filter(InterestedPerson.person_id == req.submitted_by_person_id).first()
+            if ip: submitted_by_name = f"{ip.first_name} {ip.last_name}"
+        
+        data["submitted_by_name"] = submitted_by_name
+
+        return {"message": "تم جلب بيانات الطلب", "data": data}
 
     @staticmethod
     def track_link_click(db: Session, request_id: int, preacher_id: int, channel: CommunicationChannel = None):
