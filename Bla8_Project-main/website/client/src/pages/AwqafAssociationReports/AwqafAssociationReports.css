@@ -4,6 +4,21 @@
   gap: 32px;
 }
 
+.reports-state {
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+}
+
+.reports-state-error {
+  color: #dc2626;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
 .temp-title-center {
   text-align: center;
   font-size: 24px;
@@ -193,6 +208,9 @@
 .btn-primary {
   background: #059669;
   color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: none;
   padding: 12px 32px;
   border-radius: 8px;
@@ -200,6 +218,16 @@
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+}
+
+.empty-text {
+  color: #9ca3af;
+  text-align: center;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .btn-outline {

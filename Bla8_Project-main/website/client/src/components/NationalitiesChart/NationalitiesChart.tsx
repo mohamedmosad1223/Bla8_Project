@@ -20,6 +20,38 @@ interface NationalitiesChartProps {
 }
 
 const NationalitiesChart = ({ data }: NationalitiesChartProps) => {
+  const hasProvidedData = Array.isArray(data) && data.length > 0;
+  if (hasProvidedData) {
+    const maxValue = Math.max(...data.map((item) => item.value), 1);
+    const dynamicRows = data.map((item, index) => ({
+      name: item.label,
+      value: item.value,
+      color: KUWAIT_GOVERNORATES[index % KUWAIT_GOVERNORATES.length].color
+    }));
+
+    return (
+      <div className="nationalities-container">
+        <div className="awqaf-gov-grid">
+          {dynamicRows.map((row) => (
+            <div key={row.name} className="awqaf-gov-item">
+              <span className="awqaf-gov-name">{row.name}</span>
+              <div className="awqaf-gov-bar-wrap">
+                <div
+                  className="awqaf-gov-bar"
+                  style={{
+                    width: row.value > 0 ? `${(row.value / maxValue) * 100}%` : '0%',
+                    background: row.color
+                  }}
+                />
+              </div>
+              <span className="awqaf-gov-value">{row.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // نبني map من اسم المحافظة → القيمة الحقيقية (لو جات من الـ API)
   const dataMap: Record<string, number> = {};
   if (data) {

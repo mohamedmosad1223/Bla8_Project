@@ -10,7 +10,7 @@ const Sidebar = () => {
   const userRole = localStorage.getItem('userRole');
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
-  const isAwqafManager = userRole === 'awqaf_manager';
+  const isAwqafManager = userRole === 'minister';
   const isAdmin = userRole === 'admin';
   
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);

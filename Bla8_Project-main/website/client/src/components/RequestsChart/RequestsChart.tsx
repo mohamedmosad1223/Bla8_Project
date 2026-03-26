@@ -12,11 +12,13 @@ interface RequestsChartProps {
 
 // Map Arabic status labels to Arabic display names + colors
 const STATUS_CONFIG: Record<string, { name: string; color: string }> = {
-  converted:   { name: 'من أسلم',     color: '#10B981' },
-  in_progress: { name: 'قيد التنفيذ', color: '#EAB308' },
-  rejected:    { name: 'من رفضوا',    color: '#EF4444' },
-  pending:     { name: 'قيد الانتظار',color: '#6366F1' },
-  cancelled:   { name: 'تم الإلغاء',  color: '#9CA3AF' },
+  converted:         { name: 'من أسلم',     color: '#10B981' },
+  rejected:          { name: 'من رفضوا',    color: '#EF4444' },
+  in_progress:       { name: 'قيد التنفيذ', color: '#EAB308' },
+  // Business mapping: treat "under_persuasion" and "pending" as waiting until the request is accepted
+  under_persuasion:  { name: 'قيد التنفيذ', color: '#EAB308' },
+  pending:           { name: 'قيد التنفيذ', color: '#EAB308' },
+  cancelled:         { name: 'تم الإلغاء',  color: '#9CA3AF' },
 };
 
 const FALLBACK_DATA = [
@@ -27,10 +29,27 @@ const FALLBACK_DATA = [
 
 const RequestsChart = ({ data }: RequestsChartProps) => {
   const chartData = data && data.length > 0
-    ? data.map(item => {
-        const cfg = STATUS_CONFIG[item.label] ?? { name: item.label, color: '#6B7280' };
-        return { name: cfg.name, value: item.value, color: cfg.color };
-      })
+    ? (() => {
+        const mapped = data.map(item => {
+          const cfg = STATUS_CONFIG[item.label] ?? { name: item.label, color: '#6B7280' };
+          return { name: cfg.name, value: item.value, color: cfg.color };
+        });
+
+        // Aggregate statuses that map to the same Arabic label (e.g. pending + under_persuasion -> "قيد التنفيذ")
+        const grouped = mapped.reduce<Record<string, { name: string; value: number; color: string }>>(
+          (acc, curr) => {
+            if (!acc[curr.name]) {
+              acc[curr.name] = { ...curr };
+            } else {
+              acc[curr.name].value += curr.value;
+            }
+            return acc;
+          },
+          {}
+        );
+
+        return Object.values(grouped);
+      })()
     : FALLBACK_DATA;
 
   const totalValue = chartData.reduce((acc, curr) => acc + curr.value, 0);

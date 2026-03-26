@@ -5,6 +5,17 @@
   font-family: 'Cairo', sans-serif;
 }
 
+.ra-state {
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+}
+
+.ra-state-error {
+  color: #dc2626;
+}
+
 /* Header */
 .reports-top {
   display: flex;
@@ -27,6 +38,16 @@
   background-repeat: no-repeat;
   background-position: left 12px center;
   padding-left: 32px;
+}
+
+.apply-filter-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #ca8a04;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 /* Stats */
@@ -185,4 +206,13 @@
 .updated-cell {
   color: #6B7280 !important;
   font-size: 13px !important;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
