@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Search, Send, Paperclip, MoreVertical, Phone, MessageCircle, Loader2 } from 'lucide-react';
+import { Search, Send, MessageCircle, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import './AdminChat.css';
 
@@ -231,10 +231,6 @@ const AdminChat = () => {
                 </div>
               </div>
             </div>
-            <div className="chat-actions">
-              <button className="chat-action-btn"><Phone size={18} /></button>
-              <button className="chat-action-btn"><MoreVertical size={18} /></button>
-            </div>
           </div>
 
           {/* Messages */}
@@ -273,9 +269,6 @@ const AdminChat = () => {
                 onKeyDown={handleKeyDown}
                 dir="rtl"
               />
-              <button className="chat-attach-btn">
-                <Paperclip size={20} />
-              </button>
             </div>
           </div>
         </div>

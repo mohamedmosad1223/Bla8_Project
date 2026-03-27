@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload } from 'lucide-react';
+import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
@@ -11,6 +11,8 @@ const PreacherRegister: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -161,7 +163,23 @@ const PreacherRegister: React.FC = () => {
             {/* Password */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="password" name="password" placeholder="الباسورد" value={formData.password} onChange={handleInputChange} required />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="الباسورد"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="has-toggle"
+                  required
+                />
+                <button
+                  type="button"
+                  className="toggle-password-btn"
+                  onClick={() => setShowPassword((p) => !p)}
+                  aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
                 <span className="preg-icon"><Lock size={18} /></span>
               </div>
             </div>
@@ -169,7 +187,23 @@ const PreacherRegister: React.FC = () => {
             {/* Confirm Password */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
-                <input type="password" name="confirmPassword" placeholder="تأكيد الباسورد" value={formData.confirmPassword} onChange={handleInputChange} required />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  placeholder="تأكيد الباسورد"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className="has-toggle"
+                  required
+                />
+                <button
+                  type="button"
+                  className="toggle-password-btn"
+                  onClick={() => setShowConfirmPassword((p) => !p)}
+                  aria-label={showConfirmPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
                 <span className="preg-icon"><Lock size={18} /></span>
               </div>
             </div>

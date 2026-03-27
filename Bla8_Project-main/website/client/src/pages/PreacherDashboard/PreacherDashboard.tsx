@@ -83,7 +83,7 @@ const ResponseChart = ({ data }: { data: ChartDataPoint[] }) => {
             stroke="#dba841" strokeWidth="2" className="pd-dot-hover"
             onMouseEnter={(e) => {
               const rect = svgRef.current?.getBoundingClientRect();
-              if (rect) setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top - 36, value: `${d.value} ساعة`, label: d.label });
+              if (rect) setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top - 36, value: `${d.value} دقيقة`, label: d.label });
             }}
             onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
           />
@@ -92,7 +92,7 @@ const ResponseChart = ({ data }: { data: ChartDataPoint[] }) => {
           <>
             <rect x={xp(peakIdx) - 30} y={yp(values[peakIdx]) - 20} width="60" height="22" rx="6" fill="#2d3748" />
             <text x={xp(peakIdx)} y={yp(values[peakIdx]) - 5} textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">
-              {values[peakIdx]} ساعة
+              {values[peakIdx]} دقيقة
             </text>
           </>
         )}
@@ -151,6 +151,17 @@ const STATUS_COLORS: Record<string, string> = {
   in_progress: '#a29bfe',
 };
 
+const STATUS_ARABIC_LABELS: Record<string, string> = {
+  converted: 'تم إسلامه',
+  pending: 'قيد الانتظار',
+  rejected: 'مرفوض',
+  assigned: 'مُسند',
+  in_progress: 'قيد المتابعة',
+  under_persuasion: 'قيد المتابعة',
+  cancelled: 'ملغي',
+  closed: 'مغلق',
+};
+
 const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
   const [hovered, setHovered] = useState<number | null>(null);
   if (!data || data.length === 0) {
@@ -179,7 +190,7 @@ const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
           {hovered !== null ? data[hovered].value : total}
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#718096">
-          {hovered !== null ? data[hovered].label : 'طلب'}
+          {hovered !== null ? (STATUS_ARABIC_LABELS[data[hovered].label] ?? data[hovered].label) : 'طلب'}
         </text>
       </svg>
       <div className="pd-donut-legend">
@@ -189,7 +200,7 @@ const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
             <div key={i} className={`pd-legend-row ${hovered === i ? 'hovered' : ''}`}
               onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
               <span className="pd-dot" style={{ background: color }} />
-              <span className="pd-legend-text">{s.label}</span>
+              <span className="pd-legend-text">{STATUS_ARABIC_LABELS[s.label] ?? s.label}</span>
               <strong>{s.value}</strong>
             </div>
           );
@@ -400,7 +411,7 @@ const PreacherDashboard: React.FC = () => {
       <div className="pd-row-charts">
         <div className="pd-chart-card pd-chart-flex">
           <div className="pd-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="pd-chart-title" style={{ margin: 0 }}>سرعة الاستجابة الأولى (ساعات)</h2>
+            <h2 className="pd-chart-title" style={{ margin: 0 }}>سرعة الاستجابة الأولى (دقائق)</h2>
             <div className="pd-interval-toggle">
               <button
                 className={`pd-toggle-btn ${interval === 'month' ? 'active' : ''}`}

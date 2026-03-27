@@ -138,11 +138,29 @@ class ChatsController:
         db.add(ai_msg)
         db.commit()
         db.refresh(ai_msg)
+
+        return {
+            "user_message": user_msg,
+            "ai_response": ai_msg
+        }
         
     @staticmethod
     def get_guest_ai_chat_history(db: Session, session_id: str):
         """جلب تاريخ المحادثة للزائر باستخدام session_id"""
         history = db.query(AIChatMessage).filter(AIChatMessage.session_id == session_id).order_by(AIChatMessage.created_at.asc()).all()
+        
+        # إذا كان التاريخ فارغ، أضف رسالة ترحيبية
+        if not history:
+            welcome_msg = AIChatMessage(
+                session_id=session_id,
+                role="ai",
+                content="أهلاً 👋 أنا مساعدك. كيف يمكنني مساعدتك اليوم؟"
+            )
+            db.add(welcome_msg)
+            db.commit()
+            db.refresh(welcome_msg)
+            history = [welcome_msg]
+        
         return {"history": history}
 
     @staticmethod

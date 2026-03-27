@@ -28,6 +28,32 @@ export interface PreacherDashboardData {
 }
 
 export const preacherService = {
+  normalizeChartPoints: (points: unknown): ChartDataPoint[] => {
+    if (!Array.isArray(points)) return [];
+
+    return points
+      .map((item): ChartDataPoint | null => {
+        if (!item || typeof item !== 'object') return null;
+        const raw = item as Record<string, unknown>;
+
+        const label = typeof raw.label === 'string'
+          ? raw.label
+          : typeof raw.name === 'string'
+            ? raw.name
+            : '';
+
+        const rawValue = raw.value ?? raw.time;
+        const value = typeof rawValue === 'number'
+          ? rawValue
+          : typeof rawValue === 'string'
+            ? Number(rawValue)
+            : NaN;
+
+        if (!label || Number.isNaN(value)) return null;
+        return { label, value };
+      })
+      .filter((p): p is ChartDataPoint => p !== null);
+  },
   /**
    * Register a new preacher
    * Requires multipart/form-data for file uploads
@@ -89,7 +115,16 @@ export const preacherService = {
     const response = await api.get('/dashboard/preacher', {
       params: { interval }
     });
-    return response.data;
+    const payload = response.data as Partial<PreacherDashboardData> & Record<string, unknown>;
+
+    return {
+      ...(payload as PreacherDashboardData),
+      response_speed_chart: preacherService.normalizeChartPoints(payload.response_speed_chart),
+      requests_by_status: preacherService.normalizeChartPoints(payload.requests_by_status),
+      governorates_distribution: preacherService.normalizeChartPoints(payload.governorates_distribution),
+      countries_distribution: preacherService.normalizeChartPoints(payload.countries_distribution),
+      activity_chart: preacherService.normalizeChartPoints(payload.activity_chart),
+    };
   },
 
   /**

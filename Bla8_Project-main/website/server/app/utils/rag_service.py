@@ -10,7 +10,7 @@ RAG Service (Qdrant)
 
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 import logging
 import os
 
@@ -19,13 +19,15 @@ from pathlib import Path
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from sentence_transformers import SentenceTransformer
 import requests
 
 import numpy as np
 from huggingface_hub import InferenceClient
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 0) CONFIG (من .env زي query_db.py)
@@ -63,7 +65,7 @@ ROLE_CATEGORY_MAP = {
 }
 
 _qdrant_client: Optional[QdrantClient] = None
-_embed_model: Optional[SentenceTransformer] = None
+_embed_model: Optional["SentenceTransformer"] = None
 _embedding_cache: Dict[str, List[float]] = {}
 
 # في e5 models غالباً الأفضل normalise_embeddings=True (لكن لو stored vectors عندك غير normalized
@@ -164,6 +166,8 @@ def _lazy_init() -> None:
 
     if RAG_EMBEDDING_BACKEND == "local":
         try:
+            # Lazy import so the app can boot even if local torch install is broken.
+            from sentence_transformers import SentenceTransformer
             _embed_model = SentenceTransformer(HF_EMBEDDING_MODEL_NAME)
             logger.info("Embedding model ready (local).")
         except Exception as e:

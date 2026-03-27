@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Users, Mail, KeyRound, ChevronRight, Phone, Flag, Languages, BookOpen, Globe } from 'lucide-react';
+import { User, Users, Mail, KeyRound, ChevronRight, Phone, Flag, Languages, BookOpen, Globe, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
@@ -168,6 +168,8 @@ const Register: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -342,15 +344,21 @@ const Register: React.FC = () => {
             )}
 
             <Input
-              name="password" type="password" placeholder="الباسورد (حرف كبير + رقم)"
+              name="password" type={showPassword ? 'text' : 'password'} placeholder="الباسورد (حرف كبير + رقم)"
               icon={<KeyRound size={18} />} value={formData.password}
               onChange={handleInputChange} required autoComplete="new-password"
+              rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              onRightIconClick={() => setShowPassword((p) => !p)}
+              rightIconLabel={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
             />
 
             <Input
-              name="confirmPassword" type="password" placeholder="تأكيد الباسورد"
+              name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="تأكيد الباسورد"
               icon={<KeyRound size={18} />} value={formData.confirmPassword}
               onChange={handleInputChange} required autoComplete="new-password"
+              rightIcon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              onRightIconClick={() => setShowConfirmPassword((p) => !p)}
+              rightIconLabel={showConfirmPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
             />
 
             <button type="submit" className="auth-btn primary-btn register-btn" disabled={loading}>
