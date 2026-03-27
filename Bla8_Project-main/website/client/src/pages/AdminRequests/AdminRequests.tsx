@@ -189,147 +189,148 @@ const AdminRequests = () => {
       <div className="areq-header-area">
         <h1 className="areq-title">الطلبات</h1>
 
-        <div className="areq-actions">
-          {/* Search */}
-          <div className="areq-search-wrapper">
-            <Search size={18} className="areq-search-icon" />
-            <input
-              type="text"
-              placeholder="ابحث بالاسم أو الرقم"
-              className="areq-search-input"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-          </div>
+        <div className="admin-toolbar left-aligned">
+          <div className="admin-toolbar-group">
+            {/* Search */}
+            <div className="admin-search-box">
+              <Search size={18} />
+              <input
+                type="text"
+                placeholder="ابحث بالاسم أو الرقم"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+            </div>
 
-          {/* Filter */}
-          <div className="filter-popup-container" ref={filterRef}>
-            <button
-              className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-            >
-              <SlidersHorizontal size={18} />
-              فلتر
-              {(appliedDateFrom || appliedDateTo || appliedNationality || appliedGovernorate) && (
-                <span className="filter-dot" />
-              )}
-            </button>
+            {/* Filter */}
+            <div className="admin-dropdown-container" ref={filterRef}>
+              <button
+                className={`admin-tool-btn ${isFilterOpen ? 'active' : ''}`}
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
+                <SlidersHorizontal size={18} />
+                فلتر
+                {(appliedDateFrom || appliedDateTo || appliedNationality || appliedGovernorate) && (
+                  <span className="filter-dot" style={{width: '6px', height: '6px', background: 'var(--primary-gold)', borderRadius: '50%', marginRight: '4px'}} />
+                )}
+              </button>
 
-            {isFilterOpen && (
-              <div className="filter-panel" dir="rtl">
-                <div className="filter-panel-header">
-                  <h2 className="filter-title">الفلتر</h2>
-                  <button className="btn-apply-filter" onClick={handleApplyFilter}>تطبيق الفلتر</button>
-                </div>
-
-                <div className="filter-body text-right">
-                  {/* Date Range Accordion */}
-                  <div className="filter-accordion">
-                    <div className="filter-accordion-header" onClick={() => setOpenAccordion(openAccordion === 'date' ? null : 'date')}>
-                      <span>تاريخ الطلب</span>
-                      <ChevronDown size={16} className={`text-gray ${openAccordion === 'date' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openAccordion === 'date' && (
-                      <div className="filter-accordion-content mt-2">
-                        <div className="filter-date-input">
-                          <label>من</label>
-                          <input type="date" value={draftDateFrom} onChange={e => setDraftDateFrom(e.target.value)} />
-                        </div>
-                        <div className="filter-date-input">
-                          <label>إلى</label>
-                          <input type="date" value={draftDateTo} onChange={e => setDraftDateTo(e.target.value)} />
-                        </div>
-                      </div>
-                    )}
+              {isFilterOpen && (
+                <div className="filter-panel" style={{position: 'absolute', top: '100%', right: 0, zIndex: 100, background: 'white', border: '1px solid #eee', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', minWidth: '280px'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '16px'}}>
+                    <h2 style={{margin: 0, fontSize: '1.1rem'}}>الفلتر</h2>
+                    <button className="admin-tool-btn active" onClick={handleApplyFilter} style={{padding: '4px 12px'}}>تطبيق</button>
                   </div>
 
-                  {/* Nationality Accordion (Preachers only) */}
-                  {activeTab === 'preachers' && (
-                    <div className="filter-accordion">
-                      <div className="filter-accordion-header" onClick={() => setOpenAccordion(openAccordion === 'nat' ? null : 'nat')}>
-                        <span>الجنسية</span>
-                        <ChevronDown size={16} className={`text-gray ${openAccordion === 'nat' ? 'rotate-180' : ''}`} />
+                  <div className="filter-body">
+                    {/* Date Range Accordion */}
+                    <div style={{marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px'}}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', cursor: 'pointer'}} onClick={() => setOpenAccordion(openAccordion === 'date' ? null : 'date')}>
+                        <span>تاريخ الطلب</span>
+                        <ChevronDown size={16} />
                       </div>
-                      {openAccordion === 'nat' && (
-                        <div className="filter-accordion-content mt-2">
-                           <div className="filter-submenu-list bordered-list">
-                              <label className="submenu-item" onClick={() => setDraftNationality(null)}>
-                                <div className={`checkbox-custom check-align-left ${draftNationality === null ? 'checked-gold' : ''}`}>
-                                  {draftNationality === null && <Check size={12} strokeWidth={3} color="white" />}
-                                </div>
-                                <span>الكل</span>
-                              </label>
-                              {nationalities.map(nat => (
-                                <label key={nat.id} className="submenu-item" onClick={() => setDraftNationality(nat.id)}>
-                                  <div className={`checkbox-custom check-align-left ${draftNationality === nat.id ? 'checked-gold' : ''}`}>
-                                    {draftNationality === nat.id && <Check size={12} strokeWidth={3} color="white" />}
-                                  </div>
-                                  <span>{nat.name}</span>
-                                </label>
-                              ))}
-                           </div>
+                      {openAccordion === 'date' && (
+                        <div style={{marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                             <span style={{fontSize: '0.8rem', minWidth: '25px'}}>من</span>
+                             <input type="date" value={draftDateFrom} onChange={e => setDraftDateFrom(e.target.value)} style={{border: '1px solid #eee', borderRadius: '4px', padding: '4px'}} />
+                          </div>
+                          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                             <span style={{fontSize: '0.8rem', minWidth: '25px'}}>إلى</span>
+                             <input type="date" value={draftDateTo} onChange={e => setDraftDateTo(e.target.value)} style={{border: '1px solid #eee', borderRadius: '4px', padding: '4px'}} />
+                          </div>
                         </div>
                       )}
                     </div>
-                  )}
 
-                  {/* Governorate Accordion (Associations only) */}
-                  {activeTab === 'associations' && (
-                    <div className="filter-accordion">
-                      <div className="filter-accordion-header" onClick={() => setOpenAccordion(openAccordion === 'gov' ? null : 'gov')}>
-                        <span>المحافظة</span>
-                        <ChevronDown size={16} className={`text-gray ${openAccordion === 'gov' ? 'rotate-180' : ''}`} />
-                      </div>
-                      {openAccordion === 'gov' && (
-                        <div className="filter-accordion-content mt-2">
-                           <div className="filter-submenu-list bordered-list">
-                              <label className="submenu-item" onClick={() => setDraftGovernorate('')}>
-                                <div className={`checkbox-custom check-align-left ${draftGovernorate === '' ? 'checked-gold' : ''}`}>
-                                  {draftGovernorate === '' && <Check size={12} strokeWidth={3} color="white" />}
-                                </div>
-                                <span>الكل</span>
-                              </label>
-                              {governorates.map(gov => (
-                                <label key={gov.id} className="submenu-item" onClick={() => setDraftGovernorate(gov.id)}>
-                                  <div className={`checkbox-custom check-align-left ${draftGovernorate === gov.id ? 'checked-gold' : ''}`}>
-                                    {draftGovernorate === gov.id && <Check size={12} strokeWidth={3} color="white" />}
-                                  </div>
-                                  <span>{gov.name}</span>
-                                </label>
-                              ))}
-                           </div>
+                    {/* Nationality Accordion (Preachers only) */}
+                    {activeTab === 'preachers' && (
+                      <div style={{marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', cursor: 'pointer'}} onClick={() => setOpenAccordion(openAccordion === 'nat' ? null : 'nat')}>
+                          <span>الجنسية</span>
+                          <ChevronDown size={16} />
                         </div>
-                      )}
-                    </div>
-                  )}
+                        {openAccordion === 'nat' && (
+                          <div style={{marginTop: '8px'}}>
+                             <div className="filter-submenu-list bordered-list">
+                                <label className="submenu-item" onClick={() => setDraftNationality(null)}>
+                                  <div className={`checkbox-custom check-align-left ${draftNationality === null ? 'checked-gold' : ''}`}>
+                                    {draftNationality === null && <Check size={12} strokeWidth={3} color="white" />}
+                                  </div>
+                                  <span>الكل</span>
+                                </label>
+                                {nationalities.map(nat => (
+                                  <label key={nat.id} className="submenu-item" onClick={() => setDraftNationality(nat.id)}>
+                                    <div className={`checkbox-custom check-align-left ${draftNationality === nat.id ? 'checked-gold' : ''}`}>
+                                      {draftNationality === nat.id && <Check size={12} strokeWidth={3} color="white" />}
+                                    </div>
+                                    <span>{nat.name}</span>
+                                  </label>
+                                ))}
+                             </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Reset */}
-                  {(draftDateFrom || draftDateTo || draftNationality !== null || draftGovernorate) && (
-                    <button className="btn-reset-filter" onClick={handleResetFilter}>
-                      <X size={14} /> إعادة ضبط الفلتر
-                    </button>
-                  )}
+                    {/* Governorate Accordion (Associations only) */}
+                    {activeTab === 'associations' && (
+                      <div style={{marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', cursor: 'pointer'}} onClick={() => setOpenAccordion(openAccordion === 'gov' ? null : 'gov')}>
+                          <span>المحافظة</span>
+                          <ChevronDown size={16} />
+                        </div>
+                        {openAccordion === 'gov' && (
+                          <div style={{marginTop: '8px'}}>
+                             <div className="filter-submenu-list bordered-list">
+                                <label className="submenu-item" onClick={() => setDraftGovernorate('')}>
+                                  <div className={`checkbox-custom check-align-left ${draftGovernorate === '' ? 'checked-gold' : ''}`}>
+                                    {draftGovernorate === '' && <Check size={12} strokeWidth={3} color="white" />}
+                                  </div>
+                                  <span>الكل</span>
+                                </label>
+                                {governorates.map(gov => (
+                                  <label key={gov.id} className="submenu-item" onClick={() => setDraftGovernorate(gov.id)}>
+                                    <div className={`checkbox-custom check-align-left ${draftGovernorate === gov.id ? 'checked-gold' : ''}`}>
+                                      {draftGovernorate === gov.id && <Check size={12} strokeWidth={3} color="white" />}
+                                    </div>
+                                    <span>{gov.name}</span>
+                                  </label>
+                                ))}
+                             </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Reset */}
+                    {(draftDateFrom || draftDateTo || draftNationality !== null || draftGovernorate) && (
+                      <button className="btn-reset-filter" onClick={handleResetFilter} style={{display: 'flex', alignItems: 'center', gap: '4px', color: '#888', fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', marginTop: '12px'}}>
+                        <X size={14} /> إعادة ضبط الفلتر
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Sort */}
-          <div className="sort-container" ref={sortRef}>
-            <button className={`btn-icon-text ${isSortOpen ? 'active' : ''}`} onClick={() => setIsSortOpen(!isSortOpen)}>
-              <SortIcon size={18} />
-              تصنيف
-            </button>
-            {isSortOpen && (
-              <div className="sort-dropdown">
-                <button className={`sort-option ${sortOrder === 'latest' ? 'active' : ''}`} onClick={() => { setSortOrder('latest'); setIsSortOpen(false); }}>
-                  الأحدث
-                </button>
-                <button className={`sort-option ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setIsSortOpen(false); }}>
-                  الأقدم
-                </button>
-              </div>
-            )}
+            {/* Sort */}
+            <div className="admin-dropdown-container" ref={sortRef}>
+              <button className={`admin-tool-btn ${isSortOpen ? 'active' : ''}`} onClick={() => setIsSortOpen(!isSortOpen)}>
+                <SortIcon size={18} />
+                تصنيف
+              </button>
+              {isSortOpen && (
+                <div className="admin-dropdown-menu">
+                  <button className={`admin-dropdown-item ${sortOrder === 'latest' ? 'selected' : ''}`} onClick={() => { setSortOrder('latest'); setIsSortOpen(false); }}>
+                    الأحدث
+                  </button>
+                  <button className={`admin-dropdown-item ${sortOrder === 'oldest' ? 'selected' : ''}`} onClick={() => { setSortOrder('oldest'); setIsSortOpen(false); }}>
+                    الأقدم
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

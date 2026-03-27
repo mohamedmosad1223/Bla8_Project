@@ -179,27 +179,26 @@ const AdminCallers = () => {
       <div className="callers-header-area">
         <h1 className="page-title">دعاة الجمعية</h1>
         
-        <div className="callers-actions">
-          <div className="search-filter-group">
-            <div className="search-input-wrapper-outlined">
-              <Search size={18} className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="ابحث باسم الداعية..." 
-                className="search-input-outlined"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            
-            <div className="filter-popup-container" ref={filterRef}>
-              <button 
-                className={`btn-icon-text ${isFilterOpen ? 'active' : ''}`}
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-              >
-                <FilterIcon size={18} />
-                فلتر
-              </button>
+      <div className="admin-toolbar left-aligned">
+        <div className="admin-toolbar-group">
+          <div className="admin-search-box">
+            <Search size={18} />
+            <input 
+              type="text" 
+              placeholder="ابحث باسم الداعية..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <div className="admin-dropdown-container" ref={filterRef}>
+            <button 
+              className={`admin-tool-btn ${isFilterOpen ? 'active' : ''}`}
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+            >
+              <FilterIcon size={18} />
+              فلتر
+            </button>
 
               {/* Filter Side Panel / Modal */}
               {isFilterOpen && (
@@ -382,9 +381,9 @@ const AdminCallers = () => {
               )}
             </div>
             
-            <div className="sort-container" ref={sortRef}>
+            <div className="admin-dropdown-container" ref={sortRef}>
               <button 
-                className={`btn-icon-text ${isSortOpen ? 'active' : ''}`}
+                className={`admin-tool-btn ${isSortOpen ? 'active' : ''}`}
                 onClick={() => setIsSortOpen(!isSortOpen)}
               >
                 <SortDesc size={18} />

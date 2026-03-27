@@ -14,12 +14,15 @@ from app.auth import verify_password, create_access_token, get_current_user
 from app.limiter import limiter
 from app.config import settings
 from app.utils.email_service import EmailService
+from typing import Optional
+from fastapi import Query
+
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.post("/login")
 @limiter.limit("5/minute")
-def login(request: Request, response: Response, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+def login(request: Request, response: Response, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends(), role: Optional[str] = Query(None)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user:
         raise HTTPException(
@@ -28,6 +31,14 @@ def login(request: Request, response: Response, db: Session = Depends(get_db), f
         )
     
     if not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="كلمة المرور أو البريد الإلكتروني غير صحيح",
+        )
+    
+    # Optional role validation
+    if role and user.role != role:
+        # User exists but role doesn't match login entry point
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="كلمة المرور أو البريد الإلكتروني غير صحيح",

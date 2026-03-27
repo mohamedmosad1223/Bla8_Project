@@ -40,70 +40,7 @@
 }
 .aadmin-add-btn:hover { opacity: 0.88; }
 
-/* ── Toolbar ── */
-.aadmin-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.aadmin-toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.aadmin-left-tools {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.aadmin-tool-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  padding: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-dark, #1A1A2E);
-  cursor: pointer;
-  font-family: inherit;
-  transition: opacity 0.15s;
-}
-.aadmin-tool-btn svg {
-  color: var(--text-dark, #1A1A2E);
-}
-.aadmin-tool-btn:hover { opacity: 0.7; }
-
-.aadmin-search-wrapper {
-  position: relative;
-  border-bottom: 1px solid var(--border-gray, #E5E7EB);
-  padding-bottom: 4px;
-}
-.aadmin-search-icon {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-gray, #9CA3AF);
-}
-.aadmin-search-input {
-  padding: 4px 24px 4px 0;
-  border: none;
-  font-size: 0.85rem;
-  font-family: inherit;
-  outline: none;
-  width: 260px;
-  background: transparent;
-  color: var(--text-dark);
-  text-align: right;
-}
-.aadmin-search-input:focus {
-  border-bottom-color: var(--primary-gold, #C9A84C);
-}
+/* Toolbar is now handled by global .admin-toolbar classes */
 
 /* ── Dropdowns ── */
 .aadmin-dropdown-container {

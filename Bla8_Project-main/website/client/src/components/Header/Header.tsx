@@ -191,13 +191,17 @@ const Header = () => {
           )}
         </div>
 
-        <div className="profile-section">
+        <div className="profile-section" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
           <div className="profile-info">
             <span className="profile-name">{displayName}</span>
             <span className="profile-role">{displayRole}</span>
           </div>
           <div className="profile-avatar">
-            <span className="avatar-initials">{initials}</span>
+            {userData?.profile_picture ? (
+              <img src={`/uploads/${userData.profile_picture}`} alt="" className="avatar-img" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <span className="avatar-initials">{initials}</span>
+            )}
             <span className="status-indicator"></span>
           </div>
         </div>

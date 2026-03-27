@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, Calendar, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
+import { ChevronDown, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import '../AdminAddAssociation/AdminAddAssociation.css';
 
@@ -160,13 +160,14 @@ const AdminEditAssociation = () => {
 
           {/* Row 2 */}
           <div className="aadd-group">
-            <label className="aadd-label">رقم السجل / الترخيص</label>
+            <label className="aadd-label">رقم السجل / الترخيص (لا يمكن تعديله)</label>
             <input 
               type="text" 
               name="license_number"
               value={formData.license_number}
-              onChange={handleChange}
+              readOnly
               className="aadd-input" 
+              style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
             />
           </div>
           <div className="aadd-group">
@@ -214,26 +215,34 @@ const AdminEditAssociation = () => {
           {/* Row 4 */}
           <div className="aadd-group">
             <label className="aadd-label">المحافظة</label>
-            <input 
-              type="text" 
-              name="governorate"
-              value={formData.governorate}
-              onChange={handleChange}
-              className="aadd-input" 
-            />
+            <div className="aadd-select-wrapper">
+              <select 
+                name="governorate"
+                value={formData.governorate}
+                onChange={handleChange}
+                className="aadd-input aadd-select"
+              >
+                <option value="">اختر المحافظة</option>
+                <option value="jahra">محافظة الجهراء</option>
+                <option value="asima">محافظة العاصمة</option>
+                <option value="farwaniya">محافظة الفروانية</option>
+                <option value="hawalli">محافظة حولي</option>
+                <option value="mubarak_al_kabeer">محافظة مبارك الكبير</option>
+                <option value="ahmadi">محافظة الأحمدي</option>
+                <option value="other">أخرى</option>
+              </select>
+              <ChevronDown className="aadd-select-icon" size={18} />
+            </div>
           </div>
           <div className="aadd-group">
             <label className="aadd-label">تاريخ تأسيس الجمعية</label>
-            <div className="aadd-input-with-icon left">
-              <Calendar className="aadd-icon-left" size={18} />
-              <input 
-                type="date" 
-                name="establishment_date"
-                value={formData.establishment_date}
-                onChange={handleChange}
-                className="aadd-input" 
-              />
-            </div>
+            <input 
+              type="date" 
+              name="establishment_date"
+              value={formData.establishment_date}
+              onChange={handleChange}
+              className="aadd-input" 
+            />
           </div>
 
           {/* Row 5 */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Trash2, Plus, MessageCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { Eye, Trash2, Plus, MessageCircle, Loader2, AlertTriangle, Search } from 'lucide-react';
 import api from '../../services/api';
 import './AdminAssociations.css';
 
@@ -115,41 +115,40 @@ const AdminAssociations = () => {
       </div>
 
       {/* ── Toolbar ── */}
-      <div className="aadmin-toolbar">
-        <div className="aadmin-toolbar-left">
+      <div className="admin-toolbar left-aligned">
+        <div className="admin-toolbar-group">
           
           {/* Search */}
-          <div className="aadmin-search-wrapper">
-            <svg className="aadmin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              type="text"
-              placeholder="ابحث باسم الجمعية او المشرف..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="aadmin-search-input"
-            />
+          <div className="admin-search-box">
+             <Search size={18} />
+             <input
+               type="text"
+               placeholder="ابحث باسم الجمعية او المشرف..."
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
+             />
           </div>
 
           {/* Sort Dropdown */}
-          <div className="aadmin-dropdown-container">
+          <div className="admin-dropdown-container">
             <button
-              className={`aadmin-tool-btn ${showSort ? 'active' : ''}`}
+              className={`admin-tool-btn ${showSort ? 'active' : ''}`}
               onClick={() => setShowSort(!showSort)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
               تصنيف: {sortBy === 'latest' ? 'الأحدث' : 'الأقدم'}
             </button>
 
             {showSort && (
-              <div className="aadmin-dropdown-menu">
+              <div className="admin-dropdown-menu">
                 <button 
-                  className={`aadmin-dropdown-item ${sortBy === 'latest' ? 'selected' : ''}`}
+                  className={`admin-dropdown-item ${sortBy === 'latest' ? 'selected' : ''}`}
                   onClick={() => { setSortBy('latest'); setShowSort(false); }}
                 >
                   الأحدث
                 </button>
                 <button 
-                  className={`aadmin-dropdown-item ${sortBy === 'oldest' ? 'selected' : ''}`}
+                  className={`admin-dropdown-item ${sortBy === 'oldest' ? 'selected' : ''}`}
                   onClick={() => { setSortBy('oldest'); setShowSort(false); }}
                 >
                   الأقدم
