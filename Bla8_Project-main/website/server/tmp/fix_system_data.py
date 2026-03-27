@@ -29,7 +29,14 @@ def sync_data():
         print("\n[1/2] Aligning Countries/Nationalities...")
         
         # To avoid UniqueViolation on country_code, we first set them to temp values
-        db.execute(text("UPDATE countries SET country_code = 'TEMP_' || country_code WHERE country_id <= 10"))
+        # ONLY if they don't already have the TEMP_ prefix (to avoid chain-prefixing)
+        db.execute(text("""
+            UPDATE countries 
+            SET country_code = 'TEMP_' || country_code 
+            WHERE country_id <= 10 
+            AND NOT country_code LIKE 'TEMP_%'
+        """))
+        db.commit() # Commit the temp rename first
         
         for cid, name, code, phone in country_data:
             res = db.execute(text("SELECT 1 FROM countries WHERE country_id = :id"), {"id": cid}).fetchone()

@@ -307,70 +307,112 @@
   font-weight: 600;
 }
 
+/* ─── Message Rows ─── */
 .conv-msg-row {
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  max-width: 80%;
+  max-width: 85%;
+  margin-bottom: 12px;
 }
+
 .conv-msg-sent {
-  /* My messages: physically on the RIGHT */
-  margin-left: auto;
-  margin-right: 0;
+  align-self: flex-start; /* flex-start is Right in RTL */
+  flex-direction: row;
 }
+
 .conv-msg-received {
-  /* Their messages: physically on the LEFT */
-  margin-right: auto;
-  margin-left: 0;
+  align-self: flex-end; /* flex-end is Left in RTL */
+  flex-direction: row-reverse;
 }
 
 .conv-msg-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  border-radius: 12px;
+  background-color: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
 }
-.bg-red-100 { background: #fee2e2; color: #ef4444; }
 
 .conv-msg-bubble {
-  padding: 12px 16px;
-  border-radius: 16px;
+  padding: 14px 18px;
+  border-radius: 18px;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.conv-msg-sent .conv-msg-bubble {
-  border-top-right-radius: 4px;
-}
-.conv-msg-received .conv-msg-bubble {
-  border-top-left-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
-.bg-gold {
-  background: #dba841;
-  color: #fff;
+.conv-msg-sent .conv-msg-bubble {
+  background: linear-gradient(135deg, #1a517e, #123e63);
+  color: white;
+  border-bottom-right-radius: 4px;
 }
-.bg-light {
-  background: #f8fafc;
-  color: #1e293b;
-  border: 1px solid #f1f5f9;
-}
-.bg-gold-light {
-  background: #fef3c7;
-  color: #dba841;
+
+.conv-msg-received .conv-msg-bubble {
+  background-color: #ffffff;
+  color: #1a202c;
+  border: 1px solid #e2e8f0;
+  border-bottom-left-radius: 4px;
+  border-right: 4px solid #dba829; /* Gold border for AI/Other */
 }
 
 .conv-msg-text {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.6;
+  word-break: break-word;
 }
+
+/* ─── Markdown Content Styles ─── */
+.markdown-content h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 12px 0 8px 0;
+  color: #1a517e;
+}
+
+.markdown-content h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 10px 0 6px 0;
+  color: #1e293b;
+}
+
+.markdown-content p {
+  margin: 0 0 8px 0;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 12px 0;
+}
+
+.markdown-content ul, .markdown-content ol {
+  margin: 8px 0;
+  padding-right: 20px;
+}
+
+.markdown-content li {
+  margin-bottom: 4px;
+}
+
+.markdown-content blockquote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-right: 4px solid #1a517e;
+  background-color: #f1f5f9;
+  font-style: italic;
+  color: #475569;
+}
+
 .conv-msg-time {
   font-size: 0.7rem;
   opacity: 0.8;

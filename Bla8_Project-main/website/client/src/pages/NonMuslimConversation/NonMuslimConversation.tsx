@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, Send, User } from 'lucide-react';
 import api from '../../services/api';
 import { formatTimeAgo } from '../../utils/dateUtils';
+import ReactMarkdown from 'react-markdown';
 import './NonMuslimConversation.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -241,7 +242,13 @@ const NonMuslimConversation: React.FC = () => {
                     <User size={18} color="#94a3b8" />
                   </div>
                   <div className="nm-msg-bubble">
-                    <p className="nm-msg-text">{msg.message_text}</p>
+                    {msg.is_mine ? (
+                      <p className="nm-msg-text">{msg.message_text}</p>
+                    ) : (
+                      <div className="nm-msg-text markdown-content">
+                        <ReactMarkdown>{msg.message_text}</ReactMarkdown>
+                      </div>
+                    )}
                     <span className="nm-msg-time">
                       {new Date(msg.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                     </span>
