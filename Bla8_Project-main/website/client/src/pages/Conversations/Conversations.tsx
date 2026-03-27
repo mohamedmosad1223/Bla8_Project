@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Send } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/dateUtils';
+import ReactMarkdown from 'react-markdown';
 import './Conversations.css';
 import api from '../../services/api';
 
@@ -429,7 +430,13 @@ const Conversations = () => {
               )}
 
               <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
-                <p className="conv-msg-text">{msg.content}</p>
+                {msg.role === 'assistant' ? (
+                  <div className="conv-msg-text markdown-content">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="conv-msg-text">{msg.content}</p>
+                )}
                 {msg.created_at && <span className="conv-msg-time">{formatTime(msg.created_at)}</span>}
               </div>
 

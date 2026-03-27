@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Search, Send, MessageCircle, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import api from '../../services/api';
 import './AdminChat.css';
 
@@ -241,7 +242,9 @@ const AdminChat = () => {
               messages.map(msg => (
                 <div key={msg.message_id} className={`message-wrapper ${msg.is_mine ? 'sent' : 'received'}`}>
                   <div className="message-bubble">
-                    {msg.message_text}
+                    <div className="markdown-content">
+                      <ReactMarkdown>{msg.message_text}</ReactMarkdown>
+                    </div>
                     <span className="message-time">{formatTime(msg.created_at)}</span>
                   </div>
                 </div>

@@ -9,7 +9,7 @@ class Language(Base):
 
     language_id:   Mapped[int]  = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
     language_name: Mapped[str]  = mapped_column(sa.String(100), nullable=False)
-    language_code: Mapped[str]  = mapped_column(sa.String(10), nullable=False, unique=True)
+    language_code: Mapped[str]  = mapped_column(sa.String(30), nullable=False, unique=True)
     is_active:     Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)
 
 
@@ -18,5 +18,5 @@ class Country(Base):
 
     country_id:   Mapped[int]          = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
     country_name: Mapped[str]          = mapped_column(sa.String(100), nullable=False)
-    country_code: Mapped[str]          = mapped_column(sa.String(10), nullable=False, unique=True)
+    country_code: Mapped[str]          = mapped_column(sa.String(30), nullable=False, unique=True)
     phone_code:   Mapped[str | None]   = mapped_column(sa.String(20))
