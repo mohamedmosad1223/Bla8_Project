@@ -7,7 +7,8 @@ from app.models.organization import Organization
 from app.models.dawah_request import DawahRequest
 from app.models.interested_person import InterestedPerson
 from app.models.reference import Country
-from app.models.enums import RequestStatus, PreacherStatus, RequestType
+from app.models.message import Message
+from app.models.enums import RequestStatus, PreacherStatus, RequestType, ApprovalStatus
 
 class AdminDashboardController:
     """
@@ -30,6 +31,11 @@ class AdminDashboardController:
         total_cases = db.query(DawahRequest).count()
         total_converted = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.converted).count()
         total_rejected = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.rejected).count()
+        
+        # New Metrics
+        pending_org_requests = db.query(Organization).filter(Organization.approval_status == ApprovalStatus.pending).count()
+        total_conversations = db.query(func.count(func.distinct(Message.request_id))).scalar() or 0
+        total_follow_up = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.under_persuasion).count()
 
         # 3. Tables - Top 10 Preachers
         # Assuming success rate = (converted / total) * 100
@@ -115,12 +121,14 @@ class AdminDashboardController:
             })
 
         return {
-            "total_organizations": {"title": "إجمالي عدد الجمعيات المسجلة", "value": total_orgs, "is_positive": True},
-            "total_preachers": {"title": "إجمالي عدد الدعاة", "value": total_preachers, "is_positive": True},
-            "total_individuals": {"title": "إجمالي الأفراد المسجلين", "value": total_individuals, "is_positive": True},
+            "total_organizations": {"title": "إجمالي عدد الجمعيات", "value": total_orgs, "is_positive": True},
+            "pending_org_requests": {"title": "إجمالي عدد طلبات الجمعية", "value": pending_org_requests, "is_positive": True},
+            "total_conversations": {"title": "إجمالي عدد المحادثات", "value": total_conversations, "is_positive": True},
+            "total_follow_up": {"title": "المحالون للتعليم والمتابعة", "value": total_follow_up, "is_positive": True},
+            "total_converted": {"title": "من أسلموا", "value": total_converted, "is_positive": True},
+            "total_rejected": {"title": "من رفضوا", "value": total_rejected, "is_positive": True},
             "total_cases": {"title": "إجمالي الحالات المسجلة", "value": total_cases, "is_positive": True},
-            "total_converted": {"title": "عدد من أسلموا", "value": total_converted, "is_positive": True},
-            "total_rejected": {"title": "إجمالي حالات الرفض", "value": total_rejected, "is_positive": True},
+            "total_individuals": {"title": "إجمالي الأفراد المسجلين", "value": total_individuals, "is_positive": True},
             "top_preachers": top_preachers,
             "organization_stats": organization_stats,
             "nationalities_distribution": nationalities_distribution,

@@ -12,7 +12,7 @@ from app.controllers.organizations_controller import OrganizationsController
 from app.controllers.profiles_controller import ProfilesController
 from app.auth import get_current_user, check_role
 from app.models.user import User
-from app.models.enums import UserRole
+from app.models.enums import UserRole, ApprovalStatus
 
 router = APIRouter(prefix="/api/organizations", tags=["Organizations"])
 
@@ -53,7 +53,7 @@ def register_organization(
 def list_organizations(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    approval: str | None = Query(None, description="Filter by approval_status"),
+    approval: Optional[ApprovalStatus] = Query(None, description="Filter by approval_status"),
     search: Optional[str] = Query(None, description="اسم الجمعية أو الرقم التعريفى"),
     created_after: Optional[datetime] = Query(None),
     created_before: Optional[datetime] = Query(None),
@@ -77,6 +77,7 @@ def get_organization(org_id: int, db: Session = Depends(get_db), current_user: U
     return OrganizationsController.get_organization(db, org_id)
 
 @router.patch("/{org_id}")
+@router.post("/{org_id}")
 def update_organization(org_id: int, payload: OrganizationUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """تحديث بيانات الجمعية"""
     if current_user.role != UserRole.admin:

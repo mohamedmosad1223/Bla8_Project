@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
 import { preacherService } from '../../services/preacherService';
@@ -22,7 +22,7 @@ const PreacherRegister: React.FC = () => {
     password: '',
     confirmPassword: '',
   });
-  
+
   const [file, setFile] = useState<File | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -50,18 +50,18 @@ const PreacherRegister: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const payload = new FormData();
       payload.append('full_name', formData.fullName);
       payload.append('email', formData.email);
-      payload.append('preacher_email', formData.email); 
+      payload.append('preacher_email', formData.email);
       payload.append('password', formData.password);
       payload.append('password_confirm', formData.confirmPassword);
       payload.append('phone', formData.phone);
       payload.append('scientific_qualification', formData.qualificationName);
       payload.append('nationality_country_id', formData.nationalityId);
       payload.append('qualification_file', file);
-      
+
       // Default to volunteer preacher for now if not specified
       payload.append('type', 'volunteer');
       payload.append('gender', 'male');
@@ -93,22 +93,22 @@ const PreacherRegister: React.FC = () => {
       <div className="preacher-register-container">
         <div className="form-container preacher-form-container">
           <div className="header-text preacher-header">
-            <div className="top-logo">
+            <Link to="/" className="top-logo">
               <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
               <p className="top-logo-text">للتعريف بالإسلام</p>
-            </div>
+            </Link>
             <h2>طلب تسجيل داعية</h2>
             <p>من فضلك قم بملأ البيانات التالية</p>
           </div>
 
           <form className="preacher-form" onSubmit={handleSubmit}>
             {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-            
+
             {/* Full Name */}
             <div className="preg-group full-width">
               <div className="preg-input-icon">
                 <input type="text" name="fullName" placeholder="الاسم بالكامل" value={formData.fullName} onChange={handleInputChange} required />
-                <span className="preg-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                <span className="preg-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg></span>
               </div>
             </div>
 
@@ -186,9 +186,12 @@ const PreacherRegister: React.FC = () => {
       </div>
       <SuccessModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          navigate('/login?role=preacher');
+        }}
         title="تم ارسال الطلب بنجاح"
-        description="سيتم الرد عليك قريبا"
+        description="سيتم الرد عليك قريبا. يمكنك الآن تسجيل الدخول لمتابعة حالة طلبك."
       />
     </AuthLayout>
   );
