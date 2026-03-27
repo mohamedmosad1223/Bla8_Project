@@ -213,7 +213,7 @@ const AdminEditAssociation = () => {
 
           {/* Row 4 */}
           <div className="aadd-group">
-            <label className="aadd-label">عنوان الجمعية</label>
+            <label className="aadd-label">المحافظة</label>
             <input 
               type="text" 
               name="governorate"

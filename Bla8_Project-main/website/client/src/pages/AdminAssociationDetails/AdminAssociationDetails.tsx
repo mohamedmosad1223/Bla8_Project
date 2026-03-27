@@ -17,7 +17,6 @@ import {
   Search,
   Filter,
   X,
-  ChevronDown,
   MessageCircle,
   Loader2
 } from 'lucide-react';
@@ -110,6 +109,19 @@ const AdminAssociationDetails = () => {
     } catch (err) {
       console.error('Error toggling preacher status:', err);
     }
+  };
+
+  const getGovernorateName = (id: string) => {
+    const govs = [
+      { id: 'jahra', name: 'محافظة الجهراء' },
+      { id: 'asima', name: 'محافظة العاصمة' },
+      { id: 'farwaniya', name: 'محافظة الفروانية' },
+      { id: 'hawalli', name: 'محافظة حولي' },
+      { id: 'mubarak_al_kabeer', name: 'محافظة مبارك الكبير' },
+      { id: 'ahmadi', name: 'محافظة الأحمدي' },
+      { id: 'other', name: 'أخرى' },
+    ];
+    return govs.find(g => g.id === id)?.name || id;
   };
 
   if (loading && !orgData) {
@@ -220,12 +232,8 @@ const AdminAssociationDetails = () => {
                   <span className="adetails-value">{orgData.country_name}</span>
                 </div>
                 <div className="adetails-item">
-                  <span className="adetails-label"><MapPin size={16}/> المدينة</span>
-                  <span className="adetails-value">{orgData.governorate}</span>
-                </div>
-                <div className="adetails-item">
-                  <span className="adetails-label"><MapPin size={16}/> العنوان</span>
-                  <span className="adetails-value">{orgData.address || '—'}</span>
+                  <span className="adetails-label"><MapPin size={16}/> المحافظة</span>
+                  <span className="adetails-value">{getGovernorateName(orgData.governorate)}</span>
                 </div>
                 <div className="adetails-item">
                   <span className="adetails-label"><CheckCircle size={16}/> الحالة</span>

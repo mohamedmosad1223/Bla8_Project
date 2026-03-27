@@ -103,6 +103,7 @@ const NonMuslimDashboard: React.FC = () => {
 
             setSessions(prev => prev.map(s => {
               if (s.id === activeChatId) {
+                // دمج التاريخ مع الحفاظ على أي رسائل محلية جديدة لم تُحفظ بعد في السيرفر (اختياري)
                 return { ...s, messages: mappedMessages };
               }
               return s;
@@ -157,81 +158,96 @@ const NonMuslimDashboard: React.FC = () => {
       timestamp: new Date()
     };
 
+    const initialBotMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      sender: 'bot',
+      text: '...', // مؤشر بدء التفكير
+      timestamp: new Date()
+    };
+
     setSessions(prev => prev.map(session => {
       if (session.id === activeChatId) {
         return {
           ...session,
-          messages: [...session.messages, userMessage],
+          messages: [...session.messages, userMessage, initialBotMessage],
           lastMessage: userText,
           timestamp: new Date()
         };
       }
       return session;
     }));
+    
     setInputValue('');
     setLoading(true);
 
     try {
-      const sendUrl = isGuest 
-        ? '/chat/ai/guest/send' 
-        : `/chat/ai/conversations/${activeChatId}/messages`;
+      const streamUrl = isGuest 
+        ? '/api/chat/ai/guest/send?stream=true' 
+        : `/api/chat/ai/conversations/${activeChatId}/messages?stream=true`;
       
-      const payload = isGuest 
-        ? { session_id: activeChatId, message: userText }
-        : { content: userText }; 
+      const body = isGuest 
+        ? JSON.stringify({ session_id: activeChatId, message: userText })
+        : JSON.stringify({ content: userText });
 
-      const res = await api.post(sendUrl, payload);
+      const response = await fetch(streamUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body,
+        credentials: 'include' // للحفاظ على الجلسة (HttpOnly Cookies)
+      });
 
-      let aiReply = res.data?.ai_response?.content;
+      if (!response.ok) throw new Error('فشل الاتصال بالخادم');
 
-      // إذا لم تجي الرد مباشرة من الباكيند (حالة موجودة في النظام حالياً)، جلب التاريخ من السيرفر
-      if (!aiReply) {
-        try {
-          const historyRes = await api.get(`/chat/ai/guest/history/${activeChatId}`);
-          const history = historyRes.data?.history || [];
-          const aiMessages = history.filter((m: any) => m.role === 'ai');
-          aiReply = aiMessages.length ? aiMessages[aiMessages.length - 1].content : undefined;
-        } catch (historyErr) {
-          console.warn('Failed to recover AI reply from history:', historyErr);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+
+      if (reader) {
+        let partialLine = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = (partialLine + chunk).split('\n');
+          partialLine = lines.pop() || ''; // الحفاظ على الجزء غير الكامل للchunk القادم
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const content = line.substring(6);
+              fullContent += content;
+
+              // تحديث الواجهة لحظياً بالقطعة الجديدة
+              setSessions(prev => prev.map(session => {
+                if (session.id === activeChatId) {
+                  const updatedMessages = [...session.messages];
+                  const lastMsgIndex = updatedMessages.length - 1;
+                  if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
+                    updatedMessages[lastMsgIndex] = { 
+                      ...updatedMessages[lastMsgIndex], 
+                      text: fullContent 
+                    };
+                  }
+                  return { ...session, messages: updatedMessages, lastMessage: fullContent };
+                }
+                return session;
+              }));
+            }
+          }
         }
       }
-
-      const finalReply = aiReply || 'عذراً، لم أتمكن من الحصول على رد مفيد حالياً.';
-
-      // 3. إضافة رد الذكاء الاصطناعي للمحادثة
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'bot',
-        text: finalReply,
-        timestamp: new Date()
-      };
-
-      setSessions(prev => prev.map(session => {
-        if (session.id === activeChatId) {
-          return {
-            ...session,
-            messages: [...session.messages, botMessage],
-            lastMessage: finalReply,
-            timestamp: new Date()
-          };
-        }
-        return session;
-      }));
     } catch (error: any) {
-      console.error('Error sending message to AI:', error);
-      const errorText = error.response?.data?.detail || 'حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.';
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'bot',
-        text: errorText,
-        timestamp: new Date()
-      };
+      console.error('Error in streaming:', error);
+      const errorText = 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.';
+      
       setSessions(prev => prev.map(session => {
         if (session.id === activeChatId) {
-          return {
-            ...session,
-            messages: [...session.messages, errorMessage],
-          };
+          const updatedMessages = [...session.messages];
+          const lastMsgIndex = updatedMessages.length - 1;
+          if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
+            updatedMessages[lastMsgIndex] = { ...updatedMessages[lastMsgIndex], text: errorText };
+          }
+          return { ...session, messages: updatedMessages };
         }
         return session;
       }));

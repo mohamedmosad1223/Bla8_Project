@@ -663,6 +663,8 @@ class OrganizationFilterParams(BaseModel):
     """Query parameters for organization search"""
     search:          Optional[str]          = None
     approval_status: Optional[ApprovalStatus]= None
+    country_id:      Optional[int]          = None
+    governorate:     Optional[str]          = None
     created_after:  Optional[datetime]      = None
     created_before: Optional[datetime]      = None
     order_by:        Optional[str]          = "latest" # latest, oldest

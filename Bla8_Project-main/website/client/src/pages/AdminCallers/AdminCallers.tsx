@@ -19,29 +19,72 @@ const AdminCallers = () => {
   const navigate = useNavigate();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest');
   const [preachers, setPreachers] = useState<Preacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
   const [search, setSearch] = useState('');
+  
+  // Reference data
+  const [allCountries, setAllCountries] = useState<any[]>([]);
+  const [allLanguages, setAllLanguages] = useState<any[]>([]);
+
+  // Filter states
+  const [appliedFilters, setAppliedFilters] = useState({
+    nationality_country_id: '' as string | number,
+    languages: [] as number[],
+    joined_after: '',
+    status: '' as string
+  });
+
+  const [filterDraft, setFilterDraft] = useState({
+    nationality_country_id: '' as string | number,
+    languages: [] as number[],
+    joined_after: '',
+    status: '' as string
+  });
 
   const fetchPreachers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/preachers/', {
-        params: {
-          search: search || undefined,
-          approval_status: 'approved'
-        }
-      });
+      const params: any = {
+        search: search || undefined,
+        approval_status: 'approved',
+        order_by: sortBy
+      };
+
+      if (appliedFilters.nationality_country_id) params.nationality_country_id = appliedFilters.nationality_country_id;
+      if (appliedFilters.languages.length > 0) params.languages = appliedFilters.languages;
+      if (appliedFilters.joined_after) params.joined_after = appliedFilters.joined_after;
+      if (appliedFilters.status) params.status = appliedFilters.status;
+
+      const response = await api.get('/preachers/', { params });
       setPreachers(response.data.data);
     } catch (err: any) {
       console.error('Error fetching preachers:', err);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, sortBy, appliedFilters]);
+
+  // Fetch reference data (countries & languages)
+  useEffect(() => {
+    const fetchRefs = async () => {
+      try {
+        const [countriesRes, langsRes] = await Promise.all([
+          api.get('/preachers/countries'),
+          api.get('/preachers/languages')
+        ]);
+        setAllCountries(countriesRes.data.data);
+        setAllLanguages(langsRes.data.data);
+      } catch (err) {
+        console.error('Error fetching reference data:', err);
+      }
+    };
+    fetchRefs();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -82,9 +125,6 @@ const AdminCallers = () => {
     setItemToDelete(null);
   };
   
-  // Filter states
-  const [filterLanguages, setFilterLanguages] = useState<string[]>(['الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية']);
-  
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
@@ -102,24 +142,27 @@ const AdminCallers = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sortRef, filterRef]);
 
-  const removeLanguage = (langToRemove: string) => {
-    setFilterLanguages(filterLanguages.filter(lang => lang !== langToRemove));
-  };
-
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   const toggleAccordion = (name: string) => {
     setOpenAccordion(openAccordion === name ? null : name);
   };
 
-  const availableLanguages = ['العربية', 'الانجليزية', 'الفرنسية', 'الاسبانية', 'البرتغالية', 'الهندية'];
-  const [selectedType, setSelectedType] = useState<string>('داعية');
-  const [selectedStatus, setSelectedStatus] = useState<string>('مفعل');
+  const applyFilters = () => {
+    setAppliedFilters({ ...filterDraft });
+    setIsFilterOpen(false);
+  };
 
-  const addLanguage = (lang: string) => {
-    if (!filterLanguages.includes(lang)) {
-      setFilterLanguages([...filterLanguages, lang]);
-    }
+  const resetFilters = () => {
+    const empty = {
+      nationality_country_id: '',
+      languages: [],
+      joined_after: '',
+      status: ''
+    };
+    setFilterDraft(empty);
+    setAppliedFilters(empty);
+    setIsFilterOpen(false);
   };
 
   if (loading && preachers.length === 0) {
@@ -142,7 +185,7 @@ const AdminCallers = () => {
               <Search size={18} className="search-icon" />
               <input 
                 type="text" 
-                placeholder="بحث" 
+                placeholder="ابحث باسم الداعية..." 
                 className="search-input-outlined"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -162,26 +205,23 @@ const AdminCallers = () => {
               {isFilterOpen && (
                 <div className="filter-panel" dir="rtl">
                   <div className="filter-panel-header">
-                    <h2 className="filter-title">الفلتر</h2>
-                    <button className="btn-apply-filter" onClick={() => setIsFilterOpen(false)}>
+                    <div className="flex items-center gap-4">
+                      <h2 className="filter-title">الفلتر</h2>
+                      <button className="text-sm text-gray-400 hover:text-gray-600" onClick={resetFilters}>إعادة ضبط</button>
+                    </div>
+                    <button className="btn-apply-filter" onClick={applyFilters}>
                       تطبيق الفلتر
                     </button>
                   </div>
 
                   <div className="filter-body">
-                    {/* Search */}
-                    <div className="filter-search">
-                      <Search size={16} className="filter-search-icon" />
-                      <input type="text" placeholder="ابحث ....." className="filter-search-input" />
-                    </div>
-
                     {/* Join Date Accordion */}
                     <div className="filter-accordion">
                       <div 
                         className="filter-accordion-header"
                         onClick={() => toggleAccordion('date')}
                       >
-                        <span>تاريخ الانضمام</span>
+                        <span>تاريخ الانضمام (بعد)</span>
                         <ChevronDown 
                           size={16} 
                           className={`text-gray transition-transform ${openAccordion === 'date' ? 'rotate-180' : ''}`} 
@@ -193,45 +233,50 @@ const AdminCallers = () => {
                             <input 
                               type="date"
                               className="custom-date-picker"
+                              value={filterDraft.joined_after}
+                              onChange={(e) => setFilterDraft({...filterDraft, joined_after: e.target.value})}
                             />
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Type Accordion */}
+                    {/* Nationality Accordion */}
                     <div className="filter-accordion">
                       <div 
                         className="filter-accordion-header"
-                        onClick={() => toggleAccordion('type')}
+                        onClick={() => toggleAccordion('nationality')}
                       >
-                        <span>النوع</span>
+                        <span>الجنسية</span>
                         <ChevronDown 
                           size={16} 
-                          className={`text-gray transition-transform ${openAccordion === 'type' ? 'rotate-180' : ''}`} 
+                          className={`text-gray transition-transform ${openAccordion === 'nationality' ? 'rotate-180' : ''}`} 
                         />
                       </div>
-                      {openAccordion === 'type' && (
+                      {openAccordion === 'nationality' && (
                         <div className="filter-accordion-content mt-2">
                           <div className="filter-submenu-list bordered-list">
                             <label 
                               className="submenu-item"
-                              onClick={(e) => { e.preventDefault(); setSelectedType('داعية'); }}
+                              onClick={() => setFilterDraft({...filterDraft, nationality_country_id: ''})}
                             >
-                              <div className={`checkbox-custom check-align-left ${selectedType === 'داعية' ? 'checked-gold' : ''}`}>
-                                  {selectedType === 'داعية' && <Check size={12} strokeWidth={3} color="white" />}
+                              <div className={`checkbox-custom check-align-left ${filterDraft.nationality_country_id === '' ? 'checked-gold' : ''}`}>
+                                  {filterDraft.nationality_country_id === '' && <Check size={12} strokeWidth={3} color="white" />}
                               </div>
-                              <span>داعية</span>
+                              <span>الكل</span>
                             </label>
-                            <label 
-                              className="submenu-item"
-                              onClick={(e) => { e.preventDefault(); setSelectedType('غير ذلك'); }}
-                            >
-                               <div className={`checkbox-custom check-align-left ${selectedType === 'غير ذلك' ? 'checked-gold' : ''}`}>
-                                  {selectedType === 'غير ذلك' && <Check size={12} strokeWidth={3} color="white" />}
-                               </div>
-                              <span>غير ذلك</span>
-                            </label>
+                            {allCountries.map((country) => (
+                              <label 
+                                key={country.id}
+                                className="submenu-item"
+                                onClick={() => setFilterDraft({...filterDraft, nationality_country_id: country.id})}
+                              >
+                                <div className={`checkbox-custom check-align-left ${filterDraft.nationality_country_id === country.id ? 'checked-gold' : ''}`}>
+                                    {filterDraft.nationality_country_id === country.id && <Check size={12} strokeWidth={3} color="white" />}
+                                </div>
+                                <span>{country.name}</span>
+                              </label>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -252,33 +297,45 @@ const AdminCallers = () => {
                       
                       <div className="filter-accordion-content mt-2">
                         <div className="filter-tags-wrapper">
-                          {filterLanguages.map((lang, index) => (
-                            <span key={index} className="filter-tag">
-                              <span>{lang}</span>
-                              <button type="button" onClick={() => removeLanguage(lang)}>
-                                <X size={12} />
-                              </button>
-                            </span>
-                          ))}
+                          {filterDraft.languages.map((langId) => {
+                            const langName = allLanguages.find(l => l.id === langId)?.name || langId;
+                            return (
+                              <span key={langId} className="filter-tag">
+                                <span>{langName}</span>
+                                <button type="button" onClick={() => setFilterDraft({
+                                  ...filterDraft, 
+                                  languages: filterDraft.languages.filter(id => id !== langId)
+                                })}>
+                                  <X size={12} />
+                                </button>
+                              </span>
+                            );
+                          })}
                         </div>
 
                         {openAccordion === 'language' && (
                            <div className="filter-submenu-list bordered-list mt-3">
-                             {availableLanguages.map((lang) => {
-                               const isSelected = filterLanguages.includes(lang);
+                             {allLanguages.map((lang) => {
+                               const isSelected = filterDraft.languages.includes(lang.id);
                                return (
-                                  <label key={lang} className="submenu-item" onClick={(e) => {
+                                  <label key={lang.id} className="submenu-item" onClick={(e) => {
                                     e.preventDefault();
                                     if (isSelected) {
-                                      removeLanguage(lang);
+                                      setFilterDraft({
+                                        ...filterDraft,
+                                        languages: filterDraft.languages.filter(id => id !== lang.id)
+                                      });
                                     } else {
-                                      addLanguage(lang);
+                                      setFilterDraft({
+                                        ...filterDraft,
+                                        languages: [...filterDraft.languages, lang.id]
+                                      });
                                     }
                                   }}>
                                     <div className={`checkbox-custom check-align-left ${isSelected ? 'checked-gold' : ''}`}>
                                       {isSelected && <Check size={12} strokeWidth={3} color="white" />}
                                     </div>
-                                    <span>{lang}</span>
+                                    <span>{lang.name}</span>
                                   </label>
                                );
                              })}
@@ -298,24 +355,24 @@ const AdminCallers = () => {
                       </div>
                       {openAccordion === 'status' && (
                         <div className="filter-accordion-content status-content mt-2">
-                          <label 
-                            className={`status-option ${selectedStatus === 'مفعل' ? 'active-status' : ''}`}
-                            onClick={() => setSelectedStatus('مفعل')}
+                          {['active', 'suspended'].map((status) => (
+                            <label 
+                              key={status}
+                              className={`status-option ${filterDraft.status === status ? 'active-status' : ''}`}
+                              onClick={() => setFilterDraft({...filterDraft, status})}
+                            >
+                              <div className={`checkbox-custom check-align-left ${filterDraft.status === status ? 'checked-gold' : ''}`}>
+                                  {filterDraft.status === status && <Check size={12} strokeWidth={3} color="white" />}
+                              </div>
+                              <span>{status === 'active' ? 'مفعل' : 'غير مفعل'}</span>
+                            </label>
+                          ))}
+                          <button 
+                            className="text-xs text-gray-400 mt-2 hover:underline text-right w-full"
+                            onClick={() => setFilterDraft({...filterDraft, status: ''})}
                           >
-                            <div className={`checkbox-custom check-align-left ${selectedStatus === 'مفعل' ? 'checked-gold' : ''}`}>
-                                {selectedStatus === 'مفعل' && <Check size={12} strokeWidth={3} color="white" />}
-                            </div>
-                            <span>مفعل</span>
-                          </label>
-                          <label 
-                            className={`status-option ${selectedStatus === 'غير مفعل' ? 'inactive-status' : ''}`}
-                            onClick={() => setSelectedStatus('غير مفعل')}
-                          >
-                            <div className={`checkbox-custom check-align-left ${selectedStatus === 'غير مفعل' ? 'checked-gold' : ''}`}>
-                                 {selectedStatus === 'غير مفعل' && <Check size={12} strokeWidth={3} color="white" />}
-                            </div>
-                            <span>غيرمفعل</span>
-                          </label>
+                            الكل
+                          </button>
                         </div>
                       )}
                     </div>
@@ -331,14 +388,24 @@ const AdminCallers = () => {
                 onClick={() => setIsSortOpen(!isSortOpen)}
               >
                 <SortDesc size={18} />
-                تصنيف
+                تصنيف: {sortBy === 'latest' ? 'الأحدث' : 'الأقدم'}
               </button>
               
               {isSortOpen && (
                 <div className="sort-dropdown">
                   <div className="sort-dropdown-title">تصنيف</div>
-                  <button className="sort-option">الاحدث</button>
-                  <button className="sort-option">الأقدم</button>
+                  <button 
+                    className={`sort-option ${sortBy === 'latest' ? 'selected' : ''}`}
+                    onClick={() => { setSortBy('latest'); setIsSortOpen(false); }}
+                  >
+                    الأحدث
+                  </button>
+                  <button 
+                    className={`sort-option ${sortBy === 'oldest' ? 'selected' : ''}`}
+                    onClick={() => { setSortBy('oldest'); setIsSortOpen(false); }}
+                  >
+                    الأقدم
+                  </button>
                 </div>
               )}
             </div>

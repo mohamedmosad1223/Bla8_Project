@@ -28,7 +28,8 @@
   display: flex;
   gap: 16px;
   align-items: center;
-  margin-top: 24px; /* Moving the filter and search further down per user request */
+  margin-top: 24px;
+  /* Moving the filter and search further down per user request */
 }
 
 /* ── Search & Filters ── */
@@ -39,7 +40,8 @@
   border-bottom: 2px solid #e2e8f0;
   padding: 4px 0;
   width: 250px;
-  margin-left: 16px; /* Extra space between search and filters */
+  margin-left: 16px;
+  /* Extra space between search and filters */
 }
 
 .areq-search-icon {
@@ -98,7 +100,8 @@
 }
 
 .areq-tab-btn.active {
-  color: #DBA841; /* The gold/yellow color matching picture */
+  color: #DBA841;
+  /* The gold/yellow color matching picture */
 }
 
 .areq-tab-btn.active::after {
@@ -121,7 +124,7 @@
 
 .areq-content {
   flex: 1;
-  min-width: 0; 
+  min-width: 0;
 }
 
 .areq-table-wrapper {
@@ -202,22 +205,25 @@
 .areq-eye-btn {
   color: var(--text-gray, #a0aec0);
 }
+
 .areq-eye-btn:hover {
   color: var(--primary-blue, #166088);
   background-color: rgba(22, 96, 136, 0.08);
 }
 
 .areq-accept-btn {
-  color: #10b981; 
+  color: #10b981;
 }
+
 .areq-accept-btn:hover {
   color: #059669;
   background-color: rgba(16, 185, 129, 0.1);
 }
 
 .areq-reject-btn {
-  color: #ef4444; 
+  color: #ef4444;
 }
+
 .areq-reject-btn:hover {
   color: #dc2626;
   background-color: rgba(239, 68, 68, 0.1);
@@ -245,7 +251,7 @@
   max-width: 90%;
   position: relative;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .areq-modal-close {
@@ -369,9 +375,253 @@
   background-color: #fca5a5;
 }
 
-.areq-modal-btn.areq-cancel-btn {
-  background-color: #f1f5f9;
-  color: #1e293b;
-  flex: 1;
-  border: 1px solid #e2e8f0;
+/* ─── Filter Panel ─── */
+.filter-popup-container {
+  position: relative;
+  display: flex;
 }
+
+.btn-icon-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.btn-icon-text:hover,
+.btn-icon-text.active {
+  border-color: #dba841;
+  background-color: #fefcf5;
+  color: #dba841;
+}
+
+.filter-dot {
+  background: #dba841;
+  color: #fff;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.filter-panel {
+  width: 310px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #edf2f7;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 100;
+  animation: filterFadeIn 0.2s ease-out;
+}
+
+@keyframes filterFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.filter-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.btn-apply-filter {
+  background-color: #dba841;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Accordion */
+.filter-accordion {
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.filter-accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.rotate-180 { transform: rotate(180deg); }
+
+.filter-accordion-content {
+  padding: 4px 0 12px;
+}
+
+/* Date Input */
+.filter-date-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.filter-date-input label {
+  font-size: 0.78rem;
+  color: #718096;
+}
+
+.filter-date-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.filter-date-input input:focus {
+  border-color: #dba841;
+}
+
+/* Submenu List */
+.filter-submenu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submenu-item:hover {
+  background-color: #f8fafc;
+}
+
+.submenu-item span {
+  font-size: 0.88rem;
+  color: #4a5568;
+}
+
+/* Checkbox */
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkbox-custom.checked-gold {
+  background-color: #dba841;
+  border-color: #dba841;
+}
+
+.btn-reset-filter {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+/* Sort Dropdown */
+.sort-container {
+  position: relative;
+}
+
+.sort-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #edf2f7;
+  width: 140px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.sort-option {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: right;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sort-option:hover {
+  background-color: #f8fafc;
+}
+
+.sort-option.active {
+  color: #dba841;
+  font-weight: 700;
+  background-color: #fefcf5;
+}
+
+/* Loader Spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

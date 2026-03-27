@@ -66,6 +66,8 @@ class OrganizationsController:
         db: Session, skip: int, limit: int, 
         approval: str | None = None,
         search: Optional[str] = None,
+        country_id: Optional[int] = None,
+        governorate: Optional[str] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
         order_by: str = "latest"
@@ -101,19 +103,29 @@ class OrganizationsController:
         ).outerjoin(preachers_sub, Organization.org_id == preachers_sub.c.org_id) \
          .outerjoin(stats_sub, Organization.org_id == stats_sub.c.org_id)
         
-        # 1. Search (Name/ID)
+        # 1. Search (Name/ID/Manager)
         if search:
             if search.isdigit():
                  q = q.filter(or_(
                      Organization.org_id == int(search),
-                     Organization.organization_name.ilike(f"%{search}%")
+                     Organization.organization_name.ilike(f"%{search}%"),
+                     Organization.manager_name.ilike(f"%{search}%")
                  ))
             else:
-                q = q.filter(Organization.organization_name.ilike(f"%{search}%"))
+                q = q.filter(or_(
+                    Organization.organization_name.ilike(f"%{search}%"),
+                    Organization.manager_name.ilike(f"%{search}%")
+                ))
 
         # 2. Approval Filter
         if approval:
             q = q.filter(Organization.approval_status == approval)
+
+        # 3. Country/Governorate
+        if country_id:
+            q = q.filter(Organization.country_id == country_id)
+        if governorate:
+            q = q.filter(Organization.governorate == governorate)
         
         # 3. Date Range
         if created_after:
