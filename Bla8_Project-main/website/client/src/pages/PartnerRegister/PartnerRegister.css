@@ -49,6 +49,10 @@
   appearance: none; /* remove default select arrow */
 }
 
+.input-with-icon input.has-toggle {
+  padding-right: 3rem;
+}
+
 .input-with-icon input:focus,
 .input-with-icon select:focus {
   border-color: var(--primary-gold);
@@ -63,6 +67,22 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggle-password-btn:hover {
+  color: #6B7280;
 }
 
 .input-with-icon input:focus + .icon-wrapper,

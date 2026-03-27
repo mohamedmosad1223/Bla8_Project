@@ -121,12 +121,7 @@ const NonMuslimDashboard: React.FC = () => {
         title: `محادثة زائر ${sessions.length + 1}`,
         lastMessage: 'أهلاً 👋 أنا مساعدك...',
         timestamp: new Date(),
-        messages: [{
-          id: 'welcome-' + newId,
-          sender: 'bot',
-          text: 'أهلاً 👋 أنا مساعدك. كيف يمكنني مساعدتك اليوم؟',
-          timestamp: new Date()
-        }]
+        messages: [] // الرسالة الترحيبية ستأتي من الباكيند
       };
       setSessions(prev => [newSession, ...prev]);
       setActiveChatId(newId);
@@ -187,7 +182,20 @@ const NonMuslimDashboard: React.FC = () => {
 
       const res = await api.post(sendUrl, payload);
 
-      const aiReply = res.data?.ai_response?.content;
+      let aiReply = res.data?.ai_response?.content;
+
+      // إذا لم تجي الرد مباشرة من الباكيند (حالة موجودة في النظام حالياً)، جلب التاريخ من السيرفر
+      if (!aiReply) {
+        try {
+          const historyRes = await api.get(`/chat/ai/guest/history/${activeChatId}`);
+          const history = historyRes.data?.history || [];
+          const aiMessages = history.filter((m: any) => m.role === 'ai');
+          aiReply = aiMessages.length ? aiMessages[aiMessages.length - 1].content : undefined;
+        } catch (historyErr) {
+          console.warn('Failed to recover AI reply from history:', historyErr);
+        }
+      }
+
       const finalReply = aiReply || 'عذراً، لم أتمكن من الحصول على رد مفيد حالياً.';
 
       // 3. إضافة رد الذكاء الاصطناعي للمحادثة

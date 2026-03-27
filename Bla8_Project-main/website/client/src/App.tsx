@@ -148,14 +148,14 @@ function App() {
           <Route path="/submissions" element={<ProtectedRoute allowedRoles={['muslim_caller']}><MuslimCallerSubmissions /></ProtectedRoute>} />
 
           {/* Awqaf Routes */}
-          <Route path="/awqaf-dashboard" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafDashboard /></ProtectedRoute>} />
-          <Route path="/awqaf/associations" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAssociations /></ProtectedRoute>} />
-          <Route path="/awqaf/associations/:id/details" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAssociationDetails /></ProtectedRoute>} />
-          <Route path="/awqaf/associations/:id/reports" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAssociationReports /></ProtectedRoute>} />
-          <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafPreacherDetails /></ProtectedRoute>} />
-          <Route path="/awqaf/preacher-performance" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafPreacherPerformance /></ProtectedRoute>} />
-          <Route path="/awqaf/reports" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafReportsAnalytics /></ProtectedRoute>} />
-          <Route path="/ai" element={<ProtectedRoute allowedRoles={['awqaf_manager']}><AwqafAICenter /></ProtectedRoute>} />
+          <Route path="/awqaf-dashboard" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafDashboard /></ProtectedRoute>} />
+          <Route path="/awqaf/associations" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafAssociations /></ProtectedRoute>} />
+          <Route path="/awqaf/associations/:id/details" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafAssociationDetails /></ProtectedRoute>} />
+          <Route path="/awqaf/associations/:id/reports" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafAssociationReports /></ProtectedRoute>} />
+          <Route path="/awqaf/associations/:id/preachers/:preacherId" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafPreacherDetails /></ProtectedRoute>} />
+          <Route path="/awqaf/preacher-performance" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafPreacherPerformance /></ProtectedRoute>} />
+          <Route path="/awqaf/reports" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafReportsAnalytics /></ProtectedRoute>} />
+          <Route path="/ai" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafAICenter /></ProtectedRoute>} />
 
           {/* Admin Routes */}
           <Route path="/admin/associations" element={<ProtectedRoute allowedRoles={['admin']}><AdminAssociations /></ProtectedRoute>} />

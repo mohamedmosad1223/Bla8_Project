@@ -16,6 +16,8 @@
   background-color: #FFFFFF;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
   outline: none;
+  position: relative;
+  z-index: 1;
 }
 
 .custom-input:focus {
@@ -34,6 +36,10 @@
   padding-right: 1rem;
 }
 
+.custom-input.with-right-icon {
+  padding-right: 2.75rem;
+}
+
 .input-icon {
   position: absolute;
   left: 1rem; /* Icon on the left side */
@@ -42,4 +48,23 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 2;
+}
+
+.input-right-icon {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #A0AEC0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+}
+
+.input-right-icon:hover {
+  color: #6B7280;
 }

@@ -175,7 +175,7 @@ const AwqafReportsAnalytics = () => {
         <div style={{ display: 'flex', gap: '10px' }}>
           <select className="assoc-filter-select" value={association} onChange={(e) => setAssociation(e.target.value)}>
             <option value="all">كل الجمعيات</option>
-            <option value="0">الدعاة المتطوعين</option>
+            <option value="0">الدعاة المتعاونين</option>
             {organizations.map((org) => (
               <option key={org.org_id} value={String(org.org_id)}>{org.organization_name}</option>
             ))}

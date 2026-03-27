@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, FileText, Book, Video, Mic, Share2, Eye, Play, Heart, DownloadCloud, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Search, FileText, Book, Video, Mic, Play, X } from 'lucide-react';
 import './Library.css';
 
 interface LibraryItem {
@@ -12,9 +12,7 @@ interface LibraryItem {
   url: string; // The url to the pdf or video OR empty for article
   content?: string; // Text content if type is article
   authorImageUrl?: string;
-  views?: string;
   pages?: string;
-  shares?: string;
   duration?: string;
 }
 
@@ -73,8 +71,6 @@ const mockData: LibraryItem[] = [
     imageUrl: '/library/غلاف.jpg',
     url: '',
     content: article1,
-    views: '5.2k',
-    shares: '310'
   },
   {
     id: 'a2',
@@ -85,8 +81,6 @@ const mockData: LibraryItem[] = [
     imageUrl: '/library/غلاف (2).jpg',
     url: '',
     content: article2,
-    views: '8.4k',
-    shares: '500'
   },
   {
     id: 'b1',
@@ -96,9 +90,6 @@ const mockData: LibraryItem[] = [
     author: 'بلال فيليبس',
     imageUrl: '/library/غلاف (2).jpg',
     url: '/library/10 THE TRUE RELIGION_1.pdf',
-    views: '1.2k',
-    pages: '45',
-    shares: '34'
   },
   {
     id: 'b2',
@@ -108,9 +99,6 @@ const mockData: LibraryItem[] = [
     author: 'بلال فيليبس',
     imageUrl: '/library/غلاف (3).jpg',
     url: '/library/11 THE TRUE MESSAGE OF JESUS CHRIST_1.pdf',
-    views: '2.4k',
-    pages: '120',
-    shares: '89'
   },
   {
     id: 'b3',
@@ -120,9 +108,6 @@ const mockData: LibraryItem[] = [
     author: 'د. منقذ السقار',
     imageUrl: '/library/غلاف (4).jpg',
     url: '/library/69 Sign of Prophethood_1.pdf',
-    views: '800',
-    pages: '30',
-    shares: '12'
   },
   {
     id: 'b4',
@@ -132,9 +117,6 @@ const mockData: LibraryItem[] = [
     author: 'يوسف استس',
     imageUrl: '/library/غلاف.jpg',
     url: '/library/9 WHY ISLAM (FINAL)_1.pdf',
-    views: '3.5k',
-    pages: '85',
-    shares: '150'
   },
   {
     id: 'v1',
@@ -144,9 +126,6 @@ const mockData: LibraryItem[] = [
     author: 'دعوة',
     imageUrl: '/library/غلاف.jpg',
     url: '/library/Less than 5 Mins - Ep. 6 - The Truth About Mohammad.mp4',
-    views: '15k',
-    duration: '04:50',
-    shares: '400'
   },
   {
     id: 'v2',
@@ -156,9 +135,6 @@ const mockData: LibraryItem[] = [
     author: 'دعوة',
     imageUrl: '/library/غلاف (2).jpg',
     url: '/library/فيديو يغنيك عن شرح الاسلام لغير المسلمين مترجم للغه الانجليزيه.mp4',
-    views: '20k',
-    duration: '15:20',
-    shares: '800'
   },
   {
     id: 'u1',
@@ -167,10 +143,7 @@ const mockData: LibraryItem[] = [
     title: 'التوحيد الخالص',
     author: 'أبو إسحاق الحويني',
     imageUrl: '/library/غلاف (2).jpg',
-    url: '/library/ابواسحاق_الحويني_التوحيد_الخالص.mp3',
-    duration: '01:10:05',
-    views: '12.5k',
-    shares: '450'
+    url: '/library/ابواسحاق_الحويني_التوحيد_الخالص.mp3'
   },
   {
     id: 'u2',
@@ -179,10 +152,7 @@ const mockData: LibraryItem[] = [
     title: 'الدعوة إلى الله',
     author: 'أبو إسحاق الحويني',
     imageUrl: '/library/غلاف (3).jpg',
-    url: '/library/ابواسحاق_الحويني_الدعوة_إلي_الله.mp3',
-    duration: '02:59:20',
-    views: '24k',
-    shares: '980'
+    url: '/library/ابواسحاق_الحويني_الدعوة_إلي_الله.mp3'
   },
   {
     id: 'u3',
@@ -191,10 +161,7 @@ const mockData: LibraryItem[] = [
     title: 'تعلم الإيمان قبل القرآن',
     author: 'أبو إسحاق الحويني',
     imageUrl: '/library/غلاف (4).jpg',
-    url: '/library/ابواسحاق_الحويني_تعلم_الإيمان_قبل_القرآن.mp3',
-    duration: '01:45:30',
-    views: '18k',
-    shares: '620'
+    url: '/library/ابواسحاق_الحويني_تعلم_الإيمان_قبل_القرآن.mp3'
   }
 ];
 
@@ -202,8 +169,156 @@ const Library: React.FC = () => {
   const [activeTab, setActiveTab ] = useState<'article' | 'book' | 'video' | 'audio'>('article');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
+  const [audioDurations, setAudioDurations] = useState<Record<string, string>>({});
+  const [videoDurations, setVideoDurations] = useState<Record<string, string>>({});
+  const [pdfPages, setPdfPages] = useState<Record<string, string>>({});
 
-  const filteredData = mockData.filter(item => 
+  const formatAudioDuration = (seconds: number): string => {
+    if (!Number.isFinite(seconds) || seconds < 0) return 'غير متاحة';
+    const total = Math.floor(seconds);
+    const hrs = Math.floor(total / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    if (hrs > 0) {
+      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  useEffect(() => {
+    const audioItems = mockData.filter((item) => item.type === 'audio' && item.url);
+    if (audioItems.length === 0) return;
+
+    let cancelled = false;
+    const cleanupFns: Array<() => void> = [];
+
+    audioItems.forEach((item) => {
+      const audio = new Audio();
+      audio.preload = 'metadata';
+
+      const handleLoadedMetadata = () => {
+        if (cancelled) return;
+        const realDuration = formatAudioDuration(audio.duration);
+        setAudioDurations((prev) => ({ ...prev, [item.id]: realDuration }));
+      };
+
+      const handleError = () => {
+        if (cancelled) return;
+        setAudioDurations((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+      };
+
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.addEventListener('error', handleError);
+      audio.src = item.url;
+
+      cleanupFns.push(() => {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('error', handleError);
+        audio.src = '';
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, []);
+
+  useEffect(() => {
+    const videoItems = mockData.filter((item) => item.type === 'video' && item.url);
+    if (videoItems.length === 0) return;
+
+    let cancelled = false;
+    const cleanupFns: Array<() => void> = [];
+
+    videoItems.forEach((item) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+
+      const handleLoadedMetadata = () => {
+        if (cancelled) return;
+        const realDuration = formatAudioDuration(video.duration);
+        setVideoDurations((prev) => ({ ...prev, [item.id]: realDuration }));
+      };
+
+      const handleError = () => {
+        if (cancelled) return;
+        setVideoDurations((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+      };
+
+      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      video.addEventListener('error', handleError);
+      video.src = item.url;
+
+      cleanupFns.push(() => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener('error', handleError);
+        video.src = '';
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, []);
+
+  useEffect(() => {
+    const pdfItems = mockData.filter((item) => item.type === 'book' && item.url);
+    if (pdfItems.length === 0) return;
+
+    let cancelled = false;
+
+    const loadAllPdfPages = async () => {
+      try {
+        const pdfjs = await import('pdfjs-dist/build/pdf.mjs');
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+          'pdfjs-dist/build/pdf.worker.min.mjs',
+          import.meta.url,
+        ).toString();
+
+        await Promise.all(
+          pdfItems.map(async (item) => {
+            try {
+              const loadingTask = pdfjs.getDocument(item.url);
+              const pdfDoc = await loadingTask.promise;
+              if (cancelled) return;
+              setPdfPages((prev) => ({ ...prev, [item.id]: String(pdfDoc.numPages) }));
+            } catch {
+              if (cancelled) return;
+              setPdfPages((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+            }
+          }),
+        );
+      } catch {
+        if (!cancelled) {
+          pdfItems.forEach((item) => {
+            setPdfPages((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+          });
+        }
+      }
+    };
+
+    loadAllPdfPages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const dataWithRealAudioDurations = useMemo(() => (
+    mockData.map((item) => (
+      item.type === 'audio'
+        ? { ...item, duration: audioDurations[item.id] ?? item.duration ?? 'جارٍ التحميل...' }
+        : item.type === 'video'
+          ? { ...item, duration: videoDurations[item.id] ?? item.duration ?? 'جارٍ التحميل...' }
+          : item.type === 'book'
+            ? { ...item, pages: pdfPages[item.id] ?? item.pages ?? 'جارٍ التحميل...' }
+            : item
+    ))
+  ), [audioDurations, pdfPages, videoDurations]);
+
+  const filteredData = dataWithRealAudioDurations.filter(item =>
     item.type === activeTab &&
     (item.title.includes(searchQuery) || item.author.includes(searchQuery))
   );
@@ -270,9 +385,7 @@ const Library: React.FC = () => {
               </div>
               <div className="audio-actions">
                 <div className="audio-meta">
-                  <span>{item.duration}</span>
-                  <button className="icon-btn"><DownloadCloud size={18} /></button>
-                  <button className="icon-btn liked"><Heart size={18} fill="currentColor" /></button>
+                  <span className="audio-duration"> {item.duration ?? 'غير متاحة'}</span>
                 </div>
                 <button className="audio-play-btn">
                   <Play size={20} fill="currentColor" />
@@ -320,13 +433,7 @@ const Library: React.FC = () => {
                      <h3 className="card-title" style={{ textAlign: 'center' }}>{item.title}</h3>
                      <div className="card-stats-footer" style={{ justifyContent: 'center', gap: '16px' }}>
                         <div className="stat-item">
-                          <Eye size={14} /> <span>{item.views}</span>
-                        </div>
-                        <div className="stat-item">
-                          {item.type === 'book' ? <Book size={14} /> : <FileText size={14} />} <span>{item.type === 'book' ? item.pages : item.duration}</span>
-                        </div>
-                        <div className="stat-item">
-                          <Share2 size={14} /> <span>{item.shares}</span>
+                          <span>{item.type === 'book' ? `عدد الصفحات: ${item.pages}` : `المدة: ${item.duration}`}</span>
                         </div>
                      </div>
                   </>

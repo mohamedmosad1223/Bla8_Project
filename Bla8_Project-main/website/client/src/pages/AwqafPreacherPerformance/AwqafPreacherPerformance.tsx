@@ -164,7 +164,7 @@ const AwqafPreacherPerformance = () => {
           <label>اختيار الجمعية</label>
           <select value={association} onChange={(e) => setAssociation(e.target.value)}>
             <option value="all">جميع الجمعيات</option>
-            <option value="0">الدعاة المتطوعين</option>
+            <option value="0">الدعاة المتعاونين</option>
             {organizations.map((org) => (
               <option key={org.org_id} value={String(org.org_id)}>{org.organization_name}</option>
             ))}

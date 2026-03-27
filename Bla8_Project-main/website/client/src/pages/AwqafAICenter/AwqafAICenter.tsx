@@ -64,7 +64,7 @@ const AwqafAICenter = () => {
       filter === 'all'
         ? 'كل الجمعيات'
         : filter === '0'
-          ? 'الدعاة المتطوعين'
+          ? 'الدعاة المتعاونين'
           : organizations.find((org) => String(org.org_id) === filter)?.organization_name || 'جمعية محددة';
     const timeframeLabel =
       timeframe === 'all_time' ? 'كل الوقت' : timeframe === 'this_month' ? 'هذا الشهر' : 'الشهر السابق';
@@ -160,7 +160,7 @@ const AwqafAICenter = () => {
               <div className="ai-select-wrapper">
                 <select value={filter} onChange={e => setFilter(e.target.value)} className="ai-select">
                   <option value="all">الكل</option>
-                  <option value="0">الدعاة المتطوعين</option>
+                  <option value="0">الدعاة المتعاونين</option>
                   {organizations.map((org) => (
                     <option key={org.org_id} value={String(org.org_id)}>{org.organization_name}</option>
                   ))}

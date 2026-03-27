@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, KeyRound, ChevronRight } from 'lucide-react';
+import { Mail, KeyRound, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import Input from '../../components/common/Input/Input';
@@ -15,6 +15,7 @@ const Login: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,12 +79,15 @@ const Login: React.FC = () => {
             />
 
             <Input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="الباسورد"
               icon={<KeyRound size={18} />}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              onRightIconClick={() => setShowPassword((p) => !p)}
+              rightIconLabel={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
             />
 
             <div className="form-options">

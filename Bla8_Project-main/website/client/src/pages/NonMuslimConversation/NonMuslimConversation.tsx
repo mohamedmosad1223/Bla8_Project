@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Send, Image as ImageIcon, User } from 'lucide-react';
+import { Search, Send, User } from 'lucide-react';
 import api from '../../services/api';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import './NonMuslimConversation.css';
@@ -272,9 +272,6 @@ const NonMuslimConversation: React.FC = () => {
               onKeyDown={handleKeyDown}
               disabled={!activeContact || sending}
             />
-            <button className="nm-input-btn">
-              <ImageIcon size={20} />
-            </button>
           </div>
         </div>
       </div>
