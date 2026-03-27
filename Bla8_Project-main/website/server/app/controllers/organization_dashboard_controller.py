@@ -48,33 +48,20 @@ class OrganizationDashboardController:
             DawahRequest.alert_42h_sent_at.isnot(None)
         ).count()
 
-        # 2. Kuwait Governorates Distribution (always return all 6, 0 if no data)
-        KUWAIT_GOVERNORATES = [
-            'محافظة العاصمة',
-            'محافظة الأحمدي',
-            'محافظة الفروانية',
-            'محافظة حولي',
-            'محافظة الجهراء',
-            'محافظة مبارك الكبير',
-        ]
-
-        # جيب عدد الطلبات لكل محافظة موجودة في الـ DB
-        gov_data = db.query(
-            DawahRequest.governorate, func.count(DawahRequest.request_id)
+        # 2. Invited people distribution by nationality (world map source)
+        nationality_data = db.query(
+            Country.country_name, func.count(DawahRequest.request_id)
+        ).join(
+            DawahRequest, Country.country_id == DawahRequest.invited_nationality_id
         ).join(
             Preacher, DawahRequest.assigned_preacher_id == Preacher.preacher_id
         ).filter(
-            Preacher.org_id == org_id,
-            DawahRequest.governorate.in_(KUWAIT_GOVERNORATES)
-        ).group_by(DawahRequest.governorate).all()
+            Preacher.org_id == org_id
+        ).group_by(Country.country_name).order_by(
+            func.count(DawahRequest.request_id).desc()
+        ).all()
 
-        gov_map = {gov: count for gov, count in gov_data}
-
-        # دايماً ارجع الست محافظات حتى لو قيمتهم صفر
-        top_nationalities = [
-            {"label": gov, "value": gov_map.get(gov, 0)}
-            for gov in KUWAIT_GOVERNORATES
-        ]
+        top_nationalities = [{"label": n, "value": count} for n, count in nationality_data]
 
         # 3. Requests Distribution (Donut Chart)
         dist_data = db.query(
