@@ -155,6 +155,7 @@ const PartnerRegister: React.FC = () => {
                   <option value="" disabled>الدولة</option>
                   <option value="1">مصر</option>
                   <option value="2">السعودية</option>
+                  <option value="5">الكويت</option>
                 </select>
                 <span className="icon-wrapper"><ChevronDown size={18} /></span>
               </div>
@@ -162,10 +163,14 @@ const PartnerRegister: React.FC = () => {
             <div className="form-group half-width">
               <div className="input-with-icon select-wrapper">
                 <select name="governorate" value={formData.governorate} onChange={handleInputChange} required>
-                  <option value="" disabled>المحافظة</option>
-                  <option value="cairo">القاهرة</option>
-                  <option value="giza">الجيزة</option>
-                  <option value="alexandria">الاسكندرية</option>
+                   <option value="" disabled>المحافظة</option>
+                   <option value="jahra">محافظة الجهراء</option>
+                   <option value="asima">محافظة العاصمة</option>
+                   <option value="farwaniya">محافظة الفروانية</option>
+                   <option value="hawalli">محافظة حولي</option>
+                   <option value="mubarak_al_kabeer">محافظة مبارك الكبير</option>
+                   <option value="ahmadi">محافظة الأحمدي</option>
+                   <option value="other">أخرى</option>
                 </select>
                 <span className="icon-wrapper"><ChevronDown size={18} /></span>
               </div>

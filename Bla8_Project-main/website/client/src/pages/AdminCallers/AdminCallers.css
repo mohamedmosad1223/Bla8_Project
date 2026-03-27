@@ -283,16 +283,10 @@
   display: none; /* Hide title if not explicitly needed, or keep for spacing */
 }
 
-.sort-option {
-  padding: 12px 16px;
-  text-align: right;
-  background: white;
-  border: none;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--text-dark);
-  cursor: pointer;
-  transition: background-color 0.2s;
+.sort-option.selected {
+  background-color: var(--bg-color);
+  font-weight: 700;
+  color: var(--primary-gold);
 }
 
 .sort-option:hover {
@@ -332,7 +326,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
+
+.items-center { display: flex; align-items: center; }
+.gap-4 { gap: 1rem; }
+.text-sm { font-size: 0.875rem; }
+.text-gray-400 { color: #9CA3AF; }
+.hover\:text-gray-600:hover { color: #4B5563; }
+.hover\:underline:hover { text-decoration: underline; }
+.text-xs { font-size: 0.75rem; }
+.w-full { width: 100%; }
+.text-right { text-align: right; }
 
 .filter-title {
   font-size: 1.5rem;

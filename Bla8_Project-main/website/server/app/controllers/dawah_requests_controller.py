@@ -243,6 +243,8 @@ class DawahRequestsController:
                 "accepted_at":           req.accepted_at,
                 "updated_at":            req.updated_at,
                 "notes":                 req.notes or "لا يوجد",
+                "submitted_by_caller_id":req.submitted_by_caller_id,
+                "submitted_by_person_id":req.submitted_by_person_id,
             }
             
             # Submitter info
@@ -413,7 +415,9 @@ class DawahRequestsController:
                 "accepted_at":           r.accepted_at,
                 "created_at":            r.created_at,
                 "updated_at":            r.updated_at,
-                "notes":                 r.notes or "لا يوجد"
+                "notes":                 r.notes or "لا يوجد",
+                "submitted_by_caller_id":r.submitted_by_caller_id,
+                "submitted_by_person_id":r.submitted_by_person_id,
             }
             rich_data.append(item)
             
@@ -541,7 +545,9 @@ class DawahRequestsController:
             "created_at":            req.created_at,
             "updated_at":            req.updated_at,
             "notes":                 req.notes or "لا يوجد",
-            "preacher_feedback":     req.preacher_feedback
+            "preacher_feedback":     req.preacher_feedback,
+            "submitted_by_caller_id":req.submitted_by_caller_id,
+            "submitted_by_person_id":req.submitted_by_person_id,
         }
         
         # Submitter info

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   User, 
   MessageCircle, 
-  Moon, 
   Settings, 
   Mail, 
   Phone, 
@@ -181,10 +180,7 @@ const AdminPreacherDetails = () => {
             <span className="apreach-label"><MessageCircle size={16}/> اللغة</span>
             <span className="apreach-value">{info.language_names.join(', ') || '—'}</span>
           </div>
-          <div className="apreach-item">
-            <span className="apreach-label"><Moon size={16}/> الديانة</span>
-            <span className="apreach-value">{info.religion}</span>
-          </div>
+
           <div className="apreach-item">
             <span className="apreach-label"><Settings size={16}/> الحالة</span>
             <span className={`apreach-value ${info.status === 'active' ? 'status-active' : 'status-inactive'}`}>

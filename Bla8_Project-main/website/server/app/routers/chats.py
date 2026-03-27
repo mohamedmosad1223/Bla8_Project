@@ -10,6 +10,7 @@ from app.schemas.schemas import (
     AIChatConversationCreate, AIChatConversationRead, AIChatConversationListResponse
 )
 from app.controllers.chats_controller import ChatsController
+from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/api/chat", tags=["Chats & AI"])
 
@@ -19,13 +20,19 @@ def get_ai_chat_history(db: Session = Depends(get_db), current_user: User = Depe
     return ChatsController.get_ai_chat_history(db, current_user)
 
 @router.post("/ai/send")
-def send_ai_message(payload: AIChatMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def send_ai_message(payload: AIChatMessageCreate, stream: bool = False, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """إرسال رسالة للمساعد الذكي واستلام رد آلي (للمسجلين)"""
+    if stream:
+        generator = ChatsController.send_ai_message_stream(db, current_user, payload)
+        return StreamingResponse(generator, media_type="text/event-stream")
     return ChatsController.send_ai_message(db, current_user, payload)
 
 @router.post("/ai/guest/send")
-def send_guest_ai_message(payload: GuestAIChatCreate, db: Session = Depends(get_db)):
+def send_guest_ai_message(payload: GuestAIChatCreate, stream: bool = False, db: Session = Depends(get_db)):
     """إرسال رسالة للمساعد الذكي للزوار (بدون تسجيل)"""
+    if stream:
+        generator = ChatsController.send_guest_ai_message_stream(db, payload)
+        return StreamingResponse(generator, media_type="text/event-stream")
     return ChatsController.send_guest_ai_message(db, payload)
 
 @router.get("/ai/guest/history/{session_id}")
@@ -71,7 +78,10 @@ def get_conversation_messages(conversation_id: int, db: Session = Depends(get_db
     return ChatsController.get_conversation_messages(db, current_user, conversation_id)
 
 @router.post("/conversations/{conversation_id}/messages")
-def send_message_to_conversation(conversation_id: int, payload: AIChatMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def send_message_to_conversation(conversation_id: int, payload: AIChatMessageCreate, stream: bool = False, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """إرسال رسالة داخل جلسة محادثة معينة (تكملة الكلام)"""
     payload.conversation_id = conversation_id
+    if stream:
+        generator = ChatsController.send_ai_message_stream(db, current_user, payload)
+        return StreamingResponse(generator, media_type="text/event-stream")
     return ChatsController.send_ai_message(db, current_user, payload)

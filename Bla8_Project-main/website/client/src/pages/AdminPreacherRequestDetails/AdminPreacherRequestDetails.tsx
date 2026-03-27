@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ChevronLeft, 
-  Check, 
-  X, 
-  User, 
-  Globe, 
-  MessageCircle, 
-  Moon, 
-  Mail, 
-  PhoneCall, 
-  Users, 
-  Calendar, 
+import {
+  ChevronLeft,
+  Check,
+  X,
+  User,
+  Globe,
+  MessageCircle,
+  Mail,
+  PhoneCall,
+  Users,
+  Calendar,
   Link2,
   FileText,
   Eye,
@@ -136,13 +135,7 @@ const AdminPreacherRequestDetails = () => {
             </div>
           </div>
           
-          <div className="aprd-dfield">
-            <div className="aprd-dfield-label">
-              <span className="aprd-icon-gold"><Moon size={16} /></span>
-              <span>الديانة</span>
-            </div>
-            <div className="aprd-dfield-value">{requestDetails.religion_name}</div>
-          </div>
+
 
           {/* Row 2 */}
           <div className="aprd-dfield">

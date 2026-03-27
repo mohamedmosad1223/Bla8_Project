@@ -55,6 +55,8 @@ def list_organizations(
     limit: int = Query(50, ge=1, le=200),
     approval: Optional[ApprovalStatus] = Query(None, description="Filter by approval_status"),
     search: Optional[str] = Query(None, description="اسم الجمعية أو الرقم التعريفى"),
+    country_id: Optional[int] = Query(None),
+    governorate: Optional[str] = Query(None),
     created_after: Optional[datetime] = Query(None),
     created_before: Optional[datetime] = Query(None),
     order_by: str = Query("latest", regex="^(latest|oldest)$"),
@@ -64,6 +66,7 @@ def list_organizations(
     return OrganizationsController.list_organizations(
         db=db, skip=skip, limit=limit, 
         approval=approval, search=search,
+        country_id=country_id, governorate=governorate,
         created_after=created_after, created_before=created_before,
         order_by=order_by
     )

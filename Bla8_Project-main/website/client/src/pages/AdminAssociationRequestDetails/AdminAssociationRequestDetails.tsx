@@ -10,7 +10,6 @@ import {
   Mail, 
   Calendar, 
   FileBadge, 
-  Users, 
   Building,
   FileText,
   Eye,
@@ -74,6 +73,19 @@ const AdminAssociationRequestDetails = () => {
     }
   };
 
+  const getGovernorateName = (id: string) => {
+    const govs = [
+      { id: 'jahra', name: 'محافظة الجهراء' },
+      { id: 'asima', name: 'محافظة العاصمة' },
+      { id: 'farwaniya', name: 'محافظة الفروانية' },
+      { id: 'hawalli', name: 'محافظة حولي' },
+      { id: 'mubarak_al_kabeer', name: 'محافظة مبارك الكبير' },
+      { id: 'ahmadi', name: 'محافظة الأحمدي' },
+      { id: 'other', name: 'أخرى' },
+    ];
+    return govs.find(g => g.id === id)?.name || id;
+  };
+
   return (
     <div className="aard-detail-page">
       {/* ── Detail Header Wrapper ── */}
@@ -131,16 +143,9 @@ const AdminAssociationRequestDetails = () => {
               <span className="aard-icon-gold"><MapPin size={16} /></span>
               <span>المحافظة</span>
             </div>
-            <div className="aard-dfield-value">{requestDetails.governorate}</div>
+            <div className="aard-dfield-value">{getGovernorateName(requestDetails.governorate)}</div>
           </div>
           
-          <div className="aard-dfield">
-            <div className="aard-dfield-label">
-              <span className="aard-icon-gold"><MapPin size={16} /></span>
-              <span>المدينة / العنوان</span>
-            </div>
-            <div className="aard-dfield-value">{requestDetails.address || "مدينة نصر"}</div>
-          </div>
 
           {/* Row 2 */}
           <div className="aard-dfield">
@@ -175,14 +180,7 @@ const AdminAssociationRequestDetails = () => {
             <div className="aard-dfield-value" dir="ltr">{requestDetails.license_number}</div>
           </div>
 
-          {/* Row 3 */}
-          <div className="aard-dfield">
-            <div className="aard-dfield-label">
-              <span className="aard-icon-gold"><Users size={16} /></span>
-              <span>عدد الدعاة التابعين</span>
-            </div>
-            <div className="aard-dfield-value">{requestDetails.preachers_count} داعية</div>
-          </div>
+
 
           {/* Row - Document */}
           <div className="aard-dfield aard-dfield-span2">

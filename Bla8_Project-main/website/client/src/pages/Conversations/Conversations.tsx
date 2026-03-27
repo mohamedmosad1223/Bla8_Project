@@ -95,23 +95,23 @@ const Conversations = () => {
     try {
       const res = await api.get('/messages/my-chats');
       const data: ChatPreview[] = res.data?.data || [];
-      
+
       if (!hasAutoOpened.current && (initRequestId || initUserId)) {
         hasAutoOpened.current = true;
-        
+
         let found: ChatPreview | null = null;
         if (initRequestId) {
           found = data.find(c => c.request_id === Number(initRequestId)) || null;
         } else if (initUserId) {
           found = data.find(c => c.other_user_id === Number(initUserId) && c.is_direct) || null;
         }
-        
+
         if (found) {
           setChats(data);
           setActiveChat(found);
           // Fetch its history
           try {
-            const url = found.request_id 
+            const url = found.request_id
               ? `/messages/chat-history/${found.request_id}`
               : `/messages/dm-history/${found.other_user_id}`;
             const msgRes = await api.get(url);
@@ -173,7 +173,7 @@ const Conversations = () => {
           if (lastM?.conversation_id) setAiConversationId(lastM.conversation_id);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ─── Scroll helpers ──────────────────────────────────────────────────────
@@ -288,8 +288,8 @@ const Conversations = () => {
             </p>
           )}
           {filteredChats.map((c) => {
-            const isActive = c.request_id 
-              ? activeChat?.request_id === c.request_id 
+            const isActive = c.request_id
+              ? activeChat?.request_id === c.request_id
               : activeChat?.other_user_id === c.other_user_id;
             const key = c.request_id ? `req-${c.request_id}` : `dm-${c.other_user_id}`;
             return (
@@ -337,9 +337,9 @@ const Conversations = () => {
               <div className="conv-chat-header-info">
                 <h3 className="conv-chat-title">{activeChat.other_party_name}</h3>
                 <div className="conv-chat-status">
-                  <span className={`conv-status-dot ${ (activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) ? 'online' : 'offline'}`}></span>
-                  {(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) 
-                    ? 'متصل الآن' 
+                  <span className={`conv-status-dot ${(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) ? 'online' : 'offline'}`}></span>
+                  {(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000)))
+                    ? 'متصل الآن'
                     : (activeChat.last_seen ? `آخر ظهور ${formatTimeAgo(activeChat.last_seen)}` : 'غير متصل')}
                 </div>
               </div>
@@ -353,8 +353,8 @@ const Conversations = () => {
             <div className="conv-chat-messages">
               {messages.map((msg, idx) => {
                 const dateStr = formatDate(msg.created_at);
-                const showDivider = idx === 0 || formatDate(messages[idx-1].created_at) !== dateStr;
-                
+                const showDivider = idx === 0 || formatDate(messages[idx - 1].created_at) !== dateStr;
+
                 return (
                   <React.Fragment key={msg.message_id}>
                     {showDivider && (
@@ -365,12 +365,12 @@ const Conversations = () => {
                       {msg.is_mine && (
                         <div className="conv-msg-avatar bg-red-100"><AvatarIcon /></div>
                       )}
-                      
+
                       <div className={`conv-msg-bubble ${msg.is_mine ? 'bg-gold' : 'bg-light'}`}>
                         <p className="conv-msg-text">{msg.message_text}</p>
                         <span className="conv-msg-time">{formatTime(msg.created_at)}</span>
                       </div>
-                      
+
                       {!msg.is_mine && (
                         <div className="conv-msg-avatar bg-pink-100"><AvatarIcon /></div>
                       )}
@@ -427,7 +427,7 @@ const Conversations = () => {
               {msg.role === 'user' && ( /* User is mine */
                 <div className="conv-msg-avatar bg-red-100"><AvatarIcon /></div>
               )}
-              
+
               <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
                 <p className="conv-msg-text">{msg.content}</p>
                 {msg.created_at && <span className="conv-msg-time">{formatTime(msg.created_at)}</span>}

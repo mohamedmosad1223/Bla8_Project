@@ -123,6 +123,7 @@ const PreacherRegister: React.FC = () => {
                   <option value="2">سعودي</option>
                   <option value="3">سوري</option>
                   <option value="4">أردني</option>
+                  <option value="5">كويتي</option>
                 </select>
                 <span className="preg-icon"><ChevronDown size={18} /></span>
               </div>

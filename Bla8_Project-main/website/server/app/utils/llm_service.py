@@ -199,3 +199,53 @@ class LLMService:
                  print(f"Failed to write to log file: {le}")
 
             return "عذراً، حدث خطأ أثناء الاتصال بالمساعد الذكي. حاول مرة أخرى في وقت لاحق."
+
+    @staticmethod
+    def generate_chat_response_stream(messages: List[Dict[str, str]], role: str = "interested"):
+        """
+        Calls the Groq LLM API with streaming enabled. Yields chunks of text.
+        """
+        global client
+        if not client:
+            from dotenv import load_dotenv
+            from pathlib import Path
+            env_path = Path(__file__).parent.parent.parent / ".env"
+            load_dotenv(env_path, override=True)
+            new_key = os.environ.get("GROQ_API_KEY", "")
+            if new_key:
+                try:
+                    api_key = new_key.strip("'\"")
+                    client = Groq(api_key=api_key)
+                except: pass
+
+        if not client:
+            yield "عذراً، خدمة المساعد الذكي غير متاحة حالياً."
+            return
+
+        base_prompt = LLMService.PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
+        last_user_query = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        system_prompt = build_prompt_with_context(base_prompt, last_user_query, role)
+
+        if system_prompt == "__BLOCK_RESPONSE__":
+            yield "عذراً، لا تتوفر معلومات كافية في قاعدة بياناتنا حول هذا الاستفسار حالياً."
+            return
+
+        try:
+            api_messages = [{"role": "system", "content": system_prompt}]
+            api_messages.extend(messages)
+
+            completion = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=api_messages,
+                max_tokens=2048,
+                temperature=0.7,
+                stream=True,  # Mandatory for streaming
+            )
+
+            for chunk in completion:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+
+        except Exception as e:
+            print(f"Streaming Error: {e}")
+            yield "عذراً، حدث خطأ أثناء الاتصال بالمساعد الذكي."
