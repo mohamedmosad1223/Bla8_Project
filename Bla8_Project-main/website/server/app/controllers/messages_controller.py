@@ -54,7 +54,7 @@ class MessagesController:
                 caller = db.query(MuslimCaller).filter(MuslimCaller.caller_id == request.submitted_by_caller_id).first()
                 if caller: submitter_user_id = caller.user_id
             elif request.submitted_by_person_id:
-                person = db.query(InterestedPerson).filter(InterestedPerson.user_id == user_id).first()
+                person = db.query(InterestedPerson).filter(InterestedPerson.person_id == request.submitted_by_person_id).first()
                 if person: submitter_user_id = person.user_id
 
             if sender.user_id == preacher_user_id:
@@ -77,10 +77,41 @@ class MessagesController:
             if not receiver_id:
                 raise HTTPException(status_code=400, detail="يجب تحديد المستلم للمراسلة المباشرة")
             
-            # Validation: Organizations can only message their own preachers
-            elif sender.role == UserRole.admin:
+            # Validation: Organizations can only message their own preachers or admin
+            receiver_user = db.query(User).filter(User.user_id == receiver_id).first()
+            if not receiver_user:
+                 raise HTTPException(status_code=404, detail="المستلم غير موجود")
+
+            if sender.role == UserRole.admin:
                 # Admin can message anyone
                 pass
+            elif sender.role == UserRole.organization:
+                # Organizations can message:
+                # 1. Their own preachers
+                # 2. Any Admin
+                if receiver_user.role == UserRole.admin:
+                    pass
+                elif receiver_user.role == UserRole.preacher:
+                    preacher = db.query(Preacher).filter(Preacher.user_id == receiver_id).first()
+                    if preacher and preacher.org_id == sender.organization.org_id:
+                        pass
+                    else:
+                        raise HTTPException(status_code=403, detail="لا يمكنك مراسلة دعاة غير تابعين لجمعيتك")
+                else:
+                    raise HTTPException(status_code=403, detail="هذا النوع من الحسابات يدعم مراسلة الدعاة التابعين لك أو الإدارة فقط")
+            elif sender.role == UserRole.preacher:
+                # Preachers can message:
+                # 1. Their own organization
+                # 2. Any Admin
+                if receiver_user.role == UserRole.admin:
+                    pass
+                elif receiver_user.role == UserRole.organization:
+                    if sender.preacher.org_id == receiver_user.organization.org_id:
+                        pass
+                    else:
+                        raise HTTPException(status_code=403, detail="لا يمكنك مراسلة جمعية أخرى غير التي تنتمي إليها")
+                else:
+                    raise HTTPException(status_code=403, detail="نوع حسابك يدعم مراسلة جمعيتك أو الإدارة فقط")
             else:
                 raise HTTPException(status_code=403, detail="نوع حسابك لا يدعم المراسلة المباشرة")
 

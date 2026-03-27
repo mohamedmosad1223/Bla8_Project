@@ -9,7 +9,11 @@ import {
   UserCheck,
   UserX,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Building,
+  MessageSquare,
+  BookOpen,
+  Send
 } from 'lucide-react';
 import api from '../../services/api';
 import WorldMap from '../../components/WorldMap/WorldMap';
@@ -17,11 +21,13 @@ import './AdminDashboard.css';
 
 interface DashboardData {
   total_organizations: { title: string; value: number; is_positive: boolean };
-  total_preachers: { title: string; value: number; is_positive: boolean };
-  total_individuals: { title: string; value: number; is_positive: boolean };
-  total_cases: { title: string; value: number; is_positive: boolean };
+  pending_org_requests: { title: string; value: number; is_positive: boolean };
+  total_conversations: { title: string; value: number; is_positive: boolean };
+  total_follow_up: { title: string; value: number; is_positive: boolean };
   total_converted: { title: string; value: number; is_positive: boolean };
   total_rejected: { title: string; value: number; is_positive: boolean };
+  total_cases: { title: string; value: number; is_positive: boolean };
+  total_individuals: { title: string; value: number; is_positive: boolean };
   top_preachers: Array<{
     preacher_id: number;
     full_name: string;
@@ -90,12 +96,14 @@ const AdminDashboard = () => {
 
   // ─── Stat Cards Mapping ───────────────────────────────────────
   const statCards = [
-    { title: 'اجمالي عدد الجمعيات', value: data.total_organizations.value, icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: 'جديد' },
-    { title: 'اجمالي عدد الدعاة', value: data.total_preachers.value, icon: <Users size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'up' as const, trendValue: 'جديد' },
-    { title: 'إجمالي الأفراد المسجلين', value: data.total_individuals.value, icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'up' as const, trendValue: 'جديد' },
-    { title: 'اجمالي الحالات سجلت', value: data.total_cases.value, icon: <FileText size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'up' as const, trendValue: 'جديد' },
-    { title: 'عدد من أسلموا', value: data.total_converted.value, icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'up' as const, trendValue: 'بفضل الله' },
-    { title: 'إجمالي حالات الرفض', value: data.total_rejected.value, icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '-' },
+    { title: 'إجمالي عدد الجمعيات', value: data.total_organizations.value, icon: <Building size={24} />, bgColor: '#E0E7FF', color: '#6366F1', trend: 'up' as const, trendValue: 'جديد' },
+    { title: 'إجمالي عدد طلبات الجمعية', value: data.pending_org_requests.value, icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706', trend: 'up' as const, trendValue: 'بانتظار المراجعة' },
+    { title: 'إجمالي عدد المحادثات', value: data.total_conversations.value, icon: <MessageSquare size={24} />, bgColor: '#E0F2FE', color: '#0EA5E9', trend: 'up' as const, trendValue: 'نشط' },
+    { title: 'المحالون للتعليم والمتابعة', value: data.total_follow_up.value, icon: <BookOpen size={24} />, bgColor: '#F3E8FF', color: '#A855F7', trend: 'up' as const, trendValue: 'متابعة' },
+    { title: 'من أسلموا', value: data.total_converted.value, icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981', trend: 'up' as const, trendValue: 'بفضل الله' },
+    { title: 'من رفضوا', value: data.total_rejected.value, icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444', trend: 'down' as const, trendValue: '-' },
+    { title: 'إجمالي الحالات المسجلة', value: data.total_cases.value, icon: <Send size={24} />, bgColor: '#FFEDD5', color: '#F97316', trend: 'up' as const, trendValue: 'نشط' },
+    { title: 'إجمالي الأفراد المسجلين', value: data.total_individuals.value, icon: <Users size={24} />, bgColor: '#F1F5F9', color: '#64748B', trend: 'up' as const, trendValue: 'إجمالي' },
   ];
 
   // ─── Presence Donut Chart Data ────────────────────────────────

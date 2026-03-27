@@ -144,11 +144,11 @@ const GovernoratesSection = ({ data }: { data: ChartDataPoint[] }) => {
 
 // ─── Donut Chart (Requests by Status) ────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
-  converted:  '#51cf66',
-  pending:    '#dba841',
-  rejected:   '#ff6b6b',
-  assigned:   '#74b9ff',
-  in_progress:'#a29bfe',
+  converted: '#51cf66',
+  pending: '#dba841',
+  rejected: '#ff6b6b',
+  assigned: '#74b9ff',
+  in_progress: '#a29bfe',
 };
 
 const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
@@ -301,13 +301,13 @@ const PreacherDashboard: React.FC = () => {
       // Always fetch fresh profile from server to get latest approval_status
       const profileRes = await import('../../services/authService').then(m => m.authService.getMe());
       const approvalStatus = profileRes?.extra_data?.approval_status;
-      
+
       if (approvalStatus === 'pending') {
         setIsPending(true);
         setLoading(false);
         return;
       }
-      
+
       // Approved: load dashboard
       const dashData = await preacherService.getDashboard(selectedInterval);
       setData(dashData);
@@ -331,7 +331,15 @@ const PreacherDashboard: React.FC = () => {
         <div style={{ textAlign: 'center', color: '#dba841', background: '#fdf7e3', padding: '3rem', borderRadius: '12px', border: '1px solid #f9ebd1', maxWidth: '500px' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', fontWeight: 700 }}>حساب قيد المراجعة</h2>
-          <p style={{ color: '#6b572a', lineHeight: 1.6 }}>طلب تسجيلك كداعية الآن قيد المراجعة من قبل الإدارة. سيتم إشعارك بمجرد قبول الطلب لتتمكن من الوصول للوحة التحكم والبدء في استلام طلبات المهتمين. يمكنك مراجعة بياناتك من قسم "الملف الشخصي".</p>
+          <p style={{ color: '#6b572a', lineHeight: 1.6, marginBottom: '2rem' }}>
+            طلب تسجيلك كداعية الآن قيد المراجعة من قبل الإدارة. سيتم إشعارك بمجرد قبول الطلب لتتمكن من الوصول للوحة التحكم والبدء في استلام طلبات المهتمين. يمكنك مراجعة بياناتك من قسم "الملف الشخصي".
+          </p>
+          <button 
+            onClick={() => import('../../services/authService').then(m => m.authService.logout()).then(() => window.location.href = '/')}
+            style={{ background: '#dba841', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            تسجيل الخروج
+          </button>
         </div>
       </div>
     );
@@ -354,28 +362,28 @@ const PreacherDashboard: React.FC = () => {
       value: data.total_requests.value,
       trend: `${data.total_requests.is_positive ? '+' : ''}${data.total_requests.change_percentage ?? 0}%`,
       up: data.total_requests.is_positive,
-      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dba841" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dba841" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>,
     },
     {
       label: data.converted_count.title,
       value: data.converted_count.value,
       trend: `${data.converted_count.is_positive ? '+' : ''}${data.converted_count.change_percentage ?? 0}%`,
       up: data.converted_count.is_positive,
-      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#51cf66" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#51cf66" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
     },
     {
-      label: data.engagement_count.title,
-      value: data.engagement_count.value,
-      trend: `${data.engagement_count.is_positive ? '+' : ''}${data.engagement_count.change_percentage ?? 0}%`,
-      up: data.engagement_count.is_positive,
-      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#74b9ff" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+      label: data.in_progress_count.title,
+      value: data.in_progress_count.value,
+      trend: `${data.in_progress_count.is_positive ? '+' : ''}${data.in_progress_count.change_percentage ?? 0}%`,
+      up: data.in_progress_count.is_positive,
+      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#74b9ff" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
     },
     {
       label: data.rejected_count.title,
       value: data.rejected_count.value,
       trend: `${data.rejected_count.is_positive ? '+' : ''}${data.rejected_count.change_percentage ?? 0}%`,
       up: data.rejected_count.is_positive,
-      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+      icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>,
     },
   ];
 
@@ -394,13 +402,13 @@ const PreacherDashboard: React.FC = () => {
           <div className="pd-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 className="pd-chart-title" style={{ margin: 0 }}>سرعة الاستجابة الأولى (ساعات)</h2>
             <div className="pd-interval-toggle">
-              <button 
+              <button
                 className={`pd-toggle-btn ${interval === 'month' ? 'active' : ''}`}
                 onClick={() => setIntervalVal('month')}
               >
                 شهري
               </button>
-              <button 
+              <button
                 className={`pd-toggle-btn ${interval === 'day' ? 'active' : ''}`}
                 onClick={() => setIntervalVal('day')}
               >

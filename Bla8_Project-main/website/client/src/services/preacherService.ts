@@ -16,7 +16,7 @@ export interface ChartDataPoint {
 export interface PreacherDashboardData {
   total_requests: StatCard;
   converted_count: StatCard;
-  engagement_count: StatCard;
+  in_progress_count: StatCard;
   rejected_count: StatCard;
   response_speed_chart: ChartDataPoint[];
   requests_by_status: ChartDataPoint[];
@@ -59,10 +59,16 @@ export const preacherService = {
     return response.data;
   },
 
-  /**
-   * Update a preacher's details
-   */
   update: async (preacherId: number | string, data: Record<string, unknown>) => {
+    const response = await api.patch(`/preachers/${preacherId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Update a preacher's status (approved/rejected)
+   * specifically for Admin/Organization status updates
+   */
+  updateStatus: async (preacherId: number | string, data: Record<string, unknown>) => {
     const response = await api.patch(`/preachers/${preacherId}`, data);
     return response.data;
   },

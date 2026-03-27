@@ -800,15 +800,15 @@ class PreacherPresenceRead(BaseModel):
 
 class MainDashboardRead(BaseModel):
     """البيانات الخاصة بالصفحة الرئيسية (داشبورد الأدمن)"""
-    # Top Stats (Row 1)
+    # Top Stats (8 Cards)
     total_organizations: StatCard
-    total_preachers: StatCard
-    total_individuals: StatCard
-    
-    # Top Stats (Row 2)
-    total_cases: StatCard
+    pending_org_requests: StatCard
+    total_conversations: StatCard
+    total_follow_up: StatCard
     total_converted: StatCard
     total_rejected: StatCard
+    total_cases: StatCard
+    total_individuals: StatCard
 
     # Tables
     top_preachers: list[TopPreacherRead]

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 from pydantic import EmailStr, ValidationError
@@ -152,8 +152,10 @@ def get_preacher(preacher_id: int, db: Session = Depends(get_db), current_user: 
 
 
 @router.patch("/{preacher_id}", dependencies=[Depends(check_role([UserRole.admin, UserRole.organization, UserRole.preacher]))])
+@router.post("/{preacher_id}")
 async def update_preacher(
     preacher_id: int, 
+    request: Request,
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user),
     full_name: Optional[str] = Form(None),
@@ -162,10 +164,37 @@ async def update_preacher(
     scientific_qualification: Optional[str] = Form(None),
     gender: Optional[str] = Form(None),
     status: Optional[PreacherStatus] = Form(None),
+    approval_status: Optional[ApprovalStatus] = Form(None),
+    rejection_reason: Optional[str] = Form(None),
     languages: List[str] = Form([]),
     qualification_file: Optional[UploadFile] = File(None)
 ):
-    """تحديث بيانات الداعية (يدعم لغات متعددة)"""
+    """تحديث بيانات الداعية (يدعم JSON و Multipart/Form)"""
+    # 1. Check if it's JSON
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            payload_data = await request.json()
+            payload = PreacherUpdate(**payload_data)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {str(e)}")
+        
+        # Check permissions for JSON update (Admin/Org/Self)
+        preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+        if not preacher:
+            raise HTTPException(status_code=404, detail="الداعية غير موجود")
+            
+        if current_user.role == UserRole.admin: pass
+        elif current_user.role == UserRole.organization:
+            if preacher.org_id != current_user.organization.org_id:
+                raise HTTPException(status_code=403, detail="لا يمكنك تعديل داعية لا ينتمي لجمعيتك")
+        elif current_user.role == UserRole.preacher:
+            if preacher.preacher_id != current_user.preacher.preacher_id:
+                raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات داعية آخر")
+        
+        return PreachersController.update_preacher(db, preacher_id, payload)
+
+    # 2. Handle Form data (original logic)
     preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
     if not preacher:
         raise HTTPException(status_code=404, detail="الداعية غير موجود")
@@ -177,6 +206,8 @@ async def update_preacher(
     if scientific_qualification: update_dict["scientific_qualification"] = scientific_qualification
     if gender: update_dict["gender"] = gender
     if status: update_dict["status"] = status
+    if approval_status: update_dict["approval_status"] = approval_status
+    if rejection_reason: update_dict["rejection_reason"] = rejection_reason
     
     # معالجة اللغات (دعم حالتي النص الواحد أو القائمة)
     lang_ids = []

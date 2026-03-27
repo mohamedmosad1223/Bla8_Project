@@ -76,24 +76,32 @@ def _validate_request_chat(db, sender: User, request_id: int, receiver_id_overri
 
 def _validate_dm(db, sender: User, receiver_id: int):
     """Validate direct-message permission. Returns error string or None."""
-    if sender.role == UserRole.organization:
-        preacher = db.query(Preacher).filter(Preacher.user_id == receiver_id).first()
-        if not preacher or preacher.org_id != sender.organization.org_id:
-            return "لا يمكنك مراسلة داعية لا ينتمي لجمعيتك"
+    receiver_user = db.query(User).filter(User.user_id == receiver_id).first()
+    if not receiver_user:
+        return "المستلم غير موجود"
+
+    if sender.role == UserRole.admin:
+        # Admin can message anyone
+        pass
+    elif sender.role == UserRole.organization:
+        # Organizations can message: Admins or their own Preachers
+        if receiver_user.role == UserRole.admin:
+            pass
+        elif receiver_user.role == UserRole.preacher:
+            preacher = db.query(Preacher).filter(Preacher.user_id == receiver_id).first()
+            if not preacher or preacher.org_id != sender.organization.org_id:
+                return "لا يمكنك مراسلة داعية لا ينتمي لجمعيتك"
+        else:
+            return "هذا النوع من الحسابات يدعم مراسلة الدعاة التابعين لك أو الإدارة فقط"
     elif sender.role == UserRole.preacher:
-        receiver_user = db.query(User).filter(User.user_id == receiver_id).first()
-        if receiver_user and receiver_user.role == UserRole.organization:
+        # Preachers can message: Admins or their own Organization
+        if receiver_user.role == UserRole.admin:
+            pass
+        elif receiver_user.role == UserRole.organization:
             if sender.preacher.org_id != receiver_user.organization.org_id:
                 return "لا يمكنك مراسلة جمعية أخرى غير التي تنتمي إليها"
-        elif receiver_user and receiver_user.role == UserRole.admin:
-            pass # Preacher can message admin
         else:
-            return "المراسلة المباشرة متاحة حالياً بين الداعية وجمعيته أو الإدارة فقط"
-    elif sender.role == UserRole.admin:
-        # Admin can DM organizations and preachers
-        receiver_user = db.query(User).filter(User.user_id == receiver_id).first()
-        if not receiver_user or receiver_user.role not in [UserRole.organization, UserRole.preacher]:
-            return "الأدمن يمكنه المراسلة المباشرة مع الجمعيات والدعاة فقط"
+            return "نوع حسابك يدعم مراسلة جمعيتك أو الإدارة فقط"
     else:
         return "نوع حسابك لا يدعم المراسلة المباشرة"
     return None

@@ -200,6 +200,9 @@ class OrganizationsController:
             
             setattr(org, field, value)
 
+        from app.controllers.notifications_controller import NotificationsController
+        from app.models.enums import NotificationType
+
         # مزامنة حالة الحساب وإرسال إشعارات
         if payload.approval_status == ApprovalStatus.approved:
             if org.user:
@@ -211,9 +214,11 @@ class OrganizationsController:
         elif payload.approval_status == ApprovalStatus.rejected:
             if org.user:
                 org.user.status = AccountStatus.suspended
+            
             NotificationsController.create_notification(
                 db, org.user_id, NotificationType.account_rejected,
-                "تم رفض طلب الانضمام", f"نأسف لإبلاغك بأنه تم رفض طلبك. السبب: {org.rejection_reason or 'غير محدد'}"
+                "تم رفض طلب الانضمام", 
+                f"نأسف لإبلاغك بأنه تم رفض طلب الجمعية. السبب: {org.rejection_reason or 'غير محدد'}"
             )
 
         db.commit()
