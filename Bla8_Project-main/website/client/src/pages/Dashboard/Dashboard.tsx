@@ -130,9 +130,8 @@ const Dashboard = () => {
         {/* Charts Section */}
         <div className="charts-grid">
           <div className="chart-card awqaf-kuwait-card">
-            <h3 className="awqaf-kuwait-title">توزيع المدعوين بمحافظات الكويت</h3>
+            <h3 className="awqaf-kuwait-title">توزيع المدعوين</h3>
             <div className="chart-content">
-              {/* الخريطة ثابتة دائماً - القيم تيجي من الـ API */}
               <NationalitiesChart data={data.top_nationalities} />
             </div>
           </div>

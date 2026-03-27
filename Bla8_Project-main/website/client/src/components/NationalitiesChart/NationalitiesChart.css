@@ -12,20 +12,22 @@
   margin-bottom: 4px;
 }
 
-.awqaf-kuwait-map-wrap {
+.awqaf-world-map-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 8px 0;
 }
 
-.awqaf-kuwait-map-img {
+.awqaf-world-map-wrap .wm-container {
   width: 100%;
-  max-width: 260px;
+  padding: 0;
+}
+
+.awqaf-world-map-wrap .wm-svg {
+  width: 100%;
+  max-width: 360px;
   height: auto;
-  object-fit: contain;
-  border-radius: 12px;
-  filter: none;
 }
 
 /* Governorates list */
@@ -74,4 +76,11 @@
   font-size: 0.78rem;
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.awqaf-gov-empty {
+  text-align: center;
+  color: #6B7280;
+  font-size: 0.9rem;
+  padding: 8px 0;
 }

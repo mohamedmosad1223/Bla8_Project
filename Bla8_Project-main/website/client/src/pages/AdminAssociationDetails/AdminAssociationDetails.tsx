@@ -23,16 +23,17 @@ import {
 import StatCard from '../../components/StatCard/StatCard';
 import RequestsChart from '../../components/RequestsChart/RequestsChart';
 import ConversionsChart from '../../components/ConversionsChart/ConversionsChart';
+import WorldMap from '../../components/WorldMap/WorldMap';
 import api from '../../services/api';
 import './AdminAssociationDetails.css';
 
 const governoratesList = [
-  { name: 'محافظة العاصمة',    count: '72 الف شخص', percentage: 72, color: '#F59E0B' },
-  { name: 'محافظة الأحمدي',   count: '60 الف شخص', percentage: 60, color: '#EC4899' },
-  { name: 'محافظة الفروانية', count: '50 الف شخص', percentage: 50, color: '#10B981' },
-  { name: 'محافظة حولي',      count: '40 الف شخص', percentage: 40, color: '#6366F1' },
-  { name: 'محافظة الجهراء',   count: '30 الف شخص', percentage: 30, color: '#3B82F6' },
-  { name: 'محافظة مبارك الكبير', count: '20 الف شخص', percentage: 20, color: '#E11D48' },
+  { label: 'مصر', value: 1 },
+  { label: 'السعودية', value: 1 },
+  { label: 'الإمارات', value: 1 },
+  { label: 'الأردن', value: 1 },
+  { label: 'الولايات المتحدة', value: 1 },
+  { label: 'بريطانيا', value: 1 },
 ];
 
 const AdminAssociationDetails = () => {
@@ -173,6 +174,23 @@ const AdminAssociationDetails = () => {
     return sortBy === 'latest' ? timeB - timeA : timeA - timeB;
   });
 
+  const nationalityStyles = [
+    { fill: '#FF4D4F', bg: '#FFF1F0' },
+    { fill: '#1890FF', bg: '#E6F7FF' },
+    { fill: '#FFA940', bg: '#FFF7E6' },
+    { fill: '#722ED1', bg: '#F9F0FF' },
+    { fill: '#13C2C2', bg: '#E6FFFB' },
+    { fill: '#52C41A', bg: '#F6FFED' },
+  ];
+
+  const distributionData: Array<{ label: string; value: number }> =
+    (orgData.governorates_distribution || governoratesList).map((item: any) => ({
+      label: item.label || item.name || 'غير محدد',
+      value: Number(item.value) || 0,
+    }));
+
+  const totalDistributionValue = distributionData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div className="adetails-page">
       {/* ── Breadcrumb & Title ── */}
@@ -309,30 +327,29 @@ const AdminAssociationDetails = () => {
           <div className="adetails-charts-grid">
             <div className="adetails-chart-card">
               <div className="adetails-chart-header">
-                <h3>توزيع المدعوين بمحافظات الكويت</h3>
+                <h3>توزيع المدعوين</h3>
               </div>
               <div className="adetails-chart-content map-wrapper">
-                <img
-                  src="/image 1.png"
-                  alt="خريطة الكويت"
-                  className="adetails-kuwait-map"
-                />
+                <WorldMap data={distributionData} colors={nationalityStyles.map((s) => s.fill)} />
                 <div className="adetails-gov-list">
-                  {(orgData.governorates_distribution || governoratesList).map((gov: any, idx: number) => {
-                    // Try to find matching color/percentage from governoratesList if not provided by backend
-                    const staticInfo = governoratesList.find(g => g.name === gov.label) || { percentage: 0, color: '#94a3b8' };
+                  {distributionData.map((gov, idx: number) => {
+                    const style = nationalityStyles[idx % nationalityStyles.length];
+                    const percentage = totalDistributionValue > 0
+                      ? (gov.value / totalDistributionValue) * 100
+                      : 0;
+
                     return (
                       <div key={idx} className="adetails-gov-row">
                         <div className="adetails-gov-header">
-                          <span className="adetails-gov-name">{gov.label || gov.name}</span>
+                          <span className="adetails-gov-name">{gov.label}</span>
                           <span className="adetails-gov-count">{gov.value} شخص</span>
                         </div>
                         <div className="adetails-gov-progress">
                           <div
                             className="adetails-gov-fill"
                             style={{ 
-                              width: `${(gov.value / (orgData.cases_count || 1)) * 100}%`, 
-                              backgroundColor: staticInfo.color 
+                              width: `${Math.min(100, percentage)}%`,
+                              backgroundColor: style.fill
                             }}
                           />
                         </div>
