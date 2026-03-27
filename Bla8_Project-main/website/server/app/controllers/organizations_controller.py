@@ -147,7 +147,7 @@ class OrganizationsController:
             # Convert model to dict and add extra fields
             org_dict = {column.name: getattr(org, column.name) for column in org.__table__.columns}
             org_dict["user_id"] = org.user_id
-            org_dict["account_status"] = org.user.status if org.user else AccountStatus.pending
+            org_dict["account_status"] = org.user.status.value if org.user else AccountStatus.pending.value
             org_dict["preachers_count"] = p_count
             org_dict["cases_count"] = c_count
             org_dict["converted_count"] = con_count
@@ -173,7 +173,7 @@ class OrganizationsController:
         country = db.query(Country).filter(Country.country_id == org.country_id).first()
         
         org_dict = {column.name: getattr(org, column.name) for column in org.__table__.columns}
-        org_dict["account_status"] = org.user.status if org.user else AccountStatus.pending
+        org_dict["account_status"] = org.user.status.value if org.user else AccountStatus.pending.value
         org_dict["country_name"] = country.country_name if country else "—"
         
         # Merge stats
@@ -243,10 +243,38 @@ class OrganizationsController:
         if not org:
             raise HTTPException(status_code=404, detail=OrganizationMessages.NOT_FOUND)
 
+        # Soft delete organization's user
         user = db.query(User).filter(User.user_id == org.user_id).first()
         if user:
             user.deleted_at = datetime.now(timezone.utc)
             user.status = AccountStatus.suspended
+
+        # Handle related Preachers (soft delete user, physical delete preacher)
+        from app.models.preacher import Preacher
+        from app.models.dawah_request import DawahRequest
+        from app.models.enums import RequestStatus
+        preachers = db.query(Preacher).filter(Preacher.org_id == org_id).all()
+        for p in preachers:
+            if p.user_id:
+                p_user = db.query(User).filter(User.user_id == p.user_id).first()
+                if p_user:
+                    p_user.deleted_at = datetime.now(timezone.utc)
+                    p_user.status = AccountStatus.suspended
+            
+            # Unassign requests
+            db.query(DawahRequest).filter(DawahRequest.assigned_preacher_id == p.preacher_id).update({
+                "assigned_preacher_id": None,
+                "status": RequestStatus.pending
+            }, synchronize_session=False)
+
+            db.delete(p)
+
+        # Handle AuditLog and ReportMetric nullification
+        from app.models.audit_log import AuditLog
+        db.query(AuditLog).filter(AuditLog.org_id == org_id).update({"org_id": None}, synchronize_session=False)
+
+        from app.models.report_metric import ReportMetric
+        db.query(ReportMetric).filter(ReportMetric.org_id == org_id).update({"org_id": None}, synchronize_session=False)
 
         db.delete(org)
         db.commit()

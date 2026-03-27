@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, MessageSquare, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText, Send, Image as ImageIcon } from 'lucide-react';
+import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText, Send, Image as ImageIcon } from 'lucide-react';
 import { profileService } from '../../services/profileService';
 import { authService } from '../../services/authService';
 import ForgotPasswordModal from '../../components/common/Modal/ForgotPasswordModal';
@@ -248,17 +248,20 @@ const PrivacyPolicy: React.FC = () => (
 const Profile: React.FC = () => {
   const [activeSection, setActiveSection] = useState<ActiveSection>('account-info');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // --- Form State ---
   const [form, setForm] = useState({
     fullName: '',
     email: '',
-    phone: ''
+    phone: '',
+    profilePicture: ''
   });
   const [originalForm, setOriginalForm] = useState({
     fullName: '',
     email: '',
-    phone: ''
+    phone: '',
+    profilePicture: ''
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -285,6 +288,34 @@ const Profile: React.FC = () => {
   const [modalPassword, setModalPassword] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      await profileService.updateProfile({ profile_picture: file });
+      // Refresh user data to get the new image path
+      const freshData = await authService.getMe();
+      if (freshData) {
+        setForm(prev => ({ ...prev, profilePicture: freshData.profile_picture }));
+        setOriginalForm(prev => ({ ...prev, profilePicture: freshData.profile_picture }));
+      }
+      setSuccessMessage('تم تحديث صورة الملف الشخصي بنجاح');
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg('حدث خطأ أثناء رفع الصورة. يرجى التأكد من نوع الملف وحجمه.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVerifyPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,11 +451,12 @@ const Profile: React.FC = () => {
     if (rawData) {
       try {
         const data = JSON.parse(rawData);
-        const name = data?.profile?.full_name || data?.profile?.name || data?.full_name || data?.name || '';
+        const name = data?.profile?.full_name || data?.profile?.name || data?.full_name || data?.name || data?.organization_name || '';
         const email = data?.user?.email || data?.email || '';
         const phone = data?.profile?.phone || data?.phone || '';
+        const pic = data?.profile_picture || '';
         
-        const userData = { fullName: name, email, phone };
+        const userData = { fullName: name, email, phone, profilePicture: pic };
         setForm(userData);
         setOriginalForm(userData);
       } catch (err) {
@@ -447,13 +479,24 @@ const Profile: React.FC = () => {
           {/* Avatar — hidden for non-form sections */}
           {showAvatar && (
             <div className="avatar-wrapper">
-              <div className="avatar-circle">
-                <img src="/avatar_placeholder.png" alt="Avatar" onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  (e.currentTarget.parentElement as HTMLElement).style.background = '#c8d9ec';
-                }} />
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept="image/*" 
+                onChange={handleFileChange} 
+              />
+              <div className="avatar-circle" onClick={handleAvatarClick} style={{ cursor: 'pointer' }}>
+                {form.profilePicture ? (
+                  <img src={`/uploads/${form.profilePicture}`} alt="Avatar" />
+                ) : (
+                  <img src="/avatar_placeholder.png" alt="Avatar" onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    (e.currentTarget.parentElement as HTMLElement).style.background = '#c8d9ec';
+                  }} />
+                )}
               </div>
-              <button className="avatar-camera-btn" title="تغيير الصورة">
+              <button className="avatar-camera-btn" title="تغيير الصورة" onClick={handleAvatarClick}>
                 <Camera size={16} />
               </button>
             </div>

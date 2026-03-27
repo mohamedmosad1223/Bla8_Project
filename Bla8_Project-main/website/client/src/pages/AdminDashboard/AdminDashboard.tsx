@@ -110,7 +110,7 @@ const AdminDashboard = () => {
   const presenceData = [
     { name: 'اونلاين', value: data.preacher_presence.online, color: '#10B981' },
     { name: 'مشغول', value: data.preacher_presence.busy, color: '#F59E0B' },
-    { name: 'اوفالايين', value: data.preacher_presence.offline, color: '#EF4444' },
+    { name: 'أوفلاين', value: data.preacher_presence.offline, color: '#EF4444' },
   ];
   const totalPreachers = data.preacher_presence.online + data.preacher_presence.busy + data.preacher_presence.offline;
 

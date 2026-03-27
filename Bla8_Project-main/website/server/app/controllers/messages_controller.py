@@ -313,13 +313,16 @@ class MessagesController:
                 )
             )
         ).filter(
-            Message.request_id == None,
+            Message.request_id.is_(None),
             or_(Message.sender_id == user_id, Message.receiver_id == user_id)
         ).all()
 
         for (partner_id,) in dm_partners:
+            if partner_id == user_id:
+                continue
+                
             last_msg = db.query(Message).filter(
-                Message.request_id == None,
+                Message.request_id.is_(None),
                 or_(
                     (Message.sender_id == user_id) & (Message.receiver_id == partner_id),
                     (Message.sender_id == partner_id) & (Message.receiver_id == user_id)
@@ -327,20 +330,29 @@ class MessagesController:
             ).order_by(Message.created_at.desc()).first()
             
             unread_count = db.query(Message).filter(
-                Message.request_id == None,
+                Message.request_id.is_(None),
                 Message.sender_id == partner_id,
                 Message.receiver_id == user_id,
                 Message.is_read == False
             ).count()
 
             partner_user = db.query(User).filter(User.user_id == partner_id).first()
+            if not partner_user:
+                continue
+
             partner_name = "مستخدم"
             if partner_user.role == UserRole.organization:
-                partner_name = f"مشرف جمعية {partner_user.organization.organization_name}"
+                org_name = partner_user.organization.organization_name if partner_user.organization else "جمعية"
+                partner_name = f"مشرف {org_name}"
             elif partner_user.role == UserRole.preacher:
-                partner_name = partner_user.preacher.full_name
+                partner_name = partner_user.preacher.full_name if partner_user.preacher else "داعية"
             elif partner_user.role == UserRole.admin:
-                partner_name = "الإدارة العامة"
+                partner_name = partner_user.admin.full_name if partner_user.admin else "الإدارة العامة"
+            elif partner_user.role == UserRole.muslim_caller:
+                partner_name = partner_user.muslim_caller.full_name if partner_user.muslim_caller else "مسلم داعي"
+            elif partner_user.role == UserRole.interested:
+                p = partner_user.interested_person
+                partner_name = f"{p.first_name} {p.last_name}" if p else "شخص مهتم"
 
             previews.append({
                 "request_id": None,

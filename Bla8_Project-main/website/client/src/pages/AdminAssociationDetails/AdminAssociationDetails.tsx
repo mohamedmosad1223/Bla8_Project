@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Building2, 
@@ -43,6 +43,27 @@ const AdminAssociationDetails = () => {
   const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'latest'|'oldest'>('latest');
+
+  const filterRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   
   const [orgData, setOrgData] = useState<any>(null);
   const [preachers, setPreachers] = useState<any[]>([]);
@@ -141,6 +162,16 @@ const AdminAssociationDetails = () => {
     { id: 3, title: 'من اسلموا',                   value: orgData.converted_count,  icon: <UserCheck size={24} />,    bgColor: '#D1FAE5', color: '#10B981' },
     { id: 4, title: 'من رفضوا',                    value: orgData.rejected_count,   icon: <FileText size={24} />,     bgColor: '#FEE2E2', color: '#EF4444' },
   ];
+
+  const filteredPreachers = preachers.filter(p => {
+    if (searchQuery && !p.full_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+    return true;
+  }).sort((a, b) => {
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    return sortBy === 'latest' ? timeB - timeA : timeA - timeB;
+  });
 
   return (
     <div className="adetails-page">
@@ -337,24 +368,67 @@ const AdminAssociationDetails = () => {
       {/* Tab Content: Preachers */}
       {activeTab === 'preachers' && (
         <div className="adetails-content">
-          <div className="adetails-preachers-controls">
-            <div className="adetails-search-box">
-              <input 
-                type="text" 
-                placeholder="ابحث"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search size={18} color="#9CA3AF" />
+          <div className="admin-toolbar left-aligned">
+            <div className="admin-toolbar-group">
+              <div className="admin-search-box">
+                <Search size={18} />
+                <input 
+                  type="text" 
+                  placeholder="ابحث"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <div className="admin-dropdown-container" ref={filterRef}>
+                <button 
+                  className={`admin-tool-btn ${isFilterOpen ? 'active' : ''}`}
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                >
+                  <FilterIcon size={18} />
+                  <span>فلتر</span>
+                </button>
+                {isFilterOpen && (
+                  <div className="admin-dropdown-menu">
+                    <div style={{fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '8px', marginBottom: '4px', fontSize: '0.85rem'}}>حالة الداعية</div>
+                    <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                      <input type="radio" name="status" checked={filterStatus === 'all'} onChange={() => {setFilterStatus('all'); setIsFilterOpen(false);}} />
+                      الكل
+                    </label>
+                    <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                      <input type="radio" name="status" checked={filterStatus === 'active'} onChange={() => {setFilterStatus('active'); setIsFilterOpen(false);}} />
+                      مفعل
+                    </label>
+                    <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                      <input type="radio" name="status" checked={filterStatus === 'suspended'} onChange={() => {setFilterStatus('suspended'); setIsFilterOpen(false);}} />
+                      غير مفعل
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="admin-dropdown-container" ref={sortRef}>
+                <button 
+                  className={`admin-tool-btn ${isSortOpen ? 'active' : ''}`}
+                  onClick={() => setIsSortOpen(!isSortOpen)}
+                >
+                  <Filter size={18} />
+                  <span>تصنيف: {sortBy === 'latest' ? 'الأحدث' : 'الأقدم'}</span>
+                </button>
+                {isSortOpen && (
+                  <div className="admin-dropdown-menu" style={{left: 0, right: 'auto'}}>
+                    <button 
+                      className={`admin-dropdown-item ${sortBy === 'latest' ? 'selected' : ''}`}
+                      onClick={() => {setSortBy('latest'); setIsSortOpen(false);}}
+                    >الأحدث</button>
+                    <button 
+                      className={`admin-dropdown-item ${sortBy === 'oldest' ? 'selected' : ''}`}
+                      onClick={() => {setSortBy('oldest'); setIsSortOpen(false);}}
+                    >الأقدم</button>
+                  </div>
+                )}
+              </div>
             </div>
-            <button className="adetails-filter-btn">
-              <span>فلتر</span>
-              <FilterIcon size={18} />
-            </button>
-            <button className="adetails-sort-btn">
-              <span>تصنيف</span>
-              <Filter size={18} />
-            </button>
           </div>
 
           <div className="adetails-table-container">
@@ -371,7 +445,7 @@ const AdminAssociationDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {preachers.map((preacher) => (
+                {filteredPreachers.map((preacher) => (
                   <tr key={preacher.preacher_id}>
                     <td>{preacher.preacher_id}</td>
                     <td>{preacher.full_name}</td>

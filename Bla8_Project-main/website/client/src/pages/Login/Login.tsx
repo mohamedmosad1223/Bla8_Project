@@ -32,7 +32,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.login(email, password);
+      const response = await authService.login(email, password, role);
 
       // Fetch full profile and save to localStorage
       await authService.getMe();

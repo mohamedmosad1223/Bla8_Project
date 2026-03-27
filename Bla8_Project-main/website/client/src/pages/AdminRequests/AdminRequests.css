@@ -24,26 +24,9 @@
   color: var(--text-dark, #1A1A2E);
 }
 
-.areq-actions {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-top: 24px;
-  /* Moving the filter and search further down per user request */
-}
-
+/* areq-actions is now handled by global admin-toolbar */
 /* ── Search & Filters ── */
-.areq-search-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 2px solid #e2e8f0;
-  padding: 4px 0;
-  width: 250px;
-  margin-left: 16px;
-  /* Extra space between search and filters */
-}
-
+/* Toolbar handle by global .admin-toolbar classes */
 .areq-search-icon {
   color: #a0aec0;
 }
@@ -376,33 +359,8 @@
 }
 
 /* ─── Filter Panel ─── */
-.filter-popup-container {
-  position: relative;
-  display: flex;
-}
-
-.btn-icon-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #4a5568;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.btn-icon-text:hover,
-.btn-icon-text.active {
-  border-color: #dba841;
-  background-color: #fefcf5;
-  color: #dba841;
-}
+/* Filter/Sort handle by global classes */
+/* Filter/Sort handle by global classes */
 
 .filter-dot {
   background: #dba841;
