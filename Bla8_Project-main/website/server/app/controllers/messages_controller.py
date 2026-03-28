@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 from app.models.message import Message
 from app.models.dawah_request import DawahRequest
-from app.models.enums import RequestStatus, NotificationType, UserRole
+from app.models.enums import RequestStatus, NotificationType, UserRole, PreacherStatus
 from app.models.user import User
 from app.models.preacher import Preacher
 from app.models.muslim_caller import MuslimCaller
@@ -24,6 +24,29 @@ class MessagesController:
 
     @staticmethod
     def send_message(db: Session, sender: User, payload: MessageCreate):
+        # 0. Global Suspension Check
+        from app.models.enums import AccountStatus
+        if sender.status == AccountStatus.suspended:
+            role_map = {
+                UserRole.organization: "حساب الجمعية موقوف حالياً من قبل الإدارة. لا يمكنك إرسال رسائل.",
+                UserRole.preacher: "حسابك كداعية موقوف حالياً. لا يمكنك إرسال رسائل.",
+                UserRole.admin: "حسابك موقوف حالياً.",
+                UserRole.muslim_caller: "حسابك موقوف حالياً.",
+                UserRole.interested: "حسابك موقوف حالياً."
+            }
+            detail = role_map.get(sender.role, "حسابك موقوف حالياً. لا يمكنك المراسلة.")
+            raise HTTPException(status_code=403, detail=detail)
+
+        # 0.1 Cascade Check for Preachers (Organization Status)
+        if sender.role == UserRole.preacher and sender.preacher and sender.preacher.org_id:
+            from app.models.organization import Organization
+            org = db.query(Organization).filter(Organization.org_id == sender.preacher.org_id).first()
+            if org and org.user and org.user.status == AccountStatus.suspended:
+                raise HTTPException(
+                    status_code=403,
+                    detail="نعتذر، الجمعية التابع لها موقوفة حالياً. تم إيقاف كافة أنشطة المراسلة للدعاة التابعين لها."
+                )
+
         # 1. Determine Context (Request or DM)
         request = None
         receiver_id = payload.receiver_id
@@ -43,6 +66,13 @@ class MessagesController:
                      raise HTTPException(
                          status_code=400, 
                          detail="نعتذر، يجب إكمال التقرير اليومي لهذه الحالة أولاً قبل متابعة المراسلة"
+                     )
+                 
+                 # v5: Check if preacher is active
+                 if sender.preacher and sender.preacher.status != PreacherStatus.active:
+                     raise HTTPException(
+                         status_code=403,
+                         detail="حسابك موقوف حالياً من قبل الجمعية. لا يمكنك إرسال رسائل للطلبات في هذه الحالة."
                      )
 
             # Determine Receiver and validate participation for request context
@@ -133,8 +163,8 @@ class MessagesController:
 
         # 4. Notify Receiver
         sender_name = "مستخدم"
-        if sender.role == UserRole.admin and sender.admin:
-            sender_name = sender.admin.full_name
+        if sender.role == UserRole.admin:
+            sender_name = "إدارة بلاغ"
         elif sender.role == UserRole.organization and sender.organization:
             sender_name = sender.organization.organization_name
         elif sender.role == UserRole.preacher and sender.preacher:
@@ -217,7 +247,7 @@ class MessagesController:
                 elif partner_user.role == UserRole.preacher:
                     p_name = partner_user.preacher.full_name
                 elif partner_user.role == UserRole.admin:
-                    p_name = "الإدارة العامة"
+                    p_name = "إدارة بلاغ"
                 
                 partner_info = {
                     "other_party_name": p_name,
@@ -347,7 +377,7 @@ class MessagesController:
             elif partner_user.role == UserRole.preacher:
                 partner_name = partner_user.preacher.full_name if partner_user.preacher else "داعية"
             elif partner_user.role == UserRole.admin:
-                partner_name = partner_user.admin.full_name if partner_user.admin else "الإدارة العامة"
+                partner_name = "إدارة بلاغ"
             elif partner_user.role == UserRole.muslim_caller:
                 partner_name = partner_user.muslim_caller.full_name if partner_user.muslim_caller else "مسلم داعي"
             elif partner_user.role == UserRole.interested:

@@ -37,26 +37,36 @@ class AdminDashboardController:
         total_conversations = db.query(func.count(func.distinct(Message.request_id))).scalar() or 0
         total_follow_up = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.under_persuasion).count()
 
-        # 3. Tables - Top 10 Preachers
-        # Assuming success rate = (converted / total) * 100
+        # 3. Tables - Top 10 Preachers (Direct query for real-time accuracy)
+        # Success Rate = (converted / total) * 100
+        stats_subquery = db.query(
+            DawahRequest.assigned_preacher_id,
+            func.count(DawahRequest.request_id).label("total_accepted"),
+            func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label("converted_count")
+        ).filter(DawahRequest.assigned_preacher_id.is_not(None)) \
+         .group_by(DawahRequest.assigned_preacher_id).subquery()
+
         top_preachers_query = db.query(
             Preacher.preacher_id,
             Preacher.full_name,
             Organization.organization_name,
-            PreacherStatistics.converted_count,
-            PreacherStatistics.total_accepted
-        ).join(Organization, Preacher.org_id == Organization.org_id, isouter=True) \
-         .join(PreacherStatistics, Preacher.preacher_id == PreacherStatistics.preacher_id, isouter=True) \
-         .order_by(desc(PreacherStatistics.converted_count)) \
+            stats_subquery.c.converted_count,
+            stats_subquery.c.total_accepted
+        ).join(stats_subquery, Preacher.preacher_id == stats_subquery.c.assigned_preacher_id) \
+         .outerjoin(Organization, Preacher.org_id == Organization.org_id) \
+         .order_by(desc(stats_subquery.c.converted_count)) \
          .limit(10).all()
 
         top_preachers = []
-        for p in top_preachers_query:
-            success_rate = (p.converted_count / p.total_accepted * 100) if p.total_accepted and p.total_accepted > 0 else 0
+        for p_id, p_name, o_name, conv_count, total_acc in top_preachers_query:
+            conv_count = conv_count or 0
+            total_acc = total_acc or 0
+            success_rate = (conv_count / total_acc * 100) if total_acc > 0 else 0
+            
             top_preachers.append({
-                "preacher_id": p.preacher_id,
-                "full_name": p.full_name,
-                "organization_name": p.organization_name,
+                "preacher_id": p_id,
+                "full_name": p_name,
+                "organization_name": o_name or "منفرد",
                 "success_rate": round(success_rate, 2)
             })
 

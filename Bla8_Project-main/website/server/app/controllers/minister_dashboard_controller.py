@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, and_
 from app.models.user import User
 from app.models.preacher import Preacher, PreacherLanguage
 from app.models.organization import Organization
@@ -32,11 +32,14 @@ class MinisterDashboardController:
         # For now, let's use a count of requests that are 'in_progress' or similar
         referred_count = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.in_progress).count()
 
-        # 5. Converted (من أسلموا)
+        # 5. Converted (أسلم)
         total_converted = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.converted).count()
 
-        # 6. Rejected (من رفضوا)
+        # 6. Rejected (رفض)
         total_rejected = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.rejected).count()
+
+        # 6.5 Under Persuasion (قيد الإقناع)
+        total_under_persuasion = db.query(DawahRequest).filter(DawahRequest.status == RequestStatus.under_persuasion).count()
 
         # 7. Total Cases (إجمالي الحالات المسجلة)
         total_cases = db.query(DawahRequest).count()
@@ -59,11 +62,14 @@ class MinisterDashboardController:
             {"name": g.governorate or "غير محدد", "value": g.count} for g in governorate_stats
         ]
 
-        # 10. Request Distribution
+        # 10. Request Distribution (Filtered to 3 statuses)
         dist_data = db.query(
             DawahRequest.status, func.count(DawahRequest.request_id)
-        ).group_by(DawahRequest.status).all()
+        ).filter(DawahRequest.status.in_([RequestStatus.converted, RequestStatus.rejected, RequestStatus.under_persuasion])).group_by(DawahRequest.status).all()
         requests_distribution = [{"label": s.value, "value": count} for s, count in dist_data]
+        
+        # If no data for specific statuses, ensure they are at least represented if expected by frontend
+        # (Though frontend mapping should handle it)
 
         # 11. Conversion Trends
         trend_data = db.query(
@@ -85,8 +91,8 @@ class MinisterDashboardController:
                 {"title": "إجمالي عدد طلبات الجمعية", "value": total_org_requests, "icon": "requests"},
                 {"title": "إجمالي عدد المحادثات", "value": total_conversations, "icon": "messages"},
                 {"title": "المحالون للتعليم والمتابعة", "value": referred_count, "icon": "referrals"},
-                {"title": "من أسلموا", "value": total_converted, "icon": "converted"},
-                {"title": "من رفضوا", "value": total_rejected, "icon": "rejected"},
+                {"title": "أسلم", "value": total_converted, "icon": "converted"},
+                {"title": "رفض", "value": total_rejected, "icon": "rejected"},
                 {"title": "إجمالي الحالات المسجلة", "value": total_cases, "icon": "cases"},
                 {"title": "إجمالي الأفراد المسجلين", "value": total_individuals, "icon": "individuals"},
             ],
@@ -94,7 +100,7 @@ class MinisterDashboardController:
             "requests_summary": {
                 "total": total_org_requests,
                 "converted": total_converted,
-                "in_progress": referred_count,
+                "under_persuasion": total_under_persuasion,
                 "rejected": total_rejected
             },
             "requests_distribution": requests_distribution,
@@ -123,13 +129,17 @@ class MinisterDashboardController:
         total_org_requests = org_requests_query.count()
         total_converts = org_requests_query.filter(DawahRequest.status == RequestStatus.converted).count()
         total_rejections = org_requests_query.filter(DawahRequest.status == RequestStatus.rejected).count()
+        total_persuasion = org_requests_query.filter(DawahRequest.status == RequestStatus.under_persuasion).count()
         
-        # 3. Request Distribution (Donut Chart)
+        # 3. Request Distribution (Donut Chart) - Filtered
         dist_data = db.query(
             DawahRequest.status, func.count(DawahRequest.request_id)
         ).join(
             Preacher, DawahRequest.assigned_preacher_id == Preacher.preacher_id
-        ).filter(org_filter).group_by(DawahRequest.status).all()
+        ).filter(
+            DawahRequest.status.in_([RequestStatus.converted, RequestStatus.rejected, RequestStatus.under_persuasion]),
+            org_filter
+        ).group_by(DawahRequest.status).all()
         requests_distribution = [{"label": s.value, "value": count} for s, count in dist_data]
 
         # 4. Conversion Trends (Monthly Bar Chart)
@@ -173,8 +183,8 @@ class MinisterDashboardController:
             "performance_stats": [
                 {"title": "إجمالي عدد الدعاة", "value": total_preachers, "icon": "preachers"},
                 {"title": "إجمالي عدد طلبات الجمعية", "value": total_org_requests, "icon": "requests"},
-                {"title": "من أسلموا", "value": total_converts, "icon": "converted"},
-                {"title": "من رفضوا", "value": total_rejections, "icon": "rejected"},
+                {"title": "أسلم", "value": total_converts, "icon": "converted"},
+                {"title": "رفض", "value": total_rejections, "icon": "rejected"},
             ],
             "charts": {
                 "requests_distribution": requests_distribution,
@@ -184,7 +194,7 @@ class MinisterDashboardController:
             "requests_summary": {
                 "total": total_org_requests,
                 "converted": total_converts,
-                "in_progress": total_in_progress,
+                "under_persuasion": total_persuasion,
                 "rejected": total_rejections
             }
         }
@@ -259,8 +269,10 @@ class MinisterDashboardController:
             rejected = db.query(DawahRequest).filter(DawahRequest.assigned_preacher_id == preacher_id, DawahRequest.status == RequestStatus.rejected).count()
         else:
             converted = stats.converted_count
-            in_progress = stats.in_progress_count
+            in_progress = stats.in_progress_count # This might be in_progress or under_persuasion depending on app logic
             rejected = stats.rejected_count
+            # For consistency, we calculate under_persuasion if stats is manual or rename it
+            under_persuasion = db.query(DawahRequest).filter(DawahRequest.assigned_preacher_id == preacher_id, DawahRequest.status == RequestStatus.under_persuasion).count()
 
         # 2. Nationalities distribution (Mocking or calculating based on requests)
         nationality_data = db.query(
@@ -308,9 +320,9 @@ class MinisterDashboardController:
             },
             "performance_stats": [
                 {"title": "إجمالي عدد الطلبات", "value": total_requests, "icon": "requests", "change": "+10.5%"},
-                {"title": "عدد من أسلموا", "value": converted, "icon": "converted", "change": "-10.5%"},
-                {"title": "إجمالي قيد الإقناع", "value": in_progress, "icon": "in_progress", "change": "+10.5%"},
-                {"title": "عدد من رفضوا", "value": rejected, "icon": "rejected", "change": "+10.5%"},
+                {"title": "أسلم", "value": converted, "icon": "converted", "change": "-10.5%"},
+                {"title": "قيد الإقناع", "value": under_persuasion, "icon": "in_progress", "change": "+10.5%"},
+                {"title": "رفض", "value": rejected, "icon": "rejected", "change": "+10.5%"},
             ],
             "charts": {
                 "nationalities": nationalities,
@@ -362,9 +374,9 @@ class MinisterDashboardController:
         return results
 
     @staticmethod
-    def get_global_dashboard_stats(db: Session, org_id: Optional[int] = None, period: Optional[str] = "all_time"):
+    def get_global_dashboard_stats(db: Session, org_id: Optional[int] = None, period: Optional[str] = "all_time", trend_granularity: Optional[str] = "month"):
         """
-        جلب إحصائيات الداشبورد العالمي للوزير مع فلاتر (الجمعية، الفترة الزمنية).
+        جلب إحصائيات الداشبورد العالمي للوزير مع فلاتر (الجمعية، الفترة الزمنية، دقة الرسم البياني).
         """
         from datetime import datetime, timedelta
         from sqlalchemy import and_
@@ -413,22 +425,32 @@ class MinisterDashboardController:
         
         overall_performance_pct = round((total_converts / total_activities * 100), 1) if total_activities > 0 else 0
 
-        # 3. Request Status Distribution (Donut Chart)
+        # 3. Request Status Distribution (Donut Chart) - Filtered to 3 statuses
         status_data = db.query(
             DawahRequest.status, func.count(DawahRequest.request_id)
-        ).join(Preacher).filter(*request_filter).group_by(DawahRequest.status).all()
+        ).join(Preacher).filter(
+            DawahRequest.status.in_([RequestStatus.converted, RequestStatus.rejected, RequestStatus.under_persuasion]),
+            *request_filter
+        ).group_by(DawahRequest.status).all()
 
-        # 4. Monthly Acceptance Rate (Monthly Line Chart)
-        monthly_data = db.query(
-            func.date_trunc('month', DawahRequest.created_at).label('month'),
+        # 4. Acceptance Rate (Daily/Monthly Area Chart)
+        # Ensure trend_granularity is safe
+        valid_granularity = trend_granularity if trend_granularity in ["day", "month"] else "month"
+        
+        trend_data = db.query(
+            func.date_trunc(valid_granularity, DawahRequest.created_at).label('period'),
             func.count(DawahRequest.request_id).label('total'),
-            func.count(DawahRequest.request_id).filter(DawahRequest.status != RequestStatus.pending).label('accepted')
-        ).join(Preacher).filter(*request_filter).group_by('month').order_by('month').all()
+            func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label('accepted')
+        ).join(Preacher).filter(*request_filter).group_by('period').order_by('period').all()
         
         acceptance_rate_trend = []
-        for d in monthly_data:
+        date_format = "%d %b" if valid_granularity == "day" else "%b %Y"
+        for d in trend_data:
             rate = (d.accepted / d.total * 100) if d.total > 0 else 0
-            acceptance_rate_trend.append({"month": d.month.strftime("%b %Y"), "rate": round(rate, 1)})
+            acceptance_rate_trend.append({
+                "period": d.period.strftime(date_format), 
+                "rate": round(rate, 1)
+            })
 
         # 5. Preacher Performance Comparison (Bar Chart)
         preacher_performance = db.query(
@@ -475,8 +497,8 @@ class MinisterDashboardController:
         }
 
     @staticmethod
-    def get_reports_analytics(db: Session, org_id: Optional[int] = None, period: Optional[str] = "all_time"):
-        """جلب بيانات التقارير والتحليلات المتقدمة للوزير."""
+    def get_reports_analytics(db: Session, org_id: Optional[int] = None, period: Optional[str] = "all_time", trend_granularity: Optional[str] = "month"):
+        """جلب بيانات التقارير والتحليلات المتقدمة للوزير (مع دقة الرسم البياني)."""
         from datetime import datetime, timedelta
         from sqlalchemy import and_
 
@@ -502,58 +524,227 @@ class MinisterDashboardController:
         total_requests = db.query(DawahRequest).join(Preacher).filter(*request_filter).count()
         total_converted = db.query(DawahRequest).join(Preacher).filter(DawahRequest.status == RequestStatus.converted, *request_filter).count()
         total_rejected = db.query(DawahRequest).join(Preacher).filter(DawahRequest.status == RequestStatus.rejected, *request_filter).count()
+        total_under_persuasion = db.query(DawahRequest).join(Preacher).filter(DawahRequest.status == RequestStatus.under_persuasion, *request_filter).count()
+        
         active_preachers = db.query(Preacher).join(User).filter(User.status == AccountStatus.active, (Preacher.org_id == org_id) if org_id and org_id != 0 else True).count()
         acceptance_rate = round((total_converted / total_requests * 100), 1) if total_requests > 0 else 0
 
-        # 3. Monthly Converted vs Rejected (Bar Chart)
-        monthly_comp = db.query(
-            func.date_trunc('month', DawahRequest.created_at).label('month'),
+        # 3. Trend Configuration
+        valid_granularity = trend_granularity if trend_granularity in ["day", "month"] else "month"
+        date_format = "%d %b" if valid_granularity == "day" else "%b %Y"
+
+        # 4. Generate Date Range for Trends (Padding)
+        trend_dates = []
+        if valid_granularity == 'day':
+            # If period is month-based, show the whole month. Otherwise last 14 days.
+            if period in ["this_month", "last_month"]:
+                start_range = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_range = end_date.replace(hour=23, minute=59, second=59) if period == "last_month" else now
+            else:
+                start_range = (now - timedelta(days=13)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_range = now
+                
+            curr = start_range
+            while curr <= end_range:
+                trend_dates.append(curr)
+                curr += timedelta(days=1)
+        else:
+            # Last 6 months
+            curr = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            for _ in range(6):
+                trend_dates.insert(0, curr)
+                if curr.month == 1: curr = curr.replace(year=curr.year-1, month=12)
+                else: curr = curr.replace(month=curr.month-1)
+
+        # 4. Converted vs Rejected Trend (Bar Chart)
+        trend_query = db.query(
+            func.date_trunc(valid_granularity, DawahRequest.created_at).label('period'),
             func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label('converts'),
             func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.rejected).label('rejects')
-        ).join(Preacher).filter(*request_filter).group_by('month').order_by('month').limit(6).all()
+        ).join(Preacher).filter(*request_filter).group_by('period').order_by('period')
         
-        converted_rejected_trend = [{"month": d.month.strftime("%b %Y"), "converts": d.converts, "rejects": d.rejects} for d in monthly_comp]
+        trend_results = {r.period.replace(tzinfo=None): r for r in trend_query.all()}
+        
+        converted_rejected_trend = []
+        for dt in trend_dates:
+            key = dt.replace(tzinfo=None)
+            res = trend_results.get(key)
+            converted_rejected_trend.append({
+                "period": dt.strftime(date_format),
+                "converts": res.converts if res else 0,
+                "rejects": res.rejects if res else 0
+            })
 
-        # 4. Monthly Acceptance Rate (Line Chart - Platform Wide or Org Specific)
-        monthly_rate_data = db.query(
-            func.date_trunc('month', DawahRequest.created_at).label('month'),
+        # 5. Acceptance Rate Trend (Line/Area Chart)
+        rate_query = db.query(
+            func.date_trunc(valid_granularity, DawahRequest.created_at).label('period'),
             func.count(DawahRequest.request_id).label('total'),
             func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label('accepted')
-        ).join(Preacher).filter(*request_filter).group_by('month').order_by('month').all()
+        ).join(Preacher).filter(*request_filter).group_by('period').order_by('period')
+        
+        rate_results = {r.period.replace(tzinfo=None): r for r in rate_query.all()}
         
         acceptance_trend = []
-        for d in monthly_rate_data:
-            rate = (d.accepted / d.total * 100) if d.total > 0 else 0
-            acceptance_trend.append({"month": d.month.strftime("%b %Y"), "rate": round(rate, 1)})
+        for dt in trend_dates:
+            key = dt.replace(tzinfo=None)
+            res = rate_results.get(key)
+            rate = (res.accepted / res.total * 100) if res and res.total > 0 else 0
+            acceptance_trend.append({
+                "period": dt.strftime(date_format),
+                "rate": round(rate, 1)
+            })
 
-        # 5. Geographic Distribution (Based on DawahRequest.governorate)
-        geo_data = db.query(
-            DawahRequest.governorate, 
-            func.count(DawahRequest.request_id).label('count')
-        ).join(Preacher).filter(*request_filter).group_by(DawahRequest.governorate).order_by(desc('count')).limit(5).all()
+        # 5. Geographic Distribution (Organizations - Robust Bilingual Kuwait Standard)
+        official_govs = ["العاصمة", "حولي", "الأحمدي", "الفروانية", "الجهراء", "مبارك الكبير"]
+        
+        # English to Arabic mapping (Case-insensitive)
+        en_to_ar = {
+            "capital": "العاصمة", "al asimah": "العاصمة", "alasimah": "العاصمة", "kuwait city": "العاصمة", "kuwait": "العاصمة",
+            "hawalli": "حولي", "hawali": "حولي",
+            "ahmadi": "الأحمدي", "al ahmadi": "الأحمدي", "alahmadi": "الأحمدي", "al-ahmadi": "الأحمدي",
+            "farwaniyah": "الفروانية", "al farwaniyah": "الفروانية", "alfarwaniyah": "الفروانية", "farwaniya": "الفروانية", "al farwaniya": "الفروانية", "al-farwaniyah": "الفروانية",
+            "jahra": "الجهراء", "al jahra": "الجهراء", "aljahra": "الجهراء", "al-jahra": "الجهراء",
+            "mubarak al-kabeer": "مبارك الكبير", "mubarak alkabeer": "مبارك الكبير", "mubarak": "مبارك الكبير", "mubarak al-kabir": "مبارك الكبير", "mubarak al kabeer": "مبارك الكبير"
+        }
+        
+        def normalize_ar(text: str | None) -> str:
+            if not text: return ""
+            # Handle English
+            if any(c.isalpha() for c in text): # If contains Latin characters
+                t_en = text.lower().strip()
+                return en_to_ar.get(t_en, t_en) # Return mapped Arabic or original English if not found
+                
+            # Standardize Arabic characters (Remove Hamzas, unify Taa/Haa, etc.)
+            res = text.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
+            res = res.replace("ة", "ه").replace("ى", "ي")
+            # Remove common prefixes
+            res = res.replace("محافظة", "").replace("المحافظة", "").replace("المحافظه", "")
+            return res.strip()
+            
+        # Map normalized canonical names to their official Arabic names
+        norm_to_official = {normalize_ar(g): g for g in official_govs}
+        
+        total_organizations = db.query(Organization).count()
+        all_gov_rows = db.query(Organization.governorate).all()
+        
+        gov_counts = {gov: 0 for gov in official_govs}
+        gov_counts["غير ذلك"] = 0
+        
+        for (raw_name,) in all_gov_rows:
+            norm_val = normalize_ar(raw_name)
+            if norm_val in norm_to_official:
+                official_name = norm_to_official[norm_val]
+                gov_counts[official_name] += 1
+            elif norm_val in official_govs:
+                # Ensure norm_val is treated as a valid key for gov_counts
+                gov_counts[str(norm_val)] += 1
+            else:
+                gov_counts["غير ذلك"] += 1
         
         geographic_distribution = []
-        for gov, count in geo_data:
-            pct = round((count / total_requests * 100), 1) if total_requests > 0 else 0
-            geographic_distribution.append({"name": gov or "غير محدد", "count": count, "percentage": f"{pct}%"})
+        # Ensure all 6 appear
+        for g_name in official_govs:
+            cnt = gov_counts[g_name]
+            pct = round((cnt / total_organizations * 100), 1) if total_organizations > 0 else 0
+            geographic_distribution.append({
+                "name": g_name, 
+                "count": cnt, 
+                "percentage": f"{pct}%"
+            })
+        
+        # Add 'Other' if it has entries
+        if gov_counts["غير ذلك"] > 0:
+            cnt = gov_counts["غير ذلك"]
+            pct = round((cnt / total_organizations * 100), 1) if total_organizations > 0 else 0
+            geographic_distribution.append({
+                "name": "غير ذلك", 
+                "count": cnt, 
+                "percentage": f"{pct}%"
+            })
 
-        # 6. Organizations Performance (Donut Chart & Table)
-        # Note: Even if org_id is filtered, we might still show the selected org's share? 
-        # Usually for donut charts of performance, we show multiple if org_id is None.
-        org_performance_donut = []
-        if org_id is None:
-            perf_by_org = db.query(
-                Organization.organization_name,
-                func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label('converts')
-            ).join(Preacher, Organization.org_id == Preacher.org_id).join(DawahRequest).group_by(Organization.organization_name).all()
-            org_performance_donut = [{"label": o.organization_name, "value": o.converts} for o in perf_by_org]
-        else:
-            # If specific org, show its conversion vs rejection distribution for the donut
-            org_performance_donut = [
-                {"label": "أسلموا", "value": total_converted},
-                {"label": "رفضوا", "value": total_rejected},
-                {"label": "قيد المتابعة", "value": total_requests - total_converted - total_rejected}
-            ]
+        # 6. Organizations Performance (Mullti-entity comparison - ALWAYS)
+        # We always want a comparison view for the "Top 5" chart, even if a filter is active
+        # BUT we respect the PERIOD filter (this month / last month)
+        comparison_filter = []
+        if period == "this_month":
+            comparison_filter.append(DawahRequest.created_at >= start_date)
+        elif period == "last_month":
+            comparison_filter.append(and_(DawahRequest.created_at >= start_date, DawahRequest.created_at <= end_date))
+
+        # 6a. Get performance from regular organizations
+        # We join with DawahRequest and apply the status/period filter directly in the join condition 
+        # to ensure we don't accidentally filter out organizations with 0 converts.
+        perf_query = db.query(
+            Organization.organization_name.label('label'),
+            func.count(DawahRequest.request_id).label('value')
+        ).select_from(Organization)\
+         .outerjoin(Preacher, Organization.org_id == Preacher.org_id)\
+         .outerjoin(DawahRequest, and_(
+             Preacher.preacher_id == DawahRequest.assigned_preacher_id,
+             DawahRequest.status == RequestStatus.converted,
+             *comparison_filter
+         ))\
+         .group_by(Organization.organization_name)\
+         .order_by(desc('value'))\
+         .limit(10) # Get top 10 to pick top 5 after merging with freelancers
+        
+        perf_by_org = perf_query.all()
+         
+        # 6b. Get performance from freelance preachers (Volunteers)
+        freelance_converted = db.query(
+            func.count(DawahRequest.request_id).label('value')
+        ).select_from(DawahRequest)\
+         .join(Preacher, DawahRequest.assigned_preacher_id == Preacher.preacher_id)\
+         .filter(and_(
+             Preacher.org_id == None,
+             DawahRequest.status == RequestStatus.converted,
+             *comparison_filter
+         )).first()
+        
+        # Combine and sort for the Top 5
+        all_entities = []
+        for o in perf_by_org:
+            all_entities.append({"label": str(o.label), "value": int(o.value)})
+            
+        if freelance_converted and freelance_converted.value:
+            all_entities.append({"label": "الدعاة المتعاونين", "value": int(freelance_converted.value)})
+            
+        # Perform final sort and slice
+        sorted_entities = sorted(all_entities, key=lambda x: x['value'], reverse=True)
+        org_performance_donut = sorted_entities[:5]
+
+        # Add a special 'Status Breakdown' only if a specific org is filtered (for separate UI use or tooltips)
+        # For now, the Minister wants the Top 5 chart to stay a Top 5 chart.
+
+        def get_time_ago_ar(dt: datetime) -> str:
+            if not dt: return "غير محدد"
+            # Standardize timezone-aware comparison
+            now = datetime.now(dt.tzinfo)
+            diff = now - dt
+            
+            if diff.days > 365:
+                return "منذ سنة أو أكثر"
+            if diff.days > 30:
+                months = diff.days // 30
+                return f"منذ {months} شهر" if months > 1 else "منذ شهر"
+            if diff.days > 0:
+                if diff.days == 1: return "منذ يوم"
+                if diff.days == 2: return "منذ يومين"
+                return f"منذ {diff.days} أيام" if diff.days < 11 else f"منذ {diff.days} يوماً"
+            
+            hours = diff.seconds // 3600
+            if hours > 0:
+                if hours == 1: return "منذ ساعة"
+                if hours == 2: return "منذ ساعتين"
+                return f"منذ {hours} ساعات" if hours < 11 else f"منذ {hours} ساعة"
+            
+            minutes = (diff.seconds % 3600) // 60
+            if minutes > 0:
+                if minutes == 1: return "منذ دقيقة"
+                if minutes == 2: return "منذ دقيقتين"
+                return f"منذ {minutes} دقائق" if minutes < 11 else f"منذ {minutes} دقيقة"
+            
+            return "الآن"
 
         # 7. Organizations Performance Table
         org_details = []
@@ -570,13 +761,26 @@ class MinisterDashboardController:
             o_preachers = db.query(Preacher).filter(Preacher.org_id == org.org_id).count()
             o_rate = (o_converts / o_requests * 100) if o_requests > 0 else 0
             level = "ممتاز" if o_rate > 80 else "جيد" if o_rate > 50 else "يحتاج تحسين"
+            
+            # Real Last Update logic (Hybrid: Latest Request activity OR Last Seen OR Profile Update)
+            latest_req = db.query(DawahRequest).join(Preacher).filter(Preacher.org_id == org.org_id).order_by(desc(DawahRequest.updated_at)).first()
+            req_activity = latest_req.updated_at if latest_req else None
+            
+            # Combine multiple activity indicators
+            activity_dates = [org.updated_at]
+            if req_activity: activity_dates.append(req_activity)
+            if org.user and org.user.last_seen: activity_dates.append(org.user.last_seen)
+            if org.user and org.user.last_login: activity_dates.append(org.user.last_login)
+            
+            last_activity = max(activity_dates)
+            
             org_details.append({
                 "org_name": org.organization_name,
                 "requests_count": o_requests,
                 "converts_count": o_converts,
                 "preachers_count": o_preachers,
                 "acceptance_level": level,
-                "last_update": "قبل يومين" # Placeholder for now
+                "last_update": get_time_ago_ar(last_activity)
             })
 
         return {

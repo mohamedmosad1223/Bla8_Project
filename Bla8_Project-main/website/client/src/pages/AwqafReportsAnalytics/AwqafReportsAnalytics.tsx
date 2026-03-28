@@ -5,12 +5,12 @@ import {
   UserCheck,
   TrendingUp,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
-  LineChart, Line, CartesianGrid,
-  PieChart, Pie, Cell, Legend,
+  AreaChart, Area, CartesianGrid, Cell, LabelList
 } from 'recharts';
 import StatCard from '../../components/StatCard/StatCard';
 import { ministerService } from '../../services/ministerService';
@@ -24,8 +24,8 @@ interface OrgOption {
 interface ReportsAnalyticsResponse {
   top_cards: Array<{ title: string; value: number | string; icon: string; change?: string }>;
   charts: {
-    converted_rejected_trend: Array<{ month: string; converts: number; rejects: number }>;
-    acceptance_trend: Array<{ month: string; rate: number }>;
+    converted_rejected_trend: Array<{ period: string; converts: number; rejects: number }>;
+    acceptance_trend: Array<{ period: string; rate: number }>;
     org_performance_donut: Array<{ label: string; value: number }>;
   };
   geographic_distribution: Array<{ name: string; count: number; percentage: string }>;
@@ -48,6 +48,8 @@ const AwqafReportsAnalytics = () => {
   const [data, setData] = useState<ReportsAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<'day' | 'month'>('month');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -71,7 +73,7 @@ const AwqafReportsAnalytics = () => {
         setLoading(true);
         setError(null);
         const orgId = appliedAssociation === 'all' ? undefined : Number(appliedAssociation);
-        const result = await ministerService.getReportsAnalytics(orgId, appliedPeriod);
+        const result = await ministerService.getReportsAnalytics(orgId, appliedPeriod, granularity);
         setData(result);
       } catch (err) {
         console.error('Reports analytics fetch error:', err);
@@ -81,7 +83,9 @@ const AwqafReportsAnalytics = () => {
       }
     };
     fetchReports();
-  }, [appliedAssociation, appliedPeriod]);
+  }, [appliedAssociation, appliedPeriod, granularity, refreshKey]);
+
+  const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
   const reportStats = useMemo(() => {
     if (!data?.top_cards) return [];
@@ -111,7 +115,7 @@ const AwqafReportsAnalytics = () => {
   }, [data]);
 
   const conversionBarData = (data?.charts?.converted_rejected_trend || []).map((item) => ({
-    name: item.month,
+    name: item.period,
     conversions: item.converts,
     refusals: item.rejects
   }));
@@ -139,9 +143,13 @@ const AwqafReportsAnalytics = () => {
         ? fallbackPieByRequests
         : [];
 
+  const sortedOrgData = [...safePieData]
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
   const lineData = (data?.charts?.acceptance_trend || []).map((item) => ({
-    name: item.month,
-    value1: item.rate
+    name: item.period,
+    value: item.rate
   }));
 
   const geoData = data?.geographic_distribution || [];
@@ -186,6 +194,14 @@ const AwqafReportsAnalytics = () => {
             <option value="last_month">الشهر السابق</option>
           </select>
           <button className="apply-filter-btn" onClick={() => { setAppliedAssociation(association); setAppliedPeriod(period); }}>تطبيق</button>
+          <button 
+            className="refresh-btn-icon" 
+            onClick={handleRefresh} 
+            title="تحديث البيانات"
+            disabled={loading}
+          >
+            <RefreshCw size={20} className={loading ? 'spin-animation' : ''} />
+          </button>
         </div>
       </div>
 
@@ -197,8 +213,8 @@ const AwqafReportsAnalytics = () => {
             title={stat.title}
             value={stat.value}
             icon={stat.icon}
-            iconBgColor={stat.bgColor}
-            iconColor={stat.color}
+            iconBgColor={stat.iconBgColor}
+            iconColor={stat.iconColor}
             trend={stat.trend}
             trendValue={stat.trendValue}
           />
@@ -231,28 +247,63 @@ const AwqafReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Donut: نسب الأداء حسب الجمعيات */}
+        {/* Vertical Bar Chart: أفضل 5 جمعيات تحقيقاً للإسلام */}
         <div className="chart-card">
-          <h3 style={{ textAlign: 'center' }}>نسب الأداء حسب الجمعيات</h3>
-          <div className="chart-content" style={{ minHeight: '280px' }}>
-            {safePieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie data={safePieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value" paddingAngle={2}>
-                    {safePieData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Legend
-                    align="right"
-                    verticalAlign="middle"
-                    layout="vertical"
-                    iconType="circle"
-                    iconSize={10}
-                    formatter={(value) => <span style={{ color: '#374151', fontSize: '13px', fontFamily: 'Cairo' }}>{value}</span>}
+          <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>أداء أفضل الجمعيات (أعلى 5)</h3>
+          <div className="chart-content" style={{ minHeight: '350px' }}>
+            {sortedOrgData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={sortedOrgData}
+                  margin={{ top: 30, right: 30, left: 20, bottom: 50 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#374151', fontSize: 10, fontFamily: 'Cairo' }}
+                    interval={0}
+                    angle={-15} 
+                    textAnchor="middle" 
+                    height={120} // Increased height for the gap
+                    dy={40} // Significant vertical drop
                   />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontFamily: 'Cairo' }} />
-                </PieChart>
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tickMargin={10}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontFamily: 'Cairo' }}
+                    width={45}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }}
+                    formatter={(value: any) => [`${value} مسلم جديد`, 'الإنجاز']}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    radius={[8, 8, 0, 0]} 
+                    barSize={50}
+                    fill="#D4AF37" // Golden color
+                  >
+                    {sortedOrgData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={`url(#barGradient-${index})`}
+                      />
+                    ))}
+                    <LabelList dataKey="value" position="top" offset={10} style={{ fontFamily: 'Cairo', fontSize: '14px', fill: '#374151', fontWeight: 'bold' }} />
+                  </Bar>
+                  <defs>
+                    {sortedOrgData.map((_, index) => (
+                      <linearGradient key={index} id={`barGradient-${index}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.9} />
+                        <stop offset="100%" stopColor="#B8860B" stopOpacity={0.8} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ width: '100%', minHeight: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
@@ -262,23 +313,64 @@ const AwqafReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Line Chart: نسبة القبول الشهرية */}
+        {/* Area Chart: نسبة القبول */}
         <div className="chart-card">
-          <div className="chart-header">
-            <h3>نسبة القبول الشهرية</h3>
-            <select className="chart-select">
-              <option>الشهر</option>
-            </select>
+          <div className="chart-header-row">
+            <h3>نسبة قبول الطلبات</h3>
+            <div className="granularity-toggle">
+              <button 
+                className={granularity === 'day' ? 'active' : ''} 
+                onClick={() => setGranularity('day')}
+              >
+                يومي
+              </button>
+              <button 
+                className={granularity === 'month' ? 'active' : ''} 
+                onClick={() => setGranularity('month')}
+              >
+                شهري
+              </button>
+            </div>
           </div>
           <div className="chart-content" style={{ minHeight: '280px' }}>
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={lineData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+              <AreaChart data={lineData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="colorRateReports" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#DBA841" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#DBA841" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} domain={[0, 100]} orientation="right" label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontFamily: 'Cairo' }} />
-                <Line type="linear" dataKey="value1" stroke="#9f1239" strokeWidth={2} dot={{ r: 4, fill: '#9f1239', strokeWidth: 0 }} />
-              </LineChart>
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} 
+                  dy={10} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#6B7280', fontSize: 12 }} 
+                  domain={[0, 100]} 
+                  orientation="right" 
+                  label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo', offset: 10 }} 
+                />
+                <Tooltip 
+                  formatter={(value: any) => [`${value}%`, 'نسبة القبول']}
+                  labelStyle={{ fontFamily: 'Cairo', textAlign: 'right' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }} 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#DBA841" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#colorRateReports)" 
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -286,7 +378,7 @@ const AwqafReportsAnalytics = () => {
 
       {/* Geographic Distribution */}
       <div className="ra-section">
-        <h3 className="ra-section-title">التوزيع الجغرافي للأنشطة</h3>
+        <h3 className="ra-section-title">التوزيع الجغرافي للجمعيات</h3>
         <div className="geo-container">
           {geoData.map((geo, idx) => (
             <div key={idx} className="geo-row">

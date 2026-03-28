@@ -37,7 +37,11 @@ def login(request: Request, response: Response, db: Session = Depends(get_db), f
         )
     
     # Optional role validation
-    if role and user.role != role:
+    effective_role = role
+    if role == "non_muslim":
+        effective_role = UserRole.interested
+        
+    if effective_role and user.role != effective_role:
         # User exists but role doesn't match login entry point
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

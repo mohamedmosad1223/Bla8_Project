@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { orgService } from '../../services/orgService';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 import './AdminAssociationRequestDetails.css';
 
 const AdminAssociationRequestDetails = () => {
@@ -29,6 +30,10 @@ const AdminAssociationRequestDetails = () => {
   const [rejectSuccessModalOpen, setRejectSuccessModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fetchDetails = async () => {
     if (!id) return;
@@ -66,10 +71,10 @@ const AdminAssociationRequestDetails = () => {
       });
       setRejectModalOpen(false);
       setRejectSuccessModalOpen(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error rejecting request:', err);
-      // Fallback to alert for errors to be sure it's seen, but better to use a Toast if available
-      alert('حدث خطأ أثناء رفض الطلب، يرجى المحاولة مرة أخرى');
+      setErrorMessage(err.response?.data?.detail || 'حدث خطأ أثناء رفض الطلب، يرجى المحاولة مرة أخرى');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -305,6 +310,12 @@ const AdminAssociationRequestDetails = () => {
           </div>
         </div>
       )}
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
     </div>
   );
 };

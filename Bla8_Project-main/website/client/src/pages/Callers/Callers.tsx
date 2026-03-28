@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { preacherService } from '../../services/preacherService';
 import './Callers.css';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface PreacherAPI {
@@ -50,6 +51,36 @@ const formatDate = (iso: string) => {
 // نوع الداعيه: official = داعية رسمي (تابع لجمعية) / volunteer = منفرد
 const TYPE_MAP: Record<string, string> = { official: 'داعية', volunteer: 'منفرد' };
 
+const DeleteModal = ({ onClose, onConfirm, preacherName, loading }: { 
+  onClose: () => void; 
+  onConfirm: () => void;
+  preacherName: string;
+  loading: boolean;
+}) => (
+  <div className="callers-modal-overlay">
+    <div className="callers-modal" dir="rtl">
+      <button className="callers-modal-close" onClick={onClose}><X size={20} /></button>
+      <div className="callers-modal-content">
+        <div className="callers-modal-icon-danger">
+          <Trash2 size={40} strokeWidth={2.5} />
+        </div>
+        <h2 className="callers-modal-title">تأكيد الحذف</h2>
+        <p className="callers-modal-desc">
+          هل أنت متأكد من حذف الداعية <strong>"{preacherName}"</strong> تماماً من النظام؟
+        </p>
+        <div className="callers-modal-actions">
+          <button className="callers-modal-btn callers-btn-cancel" onClick={onClose} disabled={loading}>
+            إلغاء
+          </button>
+          <button className="callers-modal-btn callers-btn-danger" onClick={onConfirm} disabled={loading}>
+            {loading ? <Loader2 size={18} className="spin-icon" /> : 'تأكيد الحذف'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 const Callers = () => {
   const navigate = useNavigate();
@@ -58,7 +89,14 @@ const Callers = () => {
   const [allPreachers,  setAllPreachers]  = useState<PreacherAPI[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
-  const [togglingId,    setTogglingId]    = useState<number | null>(null); // ID الداعية اللي بيتبدل حاله
+  const [togglingId,    setTogglingId]    = useState<number | null>(null); 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [preacherToDelete, setPreacherToDelete] = useState<PreacherAPI | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // ── Search & Sort state ────────────────────────────────────────────────
   const [searchText, setSearchText] = useState('');
@@ -73,6 +111,10 @@ const Callers = () => {
   const [filterStatus,    setFilterStatus]    = useState<string>(''); // '' | 'active' | 'suspended'
   const [filterLanguages, setFilterLanguages] = useState<string[]>([]); // Arabic names – local filter
   const [systemLangs,     setSystemLangs]     = useState<{id: number, name: string}[]>([]); 
+
+  // Check if organization is suspended
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  const isSuspended = userData.status === 'suspended';
 
   const sortRef   = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -125,6 +167,7 @@ const Callers = () => {
 
   // ── Toggle active/suspended ────────────────────────────────────────────
   const toggleActive = async (preacher: PreacherAPI) => {
+    if (isSuspended) return; // Prevent action if suspended
     const newStatus = preacher.status === 'active' ? 'suspended' : 'active';
     setTogglingId(preacher.preacher_id);
     try {
@@ -133,9 +176,10 @@ const Callers = () => {
       setAllPreachers(prev =>
         prev.map(p => p.preacher_id === preacher.preacher_id ? { ...p, status: newStatus } : p)
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update status:', err);
-      alert('تعذّر تغيير حالة الداعية، يرجى المحاولة مرة أخرى');
+      setErrorMessage(err.response?.data?.detail || 'تعذّر تغيير حالة الداعية، يرجى المحاولة مرة أخرى');
+      setIsErrorModalOpen(true);
     } finally {
       setTogglingId(null);
     }
@@ -155,16 +199,26 @@ const Callers = () => {
   };
 
   // ── DELETE PREACHER ────────────────────────────────────────────────────
-  const handleDelete = async (preacher: PreacherAPI) => {
-    if (window.confirm(`هل أنت متأكد من حذف الداعية "${preacher.full_name}" تماماً من النظام؟`)) {
-      try {
-        await preacherService.delete(preacher.preacher_id);
-        // تحديث محلي لحذف السطر من الجدول فوراً
-        setAllPreachers(prev => prev.filter(p => p.preacher_id !== preacher.preacher_id));
-      } catch (err) {
-        console.error('Failed to delete preacher:', err);
-        alert('حدث خطأ أثناء حذف الداعية، يرجى المحاولة مرة أخرى');
-      }
+  const handleDelete = (preacher: PreacherAPI) => {
+    if (isSuspended) return;
+    setPreacherToDelete(preacher);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!preacherToDelete) return;
+    setDeleteLoading(true);
+    try {
+      await preacherService.delete(preacherToDelete.preacher_id);
+      setAllPreachers(prev => prev.filter(p => p.preacher_id !== preacherToDelete.preacher_id));
+      setIsDeleteModalOpen(false);
+      setPreacherToDelete(null);
+    } catch (err: any) {
+      console.error('Failed to delete preacher:', err);
+      setErrorMessage(err.response?.data?.detail || 'حدث خطأ أثناء حذف الداعية، يرجى المحاولة مرة أخرى');
+      setIsErrorModalOpen(true);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -186,11 +240,40 @@ const Callers = () => {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="callers-page">
+      {isDeleteModalOpen && preacherToDelete && (
+        <DeleteModal 
+          preacherName={preacherToDelete.full_name}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+          loading={deleteLoading}
+        />
+      )}
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
       <div className="callers-header-area">
         <h1 className="page-title">دعاة الجمعية</h1>
 
+        {isSuspended && (
+          <div className="error-alert" style={{ marginBottom: '20px', width: '100%', maxWidth: 'none' }}>
+            <AlertCircle size={20} />
+            <div style={{ marginRight: '10px' }}>
+              <strong>تنبيه: حساب الجمعية موقوف حالياً.</strong>
+              <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>لا يمكنك إضافة دعاة جدد، أو تعديل حالاتهم، أو حذفهم حتى يتم تفعيل الحساب من قبل الإدارة.</p>
+            </div>
+          </div>
+        )}
+
         <div className="callers-actions">
-          <button className="btn-primary" onClick={() => navigate('/callers/add')}>
+          <button 
+            className={`btn-primary ${isSuspended ? 'disabled-btn' : ''}`} 
+            onClick={() => !isSuspended && navigate('/callers/add')}
+            disabled={isSuspended}
+            title={isSuspended ? 'لا يمكنك إضافة داعية لأن الحساب موقوف' : ''}
+          >
             <Plus size={18} />
             اضافة داعية
           </button>
@@ -445,15 +528,15 @@ const Callers = () => {
                         </td>
                         <td>
                           <label
-                            className="toggle-switch"
-                            style={{ cursor: togglingId === preacher.preacher_id ? 'wait' : 'pointer' }}
-                            title={preacher.status === 'active' ? 'إيقاف الداعية' : 'تفعيل الداعية'}
+                            className={`toggle-switch ${isSuspended ? 'disabled-toggle' : ''}`}
+                            style={{ cursor: (togglingId === preacher.preacher_id || isSuspended) ? 'not-allowed' : 'pointer' }}
+                            title={isSuspended ? 'الحساب موقوف' : (preacher.status === 'active' ? 'إيقاف الداعية' : 'تفعيل الداعية')}
                           >
                             <input
                               type="checkbox"
                               checked={preacher.status === 'active'}
-                              disabled={togglingId === preacher.preacher_id}
-                              onChange={() => toggleActive(preacher)}
+                              disabled={togglingId === preacher.preacher_id || isSuspended}
+                              onChange={() => !isSuspended && toggleActive(preacher)}
                             />
                             <span className="toggle-slider"></span>
                           </label>
@@ -466,10 +549,20 @@ const Callers = () => {
                             <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/callers/view/${preacher.preacher_id}`)}>
                              <Eye size={16} />
                            </button>
-                             <button className="action-icon-btn edit-icon" title="تعديل" onClick={() => navigate(`/callers/edit/${preacher.preacher_id}`)}>
+                            <button 
+                               className={`action-icon-btn edit-icon ${isSuspended ? 'disabled' : ''}`} 
+                               title={isSuspended ? 'الحساب موقوف' : 'تعديل'} 
+                               onClick={() => !isSuspended && navigate(`/callers/edit/${preacher.preacher_id}`)}
+                               disabled={isSuspended}
+                             >
                                <Edit size={16} />
                              </button>
-                             <button className="action-icon-btn delete-icon" title="حذف" onClick={() => handleDelete(preacher)}>
+                             <button 
+                               className={`action-icon-btn delete-icon ${isSuspended ? 'disabled' : ''}`} 
+                               title={isSuspended ? 'الحساب موقوف' : "حذف"} 
+                               onClick={() => !isSuspended && handleDelete(preacher)}
+                               disabled={isSuspended}
+                             >
                                <Trash2 size={16} />
                              </button>
                           </div>

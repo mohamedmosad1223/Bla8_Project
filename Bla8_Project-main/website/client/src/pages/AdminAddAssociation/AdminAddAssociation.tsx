@@ -15,7 +15,6 @@ const AdminAddAssociation = () => {
   const [showStatusModal, setShowStatusModal] = useState<'success' | 'error' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [countries, setCountries] = useState<Country[]>([]);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -34,17 +33,6 @@ const AdminAddAssociation = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const response = await api.get('/preachers/countries');
-        setCountries(response.data.data);
-      } catch (err) {
-        console.error('Error fetching countries:', err);
-      }
-    };
-    fetchCountries();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -163,9 +151,9 @@ const AdminAddAssociation = () => {
                 className="aadd-input aadd-select"
               >
                 <option value="">الدولة</option>
-                {countries.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                <option value="1">مصر</option>
+                <option value="2">السعودية</option>
+                <option value="5">الكويت</option>
               </select>
               <ChevronDown className="aadd-select-icon" size={18} />
             </div>
@@ -197,15 +185,25 @@ const AdminAddAssociation = () => {
 
           {/* Row 4 */}
           <div className="aadd-group">
-            <label className="aadd-label">عنوان الجمعية (المحافظة/الشارع)</label>
-            <input 
-              type="text" 
-              name="governorate"
-              value={formData.governorate}
-              onChange={handleChange}
-              className="aadd-input" 
-              placeholder="عنوان الجمعية" 
-            />
+            <label className="aadd-label">المحافظة</label>
+            <div className="aadd-select-wrapper">
+              <select 
+                name="governorate"
+                value={formData.governorate}
+                onChange={handleChange}
+                className="aadd-input aadd-select"
+              >
+                <option value="">المحافظة</option>
+                <option value="jahra">محافظة الجهراء</option>
+                <option value="asima">محافظة العاصمة</option>
+                <option value="farwaniya">محافظة الفروانية</option>
+                <option value="hawalli">محافظة حولي</option>
+                <option value="mubarak_al_kabeer">محافظة مبارك الكبير</option>
+                <option value="ahmadi">محافظة الأحمدي</option>
+                <option value="other">أخرى</option>
+              </select>
+              <ChevronDown className="aadd-select-icon" size={18} />
+            </div>
           </div>
           <div className="aadd-group">
             <label className="aadd-label">تاريخ تأسيس الجمعية</label>

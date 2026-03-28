@@ -17,6 +17,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { preacherService } from '../../services/preacherService';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 import './AdminPreacherRequestDetails.css';
 
 const AdminPreacherRequestDetails = () => {
@@ -30,6 +31,10 @@ const AdminPreacherRequestDetails = () => {
   const [rejectSuccessModalOpen, setRejectSuccessModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fetchDetails = async () => {
     if (!id) return;
@@ -67,9 +72,10 @@ const AdminPreacherRequestDetails = () => {
       });
       setRejectModalOpen(false);
       setRejectSuccessModalOpen(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error rejecting request:', err);
-      alert('حدث خطأ أثناء رفض الطلب، يرجى المحاولة مرة أخرى');
+      setErrorMessage(err.response?.data?.detail || 'حدث خطأ أثناء رفض الطلب، يرجى المحاولة مرة أخرى');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -304,6 +310,12 @@ const AdminPreacherRequestDetails = () => {
           </div>
         </div>
       )}
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
     </div>
   );
 };

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Trash2, Plus, MessageCircle, Loader2, AlertTriangle, Search } from 'lucide-react';
 import api from '../../services/api';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
+import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './AdminAssociations.css';
 
 interface AssociationData {
@@ -31,6 +33,14 @@ const AdminAssociations = () => {
   // Delete Modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Success Modal State
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const navigate = useNavigate();
 
@@ -64,11 +74,19 @@ const AdminAssociations = () => {
   const toggleActive = async (id: number, currentAccountStatus: string) => {
     try {
       const isActive = currentAccountStatus === 'active';
-      await api.patch(`/organizations/${id}`, { is_active: !isActive });
+      const newStatus = isActive ? 'suspended' : 'active';
+      
+      const response = await api.patch(`/admins/management/organizations/${id}/status`, { 
+        status: newStatus 
+      });
+      
+      setSuccessMessage(response.data.message || 'تم تحديث حالة الجمعية بنجاح');
+      setIsSuccessModalOpen(true);
       fetchAssociations(); // Refresh data
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error toggling status:', err);
-      alert('تعذر تحديث حالة الجمعية');
+      setErrorMessage(err.response?.data?.detail || 'تعذر تحديث حالة الجمعية');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -82,9 +100,10 @@ const AdminAssociations = () => {
       try {
         await api.delete(`/organizations/${itemToDelete}`);
         fetchAssociations();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error deleting association:', err);
-        alert('تعذر حذف الجمعية');
+        setErrorMessage(err.response?.data?.detail || 'تعذر حذف الجمعية');
+        setIsErrorModalOpen(true);
       }
     }
     setShowDeleteModal(false);
@@ -276,6 +295,19 @@ const AdminAssociations = () => {
           </div>
         </div>
       )}
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
+
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="تم بنجاح"
+        description={successMessage}
+      />
     </div>
   );
 };

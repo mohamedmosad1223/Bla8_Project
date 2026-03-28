@@ -20,18 +20,21 @@ from app.utils.file_handler import save_upload_file
 class OrganizationsController:
 
     @staticmethod
-    def register(db: Session, payload: OrganizationRegister, license_file: any):
+    def register(db: Session, payload: OrganizationRegister, license_file: any, admin_user: User | None = None):
         if db.query(User).filter(User.email == payload.email).first():
             raise HTTPException(status_code=409, detail=UserMessages.EMAIL_REGISTERED)
 
         # حفظ الملف المرفوع
         file_path = save_upload_file(license_file, "organizations/licenses")
 
+        # Determine initial status (Active if created by Admin, Pending otherwise)
+        is_admin = admin_user and admin_user.role == UserRole.admin
+        
         user = User(
             email=payload.email,
             password_hash=get_password_hash(payload.password),
             role=UserRole.organization,
-            status=AccountStatus.pending,
+            status=AccountStatus.active if is_admin else AccountStatus.pending,
         )
         db.add(user)
         db.flush()
@@ -47,6 +50,9 @@ class OrganizationsController:
             manager_name=payload.manager_name,
             phone=payload.phone,
             email=payload.org_email,
+            approval_status=ApprovalStatus.approved if is_admin else ApprovalStatus.pending,
+            approved_by=admin_user.admin.admin_id if is_admin and admin_user.admin else None,
+            approved_at=datetime.now(timezone.utc) if is_admin else None
         )
         db.add(org)
         db.flush()
@@ -191,7 +197,7 @@ class OrganizationsController:
         return {"message": OrganizationMessages.FETCHED, "data": org_dict}
 
     @staticmethod
-    def update_organization(db: Session, org_id: int, payload: OrganizationUpdate):
+    def update_organization(db: Session, org_id: int, payload: OrganizationUpdate, admin_user: User | None = None):
         org = db.query(Organization).filter(Organization.org_id == org_id).first()
         if not org:
             raise HTTPException(status_code=404, detail=OrganizationMessages.NOT_FOUND)
@@ -219,6 +225,14 @@ class OrganizationsController:
         if payload.approval_status == ApprovalStatus.approved:
             if org.user:
                 org.user.status = AccountStatus.active
+            
+            # تسجيل بيانات الموافقة
+            if admin_user and admin_user.role == UserRole.admin and admin_user.admin:
+                org.approved_by = admin_user.admin.admin_id
+                org.approved_at = datetime.now(timezone.utc)
+            else:
+                org.approved_at = datetime.now(timezone.utc)
+
             NotificationsController.create_notification(
                 db, org.user_id, NotificationType.account_approved,
                 "تمت الموافقة على حسابك", "مرحباً بك في منصة بلاغ، تم تفعيل حساب الجمعية الخاص بك بنجاح."

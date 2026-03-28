@@ -12,19 +12,18 @@ interface RequestsChartProps {
 
 // Map Arabic status labels to Arabic display names + colors
 const STATUS_CONFIG: Record<string, { name: string; color: string }> = {
-  converted:         { name: 'من أسلم',     color: '#10B981' },
-  rejected:          { name: 'من رفضوا',    color: '#EF4444' },
-  in_progress:       { name: 'قيد التنفيذ', color: '#EAB308' },
-  // Business mapping: treat "under_persuasion" and "pending" as waiting until the request is accepted
-  under_persuasion:  { name: 'قيد التنفيذ', color: '#EAB308' },
-  pending:           { name: 'قيد التنفيذ', color: '#EAB308' },
-  cancelled:         { name: 'تم الإلغاء',  color: '#9CA3AF' },
+  converted:         { name: 'أسلم',         color: '#10B981' },
+  rejected:          { name: 'رفض',          color: '#EF4444' },
+  under_persuasion:  { name: 'قيد الإقناع',  color: '#2563EB' }, // Blue
+  in_progress:       { name: 'قيد التنفيذ',  color: '#EAB308' },
+  pending:           { name: 'قيد التنفيذ',  color: '#EAB308' },
+  cancelled:         { name: 'تم الإلغاء',   color: '#9CA3AF' },
 };
 
 const FALLBACK_DATA = [
-  { name: 'من أسلم',     value: 0, color: '#10B981' },
-  { name: 'قيد التنفيذ', value: 0, color: '#EAB308' },
-  { name: 'من رفضوا',    value: 0, color: '#EF4444' },
+  { name: 'أسلم',         value: 0, color: '#10B981' },
+  { name: 'قيد الإقناع',  value: 0, color: '#2563EB' },
+  { name: 'رفض',          value: 0, color: '#EF4444' },
 ];
 
 const RequestsChart = ({ data }: RequestsChartProps) => {

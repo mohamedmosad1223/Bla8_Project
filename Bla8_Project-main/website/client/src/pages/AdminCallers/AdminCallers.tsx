@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter as FilterIcon, SortDesc, ChevronDown, X, Check, Trash2, Eye, MessageCircle, Loader2 } from 'lucide-react';
 import api from '../../services/api';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
+import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './AdminCallers.css';
 
 interface Preacher {
@@ -24,6 +26,14 @@ const AdminCallers = () => {
   const [loading, setLoading] = useState(true);
   const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Success Modal State
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const [search, setSearch] = useState('');
   
@@ -96,13 +106,18 @@ const AdminCallers = () => {
   const toggleActive = async (id: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-      const formData = new FormData();
-      formData.append('status', newStatus);
-      await api.patch(`/preachers/${id}`, formData);
+      
+      const response = await api.patch(`/admins/management/preachers/${id}/status`, { 
+        status: newStatus 
+      });
+      
+      setSuccessMessage(response.data.message || 'تم تحديث حالة الداعية بنجاح');
+      setIsSuccessModalOpen(true);
       fetchPreachers();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error toggling status:', err);
-      alert('تعذر تحديث حالة الداعية');
+      setErrorMessage(err.response?.data?.detail || 'تعذر تحديث حالة الداعية');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -116,9 +131,10 @@ const AdminCallers = () => {
       try {
         await api.delete(`/preachers/${itemToDelete}`);
         fetchPreachers();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error deleting preacher:', err);
-        alert('تعذر حذف الداعية');
+        setErrorMessage(err.response?.data?.detail || 'تعذر حذف الداعية');
+        setIsErrorModalOpen(true);
       }
     }
     setShowDeletePreacherModal(false);
@@ -513,6 +529,18 @@ const AdminCallers = () => {
           </div>
         </div>
       )}
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
+
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="تم بنجاح"
+        description={successMessage}
+      />
     </div>
   );
 };

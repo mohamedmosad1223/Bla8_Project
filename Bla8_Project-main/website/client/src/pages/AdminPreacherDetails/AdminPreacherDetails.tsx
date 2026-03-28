@@ -15,6 +15,8 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import api from '../../services/api';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
+import SuccessModal from '../../components/common/Modal/SuccessModal';
 import StatCard from '../../components/StatCard/StatCard';
 import ResponseTimeChart from '../../components/ResponseTimeChart/ResponseTimeChart';
 import WorldMap from '../../components/WorldMap/WorldMap';
@@ -50,23 +52,52 @@ const AdminPreacherDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Success Modal State
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const targetId = preacherId || id; 
+      const response = await api.get(`/dashboard/preacher/${targetId}`);
+      setData(response.data);
+    } catch (err) {
+      console.error('Error fetching preacher stats:', err);
+      setError('تعذر تحميل بيانات الداعية');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        // Using the preacher_id specifically
-        const targetId = preacherId || id; 
-        const response = await api.get(`/dashboard/preacher/${targetId}`);
-        setData(response.data);
-      } catch (err) {
-        console.error('Error fetching preacher stats:', err);
-        setError('تعذر تحميل بيانات الداعية');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, [id, preacherId]);
+
+  const toggleStatus = async () => {
+    if (!data) return;
+    try {
+      const targetId = preacherId || id;
+      const currentStatus = data.preacher_info.status;
+      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+      
+      const response = await api.patch(`/admins/management/preachers/${targetId}/status`, { 
+        status: newStatus 
+      });
+      
+      setSuccessMessage(response.data.message || 'تم تحديث حالة الداعية بنجاح');
+      setIsSuccessModalOpen(true);
+      fetchStats(); // Refresh data
+    } catch (err: any) {
+      console.error('Error toggling status:', err);
+      setErrorMessage(err.response?.data?.detail || 'تعذر تحديث حالة الداعية');
+      setIsErrorModalOpen(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -183,9 +214,21 @@ const AdminPreacherDetails = () => {
 
           <div className="apreach-item">
             <span className="apreach-label"><Settings size={16}/> الحالة</span>
-            <span className={`apreach-value ${info.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-              {info.status === 'active' ? 'مفعل' : 'غير مفعل'}
-            </span>
+            <div className="status-row">
+              <span className={`apreach-value ${info.status === 'active' ? 'status-active' : 'status-inactive'}`}>
+                {info.status === 'active' ? 'مفعل' : 'غير مفعل'}
+              </span>
+              {userRole === 'admin' && (
+                <label className="toggle-switch">
+                  <input 
+                    type="checkbox" 
+                    checked={info.status === 'active'} 
+                    onChange={toggleStatus} 
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              )}
+            </div>
           </div>
 
           <div className="apreach-item">
@@ -267,6 +310,18 @@ const AdminPreacherDetails = () => {
           </div>
         </div>
       </div>
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
+
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="تم بنجاح"
+        description={successMessage}
+      />
     </div>
   );
 };

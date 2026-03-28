@@ -25,6 +25,8 @@ import RequestsChart from '../../components/RequestsChart/RequestsChart';
 import ConversionsChart from '../../components/ConversionsChart/ConversionsChart';
 import WorldMap from '../../components/WorldMap/WorldMap';
 import api from '../../services/api';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
+import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './AdminAssociationDetails.css';
 
 const governoratesList = [
@@ -44,6 +46,14 @@ const AdminAssociationDetails = () => {
   const [showDeletePreacherModal, setShowDeletePreacherModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Success Modal State
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -96,9 +106,10 @@ const AdminAssociationDetails = () => {
       await api.delete(`/organizations/${id}`);
       setShowDeleteModal(false);
       navigate('/admin/associations');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting organization:', err);
-      alert('تعذر حذف الجمعية');
+      setErrorMessage(err.response?.data?.detail || 'تعذر حذف الجمعية');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -112,9 +123,10 @@ const AdminAssociationDetails = () => {
       try {
         await api.delete(`/preachers/${itemToDelete}`);
         fetchData();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error deleting preacher:', err);
-        alert('تعذر حذف الداعية');
+        setErrorMessage(err.response?.data?.detail || 'تعذر حذف الداعية');
+        setIsErrorModalOpen(true);
       }
     }
     setShowDeletePreacherModal(false);
@@ -124,12 +136,18 @@ const AdminAssociationDetails = () => {
   const togglePreacherActive = async (preacherId: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-      const formData = new FormData();
-      formData.append('status', newStatus);
-      await api.patch(`/preachers/${preacherId}`, formData);
+      
+      const response = await api.patch(`/admins/management/preachers/${preacherId}/status`, { 
+        status: newStatus 
+      });
+      
+      setSuccessMessage(response.data.message || 'تم تحديث حالة الداعية بنجاح');
+      setIsSuccessModalOpen(true);
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error toggling preacher status:', err);
+      setErrorMessage(err.response?.data?.detail || 'تعذر تحديث حالة الداعية');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -580,6 +598,19 @@ const AdminAssociationDetails = () => {
           </div>
         </div>
       )}
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
+
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="تم بنجاح"
+        description={successMessage}
+      />
     </div>
   );
 };

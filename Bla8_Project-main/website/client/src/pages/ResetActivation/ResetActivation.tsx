@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import OTPInput from '../../components/common/OTPInput/OTPInput';
 import { authService } from '../../services/authService';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 import './ResetActivation.css';
 
 const ResetActivation: React.FC = () => {
@@ -14,6 +15,11 @@ const ResetActivation: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState<'error' | 'success'>('error');
 
   const handleComplete = (code: string) => {
     setOtp(code);
@@ -48,9 +54,13 @@ const ResetActivation: React.FC = () => {
     setLoading(true);
     try {
       await authService.forgotPassword(email);
-      alert('تم إعادة إرسال الكود بنجاح');
-    } catch (err) {
-      alert('فشل إعادة إرسال الكود');
+      setModalType('success');
+      setModalMessage('تم إعادة إرسال الكود بنجاح');
+      setIsModalOpen(true);
+    } catch (err: any) {
+      setModalType('error');
+      setModalMessage(err.response?.data?.detail || 'فشل إعادة إرسال الكود');
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -93,6 +103,13 @@ const ResetActivation: React.FC = () => {
           </p>
         </div>
       </div>
+
+      <ErrorModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        message={modalMessage}
+        type={modalType}
+      />
     </AuthLayout>
   );
 };

@@ -14,6 +14,10 @@ const EditPreacher = () => {
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Check if organization is suspended
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  const isSuspended = userData.status === 'suspended';
+
   // Form State
   const [formData, setFormData] = useState({
     fullName: '',
@@ -89,6 +93,7 @@ const EditPreacher = () => {
   };
 
   const clearField = (fieldName: string) => {
+    if (isSuspended) return;
     if (fieldName === 'scientificQualification') {
         setFormData(prev => ({ ...prev, scientificQualification: '' }));
     } else if (fieldName === 'languages') {
@@ -97,6 +102,7 @@ const EditPreacher = () => {
   };
 
   const toggleLanguage = (langId: number) => {
+    if (isSuspended) return;
     if (selectedLangs.includes(langId)) {
       setSelectedLangs(selectedLangs.filter(id => id !== langId));
     } else {
@@ -106,7 +112,7 @@ const EditPreacher = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!id || isSuspended) return;
 
     try {
       setSaveLoading(true);
@@ -156,6 +162,13 @@ const EditPreacher = () => {
 
       <div className="form-container">
         <form className="add-caller-form" onSubmit={handleSubmit}>
+          {isSuspended && (
+            <div className="error-alert" style={{ marginBottom: '20px' }}>
+              <AlertCircle size={18} />
+              <span>لا يمكنك تعديل بيانات الدعاة لأن حساب الجمعية موقوف حالياً.</span>
+            </div>
+          )}
+
           {error && (
             <div className="error-alert">
               <AlertCircle size={18} />
@@ -166,16 +179,16 @@ const EditPreacher = () => {
           <div className="form-grid">
             <div className="form-group">
               <label>اسم الداعية بالكامل</label>
-              <input type="text" name="fullName" className="form-input" value={formData.fullName} onChange={handleInputChange} required />
+              <input type="text" name="fullName" className="form-input" value={formData.fullName} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
             <div className="form-group">
               <label>رقم الهاتف</label>
-              <input type="text" name="phone" className="form-input" value={formData.phone} onChange={handleInputChange} required />
+              <input type="text" name="phone" className="form-input" value={formData.phone} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
 
             <div className="form-group">
               <label>النوع</label>
-              <select name="gender" className="form-input" value={formData.gender} onChange={handleInputChange} required style={{ appearance: 'auto' }}>
+              <select name="gender" className="form-input" value={formData.gender} onChange={handleInputChange} required disabled={isSuspended} style={{ appearance: 'auto' }}>
                 <option value="male">ذكر</option>
                 <option value="female">أنثى</option>
               </select>
@@ -184,41 +197,45 @@ const EditPreacher = () => {
             <div className="form-group">
               <label style={{ display: 'flex', justifyContent: 'space-between' }}>
                 المؤهل العلمي
-                {formData.scientificQualification && <X size={14} style={{ cursor: 'pointer', color: '#EF4444' }} onClick={() => clearField('scientificQualification')} title="مسح الحقل" />}
+                {formData.scientificQualification && !isSuspended && <X size={14} style={{ cursor: 'pointer', color: '#EF4444' }} onClick={() => clearField('scientificQualification')} title="مسح الحقل" />}
               </label>
-              <input type="text" name="scientificQualification" className="form-input" value={formData.scientificQualification} onChange={handleInputChange} required />
+              <input type="text" name="scientificQualification" className="form-input" value={formData.scientificQualification} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
 
             <div className="form-group">
               <label>البريد الالكتروني (للتواصل)</label>
-              <input type="email" name="email" className="form-input" value={formData.email} onChange={handleInputChange} required />
+              <input type="email" name="email" className="form-input" value={formData.email} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
 
             <div className="form-group relative" ref={dropdownRef}>
               <label style={{ display: 'flex', justifyContent: 'space-between' }}>
                 اللغة
-                {selectedLangs.length > 0 && <X size={14} style={{ cursor: 'pointer', color: '#EF4444' }} onClick={() => clearField('languages')} title="مسح الكل" />}
+                {selectedLangs.length > 0 && !isSuspended && <X size={14} style={{ cursor: 'pointer', color: '#EF4444' }} onClick={() => clearField('languages')} title="مسح الكل" />}
               </label>
-              <div className="tags-input-container form-input" onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)} style={{ cursor: 'pointer', minHeight: '42px', height: 'auto' }}>
+              <div className={`tags-input-container form-input ${isSuspended ? 'disabled' : ''}`} onClick={() => !isSuspended && setIsLanguageDropdownOpen(!isLanguageDropdownOpen)} style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '42px', height: 'auto' }}>
                 <div className="tags-wrapper">
                   {selectedLangs.map((langId) => {
                     const lang = availableLangs.find(l => l.id === langId);
                     return (
                       <span key={langId} className="tag" onClick={(e) => e.stopPropagation()}>
                         {lang?.name}
-                        <button type="button" className="tag-remove" onClick={(e) => { e.stopPropagation(); toggleLanguage(langId); }}>
-                          <X size={14} />
-                        </button>
+                        {!isSuspended && (
+                          <button type="button" className="tag-remove" onClick={(e) => { e.stopPropagation(); toggleLanguage(langId); }}>
+                            <X size={14} />
+                          </button>
+                        )}
                       </span>
                     );
                   })}
                 </div>
-                <button type="button" className="tag-dropdown-btn">
-                  <ChevronRight size={16} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} />
-                </button>
+                {!isSuspended && (
+                  <button type="button" className="tag-dropdown-btn">
+                    <ChevronRight size={16} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} />
+                  </button>
+                )}
               </div>
 
-              {isLanguageDropdownOpen && (
+              {isLanguageDropdownOpen && !isSuspended && (
                 <div className="language-dropdown-menu">
                   {availableLangs.map((lang) => {
                     const isSelected = selectedLangs.includes(lang.id);
@@ -237,7 +254,7 @@ const EditPreacher = () => {
           </div>
 
           <div className="form-footer">
-            <button type="submit" className="btn-save" disabled={saveLoading}>
+            <button type="submit" className={`btn-save ${isSuspended ? 'disabled-btn' : ''}`} disabled={saveLoading || isSuspended}>
               {saveLoading ? <Loader2 size={18} className="spin-icon" /> : 'حفظ التعديلات'}
             </button>
           </div>

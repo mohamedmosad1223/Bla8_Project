@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Conversations.css';
 import api from '../../services/api';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ChatPreview {
@@ -92,6 +93,10 @@ const Conversations = () => {
   const [aiConversationId, setAiConversationId] = useState<number | null>(null);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const aiEndRef = useRef<HTMLDivElement>(null);
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // ─── Fetch Chats List ────────────────────────────────────────────────────
   const fetchChats = useCallback(async () => {
@@ -223,7 +228,8 @@ const Conversations = () => {
       // Refresh messages
       await openChat(activeChat);
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'حدث خطأ أثناء إرسال الرسالة');
+      setErrorMessage(err.response?.data?.detail || 'حدث خطأ أثناء إرسال الرسالة');
+      setIsErrorModalOpen(true);
     } finally {
       setSending(false);
     }
@@ -484,6 +490,12 @@ const Conversations = () => {
           </div>
         </div>
       </div>
+
+      <ErrorModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        message={errorMessage} 
+      />
 
     </div>
   );
