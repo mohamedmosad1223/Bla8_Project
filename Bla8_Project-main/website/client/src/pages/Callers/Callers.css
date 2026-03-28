@@ -638,3 +638,138 @@
   flex: 1; /* Allows the checkmark to push left */
 }
 
+/* -----------------------------
+   Delete Modal
+   ----------------------------- */
+.callers-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.callers-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  position: relative;
+  text-align: center;
+  animation: modalPopin 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopin {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.callers-modal-close {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: #CBD5E0;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  transition: color 0.2s;
+}
+
+.callers-modal-close:hover {
+  color: #718096;
+}
+
+.callers-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.callers-modal-icon-danger {
+  background-color: #FEF2F2;
+  color: #EF4444;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.callers-modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1A202C;
+}
+
+.callers-modal-desc {
+  margin: 0;
+  color: #718096;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 340px;
+}
+
+.callers-modal-desc strong {
+  color: #2D3748;
+  font-weight: 700;
+}
+
+.callers-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.callers-modal-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.callers-modal-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.callers-modal-btn:active {
+  transform: scale(0.98);
+}
+
+.callers-btn-danger {
+  background-color: #EF4444;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.callers-btn-cancel {
+  background-color: #EDF2F7;
+  color: #4A5568;
+}
+
+.callers-btn-cancel:hover {
+  background-color: #E2E8F0;
+}

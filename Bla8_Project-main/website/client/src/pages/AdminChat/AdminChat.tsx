@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Search, Send, MessageCircle, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import api from '../../services/api';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 import './AdminChat.css';
 
 interface Message {
@@ -34,6 +35,10 @@ const AdminChat = () => {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [partnerInfo, setPartnerInfo] = useState<{name: string, online: boolean} | null>(null);
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -120,9 +125,10 @@ const AdminChat = () => {
       setMessageInput('');
       fetchHistory(activeContactId);
       fetchContacts(); // Refresh sidebar to include the new contact
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending message:', err);
-      alert('فشل إرسال الرسالة');
+      setErrorMessage(err.response?.data?.detail || 'فشل إرسال الرسالة');
+      setIsErrorModalOpen(true);
     }
   };
 
@@ -282,6 +288,11 @@ const AdminChat = () => {
         </div>
       )}
 
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
     </div>
   );
 };

@@ -12,9 +12,9 @@ export const ministerService = {
   /**
    * Get minister global preacher performance dashboard
    */
-  getGlobalDashboardStats: async (orgId?: number, period: 'all_time' | 'this_month' | 'last_month' = 'all_time') => {
+  getGlobalDashboardStats: async (orgId?: number, period: 'all_time' | 'this_month' | 'last_month' = 'all_time', trendGranularity: 'day' | 'month' = 'month') => {
     const response = await api.get('/minister/global-dashboard', {
-      params: { org_id: orgId, period }
+      params: { org_id: orgId, period, trend_granularity: trendGranularity }
     });
     return response.data;
   },
@@ -22,9 +22,9 @@ export const ministerService = {
   /**
    * Get minister reports analytics dashboard
    */
-  getReportsAnalytics: async (orgId?: number, period: 'all_time' | 'this_month' | 'last_month' = 'all_time') => {
+  getReportsAnalytics: async (orgId?: number, period: 'all_time' | 'this_month' | 'last_month' = 'all_time', trendGranularity: 'day' | 'month' = 'month') => {
     const response = await api.get('/minister/reports-analytics', {
-      params: { org_id: orgId, period }
+      params: { org_id: orgId, period, trend_granularity: trendGranularity }
     });
     return response.data;
   },

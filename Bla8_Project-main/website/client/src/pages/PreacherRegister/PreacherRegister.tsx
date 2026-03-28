@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronRight, ChevronDown, Phone, Mail, Lock, Upload, Eye, EyeOff, X, Check } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
@@ -13,6 +13,13 @@ const PreacherRegister: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Dynamic Data State
+  const [availableLangs, setAvailableLangs] = useState<{id: number, name: string}[]>([]);
+  const [availableCountries, setAvailableCountries] = useState<{id: number, name: string}[]>([]);
+  const [selectedLangs, setSelectedLangs] = useState<number[]>([]); 
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -27,6 +34,44 @@ const PreacherRegister: React.FC = () => {
 
   const [file, setFile] = useState<File | null>(null);
 
+  // Fetch languages and countries on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [langRes, countryRes] = await Promise.all([
+          preacherService.getAllLanguages(),
+          preacherService.getAllCountries()
+        ]);
+
+        const languages = langRes.data || langRes;
+        if (Array.isArray(languages)) {
+          setAvailableLangs(languages);
+        }
+
+        const countries = countryRes.data || countryRes;
+        if (Array.isArray(countries)) {
+          setAvailableCountries(countries);
+        }
+      } catch (err) {
+        console.error('Failed to fetch registration metadata:', err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Handle click outside for dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsLanguageDropdownOpen(false);
+      }
+    }
+    if (isLanguageDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isLanguageDropdownOpen]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -35,6 +80,14 @@ const PreacherRegister: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  const toggleLanguage = (langId: number) => {
+    if (selectedLangs.includes(langId)) {
+      setSelectedLangs(selectedLangs.filter(id => id !== langId));
+    } else {
+      setSelectedLangs([...selectedLangs, langId]);
     }
   };
 
@@ -63,6 +116,9 @@ const PreacherRegister: React.FC = () => {
       payload.append('scientific_qualification', formData.qualificationName);
       payload.append('nationality_country_id', formData.nationalityId);
       payload.append('qualification_file', file);
+
+      // Add selected languages
+      selectedLangs.forEach(id => payload.append('languages', id.toString()));
 
       // Default to volunteer preacher for now if not specified
       payload.append('type', 'volunteer');
@@ -119,14 +175,56 @@ const PreacherRegister: React.FC = () => {
               <div className="preg-input-icon preg-select-wrap">
                 <select name="nationalityId" value={formData.nationalityId} onChange={handleInputChange} required>
                   <option value="" disabled>الجنسية</option>
-                  <option value="1">مصري</option>
-                  <option value="2">سعودي</option>
-                  <option value="3">سوري</option>
-                  <option value="4">أردني</option>
-                  <option value="5">كويتي</option>
+                  {availableCountries.map(country => (
+                    <option key={country.id} value={country.id}>{country.name}</option>
+                  ))}
                 </select>
                 <span className="preg-icon"><ChevronDown size={18} /></span>
               </div>
+            </div>
+
+            {/* Languages (Multi-select style like AddCaller) */}
+            <div className="preg-group full-width relative" ref={dropdownRef}>
+              <div 
+                className={`preg-input-icon tags-input-container ${isLanguageDropdownOpen ? 'active' : ''}`}
+                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="tags-wrapper">
+                  {selectedLangs.length === 0 && <span className="placeholder-text">اختر اللغات...</span>}
+                  {selectedLangs.map((langId) => {
+                    const lang = availableLangs.find(l => l.id === langId);
+                    return (
+                      <span key={langId} className="preg-tag" onClick={(e) => e.stopPropagation()}>
+                        {lang?.name}
+                        <button type="button" className="tag-remove" onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLanguage(langId);
+                        }}>
+                          <X size={14} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+                <span className="preg-icon"><ChevronDown size={18} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} /></span>
+              </div>
+
+              {isLanguageDropdownOpen && (
+                <div className="language-dropdown-menu">
+                  {availableLangs.map((lang) => {
+                    const isSelected = selectedLangs.includes(lang.id);
+                    return (
+                      <div key={lang.id} className="language-dropdown-item" onClick={() => toggleLanguage(lang.id)}>
+                        <div className={`checkbox-custom check-align-right ${isSelected ? 'checked' : ''}`}>
+                          {isSelected && <Check size={12} strokeWidth={4} color="white" />}
+                        </div>
+                        <span>{lang.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Qualification Name + Upload */}

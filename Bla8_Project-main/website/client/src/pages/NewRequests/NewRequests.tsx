@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter as FilterIcon, SortDesc, Eye, ChevronRight, ChevronDown, X, Check } from 'lucide-react';
+import { Search, Filter as FilterIcon, SortDesc, Eye, ChevronRight, ChevronDown, X, Check, AlertCircle } from 'lucide-react';
 import './NewRequests.css';
 import { dawahRequestService, PoolRequest } from '../../services/dawahRequestService';
 
@@ -14,7 +14,7 @@ const genderLabel = (g: string | null) => {
 
 const channelLabel = (ch: string | null) => {
   const map: Record<string, string> = {
-    whatsapp: 'واتساب', phone: 'هاتف', messenger: 'ماسنجر', telegram: 'تيليجرام', other: 'أخرى',
+    whatsapp: 'واتساب', phone: 'هاتف', messenger: 'ماسنجر', telegram: 'تيليجرام', email: 'بريد إلكتروني', other: 'أخرى',
   };
   return ch ? (map[ch] ?? ch) : '—';
 };
@@ -75,6 +75,28 @@ const RejectModal = ({ onClose }: { onClose: () => void }) => (
           <button className="nreq-modal-btn nreq-btn-cancel" onClick={onClose}>إلغاء</button>
           <button className="nreq-modal-btn nreq-btn-danger" onClick={onClose}>موافق</button>
         </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ErrorModal = ({ onClose, message }: { onClose: () => void; message: string }) => (
+  <div className="nreq-modal-overlay">
+    <div className="nreq-modal nreq-error-modal" dir="rtl" style={{ maxWidth: '450px' }}>
+      <button className="nreq-modal-close" onClick={onClose}><X size={20} /></button>
+      <div className="nreq-modal-content">
+        <div className="nreq-modal-icon-danger">
+          <AlertCircle size={40} strokeWidth={2.5} />
+        </div>
+        <h2 className="nreq-modal-title" style={{ fontSize: '1.4rem' }}>عذراً، لا يمكن قبول الطلب</h2>
+        <p className="nreq-modal-desc" style={{ maxWidth: '350px', lineHeight: '1.6', color: '#718096' }}>{message}</p>
+        <button 
+          className="nreq-modal-btn-full nreq-btn-danger" 
+          onClick={onClose}
+          style={{ marginTop: '15px' }}
+        >
+          حسناً، فهمت
+        </button>
       </div>
     </div>
   </div>
@@ -272,6 +294,8 @@ const NewRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<PoolRequest | null>(null);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [isSkipModalOpen, setIsSkipModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [pendingActionRequest, setPendingActionRequest] = useState<PoolRequest | null>(null);
 
   // ── Filter & Sort state ───────────────────────────────────────────────────
@@ -330,13 +354,10 @@ const NewRequests = () => {
   }, []);
 
   // ── Dynamic filter options from loaded data + Common Fallbacks ───────────
-  const baseNationalities = ['الكويت', 'مصر', 'السعودية', 'الفلبين', 'الهند', 'سريلانكا', 'نيبال', 'أوغندا', 'أمريكا', 'بريطانيا'];
-  const baseLanguages     = ['العربية', 'الإنجليزية', 'التاغالوغية', 'الهندية', 'السنهالية', 'الأمهرية', 'الفرنسية', 'الإسبانية'];
-  const baseReligions     = ['مسيحي', 'هندوسي', 'بوذي', 'لاديني', 'يهودي'];
 
-  const uniqueNationalities = [...new Set([...baseNationalities, ...allRequests.map(r => r.invited_country_name).filter(Boolean)])] as string[];
-  const uniqueLanguages     = [...new Set([...baseLanguages, ...allRequests.map(r => r.invited_language_name).filter(Boolean)])] as string[];
-  const uniqueReligions     = [...new Set([...baseReligions, ...allRequests.map(r => r.invited_religion).filter(Boolean)])] as string[];
+  const uniqueNationalities = [...new Set(allRequests.map(r => r.invited_country_name).filter(Boolean))] as string[];
+  const uniqueLanguages     = [...new Set(allRequests.map(r => r.invited_language_name).filter(Boolean))] as string[];
+  const uniqueReligions     = [...new Set(allRequests.map(r => r.invited_religion).filter(Boolean))]     as string[];
 
   const filteredNats  = uniqueNationalities.filter(n => n.includes(natSearch));
   const filteredLangs = uniqueLanguages.filter(l => l.includes(langSearch));
@@ -426,7 +447,9 @@ const NewRequests = () => {
       navigate('/requests/current');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      alert(msg || 'حدث خطأ أثناء قبول الطلب');
+      setErrorMessage(msg || 'حدث خطأ أثناء قبول الطلب');
+      setIsErrorModalOpen(true);
+      setIsAcceptModalOpen(false); // Close the accept modal first
     } finally {
       setActionLoading(false);
     }
@@ -435,6 +458,7 @@ const NewRequests = () => {
   const closeModals = () => {
     setIsAcceptModalOpen(false);
     setIsSkipModalOpen(false);
+    setIsErrorModalOpen(false);
     setPendingActionRequest(null);
   };
 
@@ -447,6 +471,9 @@ const NewRequests = () => {
       )}
       {isSkipModalOpen && (
         <RejectModal onClose={closeModals} />
+      )}
+      {isErrorModalOpen && (
+        <ErrorModal onClose={closeModals} message={errorMessage} />
       )}
 
       {view === 'detail' && selectedRequest ? (

@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import EmailStr, ValidationError
 
 from app.database import get_db
-from app.models.enums import PreacherType, PreacherStatus, GenderType, ApprovalStatus, UserRole
+from app.models.enums import PreacherType, PreacherStatus, GenderType, ApprovalStatus, UserRole, AccountStatus
 from app.schemas import PreacherUpdate, PreacherRegister
 from app.controllers.preachers_controller import PreachersController
 from app.controllers.profiles_controller import ProfilesController
@@ -85,6 +85,9 @@ def register_preacher(
         # تحويل الأخطاء لنصوص واضحة لتجنب مشاكل الـ Serialization
         error_messages = [{"msg": err["msg"], "loc": err["loc"]} for err in e.errors()]
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error_messages)
+        
+    if current_user and current_user.role == UserRole.organization and current_user.status == AccountStatus.suspended:
+        raise HTTPException(status_code=403, detail="لا يمكنك إضافة دعاة جدد لأن حساب الجمعية موقوف")
         
     return PreachersController.register(db, payload, qualification_file, current_user)
 
@@ -179,7 +182,10 @@ async def update_preacher(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {str(e)}")
         
-        # Check permissions for JSON update (Admin/Org/Self)
+        if current_user.role == UserRole.organization and current_user.status == AccountStatus.suspended:
+            raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات الدعاة لأن حساب الجمعية موقوف")
+
+    # Check permissions for JSON update (Admin/Org/Self)
         preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
         if not preacher:
             raise HTTPException(status_code=404, detail="الداعية غير موجود")
@@ -245,6 +251,9 @@ async def update_preacher(
         raise HTTPException(status_code=400, detail="لم يتم إرسال بيانات لتحديثها")
 
     # التحقق من الصلاحيات
+    if current_user.role == UserRole.organization and current_user.status == AccountStatus.suspended:
+        raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات الدعاة لأن حساب الجمعية موقوف")
+
     if current_user.role == UserRole.admin:
         pass
     elif current_user.role == UserRole.organization:
@@ -269,6 +278,9 @@ def delete_preacher(preacher_id: int, db: Session = Depends(get_db), current_use
          raise HTTPException(status_code=404, detail="الداعية غير موجود")
 
     if current_user.role == UserRole.organization:
+        if current_user.status == AccountStatus.suspended:
+            raise HTTPException(status_code=403, detail="لا يمكنك حذف الدعاة لأن حساب الجمعية موقوف")
+            
         if preacher.org_id != current_user.organization.org_id:
             raise HTTPException(status_code=403, detail="لا يمكنك حذف داعية لا ينتمي لجمعيتك")
 

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import './CurrentRequests.css';
 import { dawahRequestService, PoolRequest } from '../../services/dawahRequestService';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const statusLabel = (st: string | null) => {
@@ -38,7 +39,7 @@ const genderLabel = (g: string | null) => {
 
 const channelLabel = (ch: string | null) => {
   const map: Record<string, string> = {
-    whatsapp: 'واتساب', phone: 'هاتف', messenger: 'ماسنجر', telegram: 'تيليجرام', other: 'أخرى',
+    whatsapp: 'واتساب', phone: 'هاتف', messenger: 'ماسنجر', telegram: 'تيليجرام', email: 'بريد إلكتروني', other: 'أخرى',
   };
   return ch ? (map[ch] ?? ch) : '—';
 };
@@ -137,6 +138,9 @@ const UpdateStatusModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleSave = async () => {
     setLoading(true);
     setError('');
@@ -177,39 +181,46 @@ const UpdateStatusModal = ({
   );
 
   return (
-    <div className="umodal-backdrop" onClick={onClose}>
-      <div className="umodal-box" onClick={e => e.stopPropagation()} dir="rtl">
-        <button className="umodal-close" onClick={onClose}><X size={20} strokeWidth={2} /></button>
-        <h2 className="umodal-title">تحديث الحالة</h2>
-        <div className="umodal-toggle-container">
-          <button
-            className={`umodal-tab-btn ${selected === 'Islam' ? 'active-green' : 'inactive-gray'}`}
-            onClick={() => setSelected('Islam')}
-          >تم اسلامه</button>
-          <button
-            className={`umodal-tab-btn ${selected === 'Reject' ? 'active-green' : 'inactive-gray'}`}
-            onClick={() => setSelected('Reject')}
-          >رفض الاسلام</button>
-        </div>
-        <div className="umodal-field">
-          <textarea
-            className="umodal-textarea"
-            placeholder="مثال ملاحظة"
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            rows={4}
-          />
-          <span className="umodal-label-float">ملاحظة</span>
-        </div>
-        {error && <div style={{ color: '#ff6b6b', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
-        <div className="umodal-actions">
-          <button className="umodal-btn-save" onClick={handleSave} disabled={loading}>
-            {loading ? '...' : 'حفظ'}
-          </button>
-          <button className="umodal-btn-cancel" onClick={onClose} disabled={loading}>الغاء</button>
+    <>
+      <div className="umodal-backdrop" onClick={onClose}>
+        <div className="umodal-box" onClick={e => e.stopPropagation()} dir="rtl">
+          <button className="umodal-close" onClick={onClose}><X size={20} strokeWidth={2} /></button>
+          <h2 className="umodal-title">تحديث الحالة</h2>
+          <div className="umodal-toggle-container">
+            <button
+              className={`umodal-tab-btn ${selected === 'Islam' ? 'active-green' : 'inactive-gray'}`}
+              onClick={() => setSelected('Islam')}
+            >تم اسلامه</button>
+            <button
+              className={`umodal-tab-btn ${selected === 'Reject' ? 'active-green' : 'inactive-gray'}`}
+              onClick={() => setSelected('Reject')}
+            >رفض الاسلام</button>
+          </div>
+          <div className="umodal-field">
+            <textarea
+              className="umodal-textarea"
+              placeholder="مثال ملاحظة"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows={4}
+            />
+            <span className="umodal-label-float">ملاحظة</span>
+          </div>
+          {error && <div style={{ color: '#ff6b6b', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+          <div className="umodal-actions">
+            <button className="umodal-btn-save" onClick={handleSave} disabled={loading}>
+              {loading ? '...' : 'حفظ'}
+            </button>
+            <button className="umodal-btn-cancel" onClick={onClose} disabled={loading}>الغاء</button>
+          </div>
         </div>
       </div>
-    </div>
+      <ErrorModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        message={errorMessage} 
+      />
+    </>
   );
 };
 
@@ -226,6 +237,9 @@ const DetailView = ({
   const [showReportReminder, setShowReportReminder] = useState(false);
   const navigate = useNavigate();
   const userRole = localStorage.getItem('userRole');
+
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // 1. Refresh the request data to get the most up-to-date info (e.g. feedback)
@@ -284,7 +298,8 @@ const DetailView = ({
                     const cleanPhone = detail.invited_phone.replace(/\+/g, '');
                     window.open(`https://wa.me/${cleanPhone}`, '_blank');
                   } else {
-                    alert('لا يوجد رابط تواصل مباشر متاح لهذا الطلب. يرجى استخدام بيانات التواصل الموضحة.');
+                    setErrorMessage('لا يوجد رابط تواصل مباشر متاح لهذا الطلب. يرجى استخدام بيانات التواصل الموضحة.');
+                    setIsErrorModalOpen(true);
                   }
                 }}
               >
@@ -435,6 +450,12 @@ const DetailView = ({
           onSaved={() => { setShowUpdateModal(false); setShowReportReminder(true); }}
         />
       )}
+
+      <ErrorModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        message={errorMessage} 
+      />
     </div>
   );
 };
@@ -522,13 +543,9 @@ const CurrentRequests = () => {
   }, []);
 
   // ── Dynamic filter options ────────────────────────────────────────────────────
-  const baseNationalities = ['الكويت', 'مصر', 'السعودية', 'الفلبين', 'الهند', 'سريلانكا', 'نيبال', 'أمريكا', 'بريطانيا'];
-  const baseLanguages     = ['العربية', 'الإنجليزية', 'التاغالوغية', 'الهندية', 'الفرنسية', 'الإسبانية'];
-  const baseReligions     = ['مسيحي', 'هندوسي', 'بوذي', 'لاديني', 'يهودي'];
-
-  const uniqueNationalities = [...new Set([...baseNationalities, ...allRequests.map(r => r.invited_country_name).filter(Boolean)])] as string[];
-  const uniqueLanguages     = [...new Set([...baseLanguages,     ...allRequests.map(r => r.invited_language_name).filter(Boolean)])] as string[];
-  const uniqueReligions     = [...new Set([...baseReligions,     ...allRequests.map(r => r.invited_religion).filter(Boolean)])]     as string[];
+  const uniqueNationalities = [...new Set(allRequests.map(r => r.invited_country_name).filter(Boolean))] as string[];
+  const uniqueLanguages     = [...new Set(allRequests.map(r => r.invited_language_name).filter(Boolean))] as string[];
+  const uniqueReligions     = [...new Set(allRequests.map(r => r.invited_religion).filter(Boolean))]     as string[];
   const statusOptions       = ['تم إسلامه', 'قيد الإقناع', 'رفض الإسلام'];
 
   const filteredNats  = uniqueNationalities.filter(n => n.includes(natSearch));

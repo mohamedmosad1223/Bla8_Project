@@ -10,7 +10,7 @@ from app.database import get_db
 from app.schemas import OrganizationUpdate, OrganizationRegister
 from app.controllers.organizations_controller import OrganizationsController
 from app.controllers.profiles_controller import ProfilesController
-from app.auth import get_current_user, check_role
+from app.auth import get_current_user, check_role, get_optional_current_user
 from app.models.user import User
 from app.models.enums import UserRole, ApprovalStatus
 
@@ -30,7 +30,8 @@ def register_organization(
     phone: str = Form(...),
     org_email: EmailStr = Form(...),
     license_file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """تسجيل جمعية جديدة مع رفع ملف الترخيص"""
     payload = OrganizationRegister(
@@ -47,7 +48,7 @@ def register_organization(
         org_email=org_email,
         license_file="placeholder" # سيتم استبداله في الكنترولر
     )
-    return OrganizationsController.register(db, payload, license_file)
+    return OrganizationsController.register(db, payload, license_file, admin_user=current_user)
 
 @router.get("/", dependencies=[Depends(check_role([UserRole.admin]))])
 def list_organizations(
@@ -91,7 +92,7 @@ def update_organization(org_id: int, payload: OrganizationUpdate, db: Session = 
          if payload.approval_status is not None or payload.rejection_reason is not None:
              raise HTTPException(status_code=403, detail="لا تملك صلاحية تعديل حالة الموافقة")
              
-    return OrganizationsController.update_organization(db, org_id, payload)
+    return OrganizationsController.update_organization(db, org_id, payload, admin_user=current_user)
 
 
 @router.delete("/{org_id}", dependencies=[Depends(check_role([UserRole.admin]))])

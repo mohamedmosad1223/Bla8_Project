@@ -7,7 +7,6 @@ import SuccessModal from '../../components/common/Modal/SuccessModal';
 import './AddCaller.css';
 
 
-
 const AddCaller = () => {
   const navigate = useNavigate();
   const [availableLangs, setAvailableLangs] = useState<{id: number, name: string}[]>([]);
@@ -15,6 +14,10 @@ const AddCaller = () => {
   const [selectedLangs, setSelectedLangs] = useState<number[]>([]); 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if organization is suspended
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  const isSuspended = userData.status === 'suspended';
 
   // جلب البيانات من السيرفر
   useEffect(() => {
@@ -94,6 +97,8 @@ const AddCaller = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSuspended) return;
+
     if (formData.password !== formData.confirmPassword) {
       setError('كلمات المرور غير متطابقة');
       return;
@@ -165,6 +170,13 @@ const AddCaller = () => {
 
       <div className="form-container">
         <form className="add-caller-form" onSubmit={handleSubmit}>
+          {isSuspended && (
+            <div className="error-alert" style={{ marginBottom: '20px' }}>
+              <AlertCircle size={18} />
+              <span>لا يمكنك إضافة دعاة جدد لأن حساب الجمعية موقوف حالياً.</span>
+            </div>
+          )}
+
           {error && (
             <div className="error-alert">
               <AlertCircle size={18} />
@@ -176,11 +188,11 @@ const AddCaller = () => {
             {/* الاسم الكامل ورقم الهاتف */}
             <div className="form-group">
               <label>اسم الداعية بالكامل</label>
-              <input type="text" name="fullName" placeholder="اسم الداعية بالكامل" className="form-input" value={formData.fullName} onChange={handleInputChange} required />
+              <input type="text" name="fullName" placeholder="اسم الداعية بالكامل" className="form-input" value={formData.fullName} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
             <div className="form-group">
               <label>رقم الهاتف</label>
-              <input type="text" name="phone" placeholder="رقم الهاتف" className="form-input" value={formData.phone} onChange={handleInputChange} required />
+              <input type="text" name="phone" placeholder="رقم الهاتف" className="form-input" value={formData.phone} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
 
             {/* النوع - Gender */}
@@ -192,6 +204,7 @@ const AddCaller = () => {
                 value={formData.gender} 
                 onChange={(e) => setFormData(prev => ({...prev, gender: e.target.value}))}
                 required
+                disabled={isSuspended}
                 style={{ appearance: 'auto', paddingRight: '10px' }}
               >
                 <option value="male">ذكر</option>
@@ -208,6 +221,7 @@ const AddCaller = () => {
                 value={formData.nationalityCountryId} 
                 onChange={(e) => setFormData(prev => ({...prev, nationalityCountryId: parseInt(e.target.value)}))}
                 required 
+                disabled={isSuspended}
                 style={{ appearance: 'auto', paddingRight: '10px' }}
               >
                 {availableCountries.map(c => (
@@ -219,13 +233,13 @@ const AddCaller = () => {
             {/* المؤهل العلمي والملف */}
             <div className="form-group">
               <label>المؤهل العلمي</label>
-              <input type="text" name="scientificQualification" placeholder="اكتب اسم ونوع المؤهل" className="form-input" value={formData.scientificQualification} onChange={handleInputChange} required />
+              <input type="text" name="scientificQualification" placeholder="اكتب اسم ونوع المؤهل" className="form-input" value={formData.scientificQualification} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
             <div className="form-group">
               <label>رفع الشهادات العملية</label>
               <div className="file-upload-wrapper">
-                <input type="file" id="certificate-upload" className="file-input-hidden" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" />
-                <label htmlFor="certificate-upload" className="file-upload-label form-input">
+                <input type="file" id="certificate-upload" className="file-input-hidden" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" disabled={isSuspended} />
+                <label htmlFor="certificate-upload" className={`file-upload-label form-input ${isSuspended ? 'disabled' : ''}`}>
                   <span className="placeholder-text">{file ? file.name : 'ارفع شهادات الداعية (PDF/JPG)'}</span>
                   <Upload size={18} className="upload-icon" />
                 </label>
@@ -235,14 +249,14 @@ const AddCaller = () => {
             {/* البريد واللغات */}
             <div className="form-group">
               <label>البريد الالكتروني</label>
-              <input type="email" name="email" placeholder="البريد الالكتروني" className="form-input" value={formData.email} onChange={handleInputChange} required />
+              <input type="email" name="email" placeholder="البريد الالكتروني" className="form-input" value={formData.email} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
             <div className="form-group relative" ref={dropdownRef}>
               <label>اللغة</label>
               <div 
-                className="tags-input-container form-input" 
-                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                style={{ cursor: 'pointer', minHeight: '42px', height: 'auto' }}
+                className={`tags-input-container form-input ${isSuspended ? 'disabled' : ''}`} 
+                onClick={() => !isSuspended && setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '42px', height: 'auto' }}
               >
                 <div className="tags-wrapper">
                   {selectedLangs.length === 0 && <span className="placeholder-text">اختر اللغات...</span>}
@@ -251,22 +265,26 @@ const AddCaller = () => {
                     return (
                       <span key={langId} className="tag" onClick={(e) => e.stopPropagation()}>
                         {lang?.name}
-                        <button type="button" className="tag-remove" onClick={(e) => {
-                          e.stopPropagation();
-                          toggleLanguage(langId);
-                        }}>
-                          <X size={14} />
-                        </button>
+                        {!isSuspended && (
+                          <button type="button" className="tag-remove" onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLanguage(langId);
+                          }}>
+                            <X size={14} />
+                          </button>
+                        )}
                       </span>
                     );
                   })}
                 </div>
-                <button type="button" className="tag-dropdown-btn">
-                  <ChevronRight size={16} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} />
-                </button>
+                {!isSuspended && (
+                  <button type="button" className="tag-dropdown-btn">
+                    <ChevronRight size={16} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} />
+                  </button>
+                )}
               </div>
 
-              {isLanguageDropdownOpen && (
+              {isLanguageDropdownOpen && !isSuspended && (
                 <div className="language-dropdown-menu">
                   {availableLangs.map((lang) => {
                     const isSelected = selectedLangs.includes(lang.id);
@@ -287,19 +305,19 @@ const AddCaller = () => {
             <div className="form-group">
               <label>كلمة السر</label>
               <div className="password-input-wrapper">
-                <input type="password" name="password" placeholder="كلمة السر" className="form-input password-input" value={formData.password} onChange={handleInputChange} required />
+                <input type="password" name="password" placeholder="كلمة السر" className="form-input password-input" value={formData.password} onChange={handleInputChange} required disabled={isSuspended} />
               </div>
             </div>
             <div className="form-group">
               <label>تأكيد كلمة السر</label>
               <div className="password-input-wrapper">
-                <input type="password" name="confirmPassword" placeholder="تأكيد كلمة السر" className="form-input password-input" value={formData.confirmPassword} onChange={handleInputChange} required />
+                <input type="password" name="confirmPassword" placeholder="تأكيد كلمة السر" className="form-input password-input" value={formData.confirmPassword} onChange={handleInputChange} required disabled={isSuspended} />
               </div>
             </div>
           </div>
 
           <div className="form-footer">
-            <button type="submit" className="btn-save" disabled={loading}>
+            <button type="submit" className={`btn-save ${isSuspended ? 'disabled-btn' : ''}`} disabled={loading || isSuspended}>
               {loading ? <Loader2 size={18} className="spin-icon" /> : 'حفظ البيانات'}
             </button>
           </div>

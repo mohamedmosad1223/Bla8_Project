@@ -4,6 +4,7 @@ import { Search, Send, User } from 'lucide-react';
 import api from '../../services/api';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import ReactMarkdown from 'react-markdown';
+import ErrorModal from '../../components/common/Modal/ErrorModal';
 import './NonMuslimConversation.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,6 +39,10 @@ const NonMuslimConversation: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
   const [sending, setSending] = useState(false);
+
+  // Error Modal State
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const hasAutoOpened = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -126,7 +131,8 @@ const NonMuslimConversation: React.FC = () => {
       await openChat(activeContact);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
-      alert(error.response?.data?.detail || 'حدث خطأ أثناء إرسال الرسالة');
+      setErrorMessage(error.response?.data?.detail || 'حدث خطأ أثناء إرسال الرسالة');
+      setIsErrorModalOpen(true);
     } finally {
       setSending(false);
     }
@@ -283,6 +289,11 @@ const NonMuslimConversation: React.FC = () => {
         </div>
       </div>
 
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
+      />
     </div>
   );
 };

@@ -24,21 +24,23 @@ def get_minister_dashboard(
 def get_minister_global_dashboard(
     org_id: Optional[int] = None,
     period: Optional[str] = "all_time",
+    trend_granularity: Optional[str] = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
     """جلب بيانات الداشبورد العالمي الشامل مع فلاتر (لوزير الأوقاف)"""
-    return MinisterDashboardController.get_global_dashboard_stats(db, org_id, period)
+    return MinisterDashboardController.get_global_dashboard_stats(db, org_id, period, trend_granularity)
 
 @router.get("/reports-analytics")
 def get_minister_reports_analytics(
     org_id: Optional[int] = None,
     period: Optional[str] = "all_time",
+    trend_granularity: Optional[str] = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
     """جلب بيانات التقارير والتحليلات المتقدمة (لوزير الأوقاف)"""
-    return MinisterDashboardController.get_reports_analytics(db, org_id, period)
+    return MinisterDashboardController.get_reports_analytics(db, org_id, period, trend_granularity)
 
 @router.get("/organizations")
 def get_minister_organizations(

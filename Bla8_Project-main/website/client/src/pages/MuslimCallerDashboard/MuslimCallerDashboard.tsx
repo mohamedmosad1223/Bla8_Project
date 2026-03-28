@@ -120,9 +120,9 @@ const MuslimCallerDashboard: React.FC = () => {
       }
     }
 
-    // Require deepLink if social media is selected
-    if (['messenger', 'twitter', 'instagram', 'other_social'].includes(form.communicationMethod) && !form.deepLink) {
-        newErrors['deepLink'] = 'يرجى وضع رابط التواصل المباشر';
+    // Require deepLink if messenger, email or other is selected
+    if (['messenger', 'email', 'other'].includes(form.communicationMethod) && !form.deepLink) {
+        newErrors['deepLink'] = 'يرجى وضع الرابط أو البريد الإلكتروني';
     }
 
     if (!form.acceptedTerms) {
@@ -137,8 +137,8 @@ const MuslimCallerDashboard: React.FC = () => {
     phone: 'phone',
     telegram: 'telegram',
     messenger: 'messenger',
-    twitter: 'twitter',
-    instagram: 'instagram'
+    email: 'email',
+    other: 'other'
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -162,6 +162,10 @@ const MuslimCallerDashboard: React.FC = () => {
         finalDeepLink = `https://wa.me/${cleanPhone}`;
       } else if (form.communicationMethod === 'telegram' && cleanPhone) {
         finalDeepLink = `https://t.me/${cleanPhone}`;
+      } else if (form.communicationMethod === 'phone' && cleanPhone) {
+        finalDeepLink = `tel:${cleanPhone}`;
+      } else if (form.communicationMethod === 'email' && form.deepLink) {
+        finalDeepLink = `mailto:${form.deepLink}`;
       }
 
       const payload = {
@@ -269,21 +273,24 @@ const MuslimCallerDashboard: React.FC = () => {
               { value: 'phone', label: 'مكالمة هاتفية' },
               { value: 'telegram', label: 'تيليغرام' }, 
               { value: 'messenger', label: 'ماسنجر' },
-              { value: 'twitter', label: 'تويتر (X)' },
-              { value: 'instagram', label: 'إنستجرام' }
+              { value: 'email', label: 'بريد إلكتروني' },
+              { value: 'other', label: 'أخرى' }
             ]}
           />
 
           {/* Conditional Deep Link Input */}
-          {['messenger', 'twitter', 'instagram'].includes(form.communicationMethod) && (
+          {['messenger', 'email', 'other'].includes(form.communicationMethod) && (
             <div className="mc-field-wrap">
               <Input
-                type="text" name="deepLink" placeholder="رابط الملف الشخصي (Profile Link)"
+                type="text" name="deepLink" 
+                placeholder={form.communicationMethod === 'email' ? "البريد الإلكتروني" : "رابط الملف الشخصي (Profile Link)"}
                 icon={<LinkIcon size={18} />} value={form.deepLink} onChange={handle}
                 className={getError('deepLink') ? 'mc-error-border' : ''}
               />
               <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
-                برجاء وضع رابط الحساب المباشر لسهولة التواصل
+                {form.communicationMethod === 'email' 
+                  ? 'برجاء وضع البريد الإلكتروني للمدعو'
+                  : 'برجاء وضع رابط الحساب المباشر لسهولة التواصل'}
               </p>
             </div>
           )}

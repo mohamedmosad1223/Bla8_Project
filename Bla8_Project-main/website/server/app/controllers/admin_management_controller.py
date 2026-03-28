@@ -315,8 +315,22 @@ class AdminManagementController:
         
         if org.user:
             org.user.status = status
+            
+        # Cascade suspension to all preachers of this organization
+        if status == AccountStatus.suspended:
+            preachers = db.query(Preacher).filter(Preacher.org_id == org_id).all()
+            for p in preachers:
+                p.status = PreacherStatus.suspended
+                if p.user:
+                    p.user.status = AccountStatus.suspended
+                    
         db.commit()
-        return {"message": "تم تحديث حالة الجمعية بنجاح"}
+        
+        msg = "تم تحديث حالة الجمعية بنجاح"
+        if status == AccountStatus.suspended:
+            msg = "تم توقيف الجمعية وكافة الدعاة التابعين لها بنجاح"
+            
+        return {"message": msg}
 
     @staticmethod
     def toggle_preacher_status(db: Session, preacher_id: int, status: PreacherStatus):

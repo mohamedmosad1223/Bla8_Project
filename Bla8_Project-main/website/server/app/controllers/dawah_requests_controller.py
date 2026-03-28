@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.dawah_request import DawahRequest, RequestStatusHistory, ContactAttempt
-from app.models.enums import RequestStatus, RequestType, UserRole, CommunicationChannel
+from app.models.enums import RequestStatus, RequestType, UserRole, CommunicationChannel, PreacherStatus
 from app.schemas import DawahRequestCreate, StatusUpdateRequest
 from app.models.user import User
 from app.models.preacher import Preacher
@@ -137,6 +137,28 @@ class DawahRequestsController:
         if request.status != RequestStatus.pending:
             raise HTTPException(status_code=400, detail="هذا الطلب تم قبوله بالفعل أو لم يعد متاحاً")
             
+        # v5: Check if preacher is active
+        preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+        if not preacher:
+            raise HTTPException(status_code=404, detail="الداعية غير موجود")
+        
+        # Check Organization Status
+        if preacher.org_id:
+            from app.models.organization import Organization
+            from app.models.enums import AccountStatus
+            org = db.query(Organization).filter(Organization.org_id == preacher.org_id).first()
+            if org and org.user and org.user.status == AccountStatus.suspended:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="نعتذر، الجمعية التابع لها موقوفة حالياً. تم إيقاف كافة الأنشطة للدعاة التابعين لها."
+                )
+
+        if preacher.status != PreacherStatus.active:
+            raise HTTPException(
+                status_code=403, 
+                detail="نعتذر، حسابك موقوف حالياً. يرجى التواصل مع الإدارة لتفعيل الحساب قبل سحب طلبات جديدة."
+            )
+
         # v4: Check if preacher is blocked due to missing daily reports (24h rule)
         if DawahReportsController.is_preacher_blocked(db, preacher_id):
             raise HTTPException(
@@ -288,6 +310,26 @@ class DawahRequestsController:
         if not request:
             raise HTTPException(status_code=404, detail="الطلب غير موجود أو غير مسند إليك")
         
+        # v5: Enforce active status for updates
+        preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+        if preacher:
+            # Check Organization Status
+            if preacher.org_id:
+                from app.models.organization import Organization
+                from app.models.enums import AccountStatus
+                org = db.query(Organization).filter(Organization.org_id == preacher.org_id).first()
+                if org and org.user and org.user.status == AccountStatus.suspended:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail="نعتذر، الجمعية التابع لها موقوفة حالياً. تم إيقاف كافة الأأنشطة للدعاة التابعين لها."
+                    )
+
+            if preacher.status != PreacherStatus.active:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="لا يمكنك تحديث حالة الطلبات أثناء إيقاف حسابك بصفة داعية."
+                )
+
         # v4: Enforce mandatory daily report for non-terminal updates too
         # If it's a terminal status, the feedback check below handles it.
         # If it's just a note or status change to/from in_progress/under_persuasion, check 24h report.
@@ -575,6 +617,14 @@ class DawahRequestsController:
 
         if not request:
             raise HTTPException(status_code=404, detail="الطلب غير موجود أو غير مسند إليك")
+
+        # v5: Enforce active status for link clicks
+        preacher = db.query(Preacher).filter(Preacher.preacher_id == preacher_id).first()
+        if preacher and preacher.status != PreacherStatus.active:
+            raise HTTPException(
+                status_code=403, 
+                detail="عذراً، يرجى تفعيل حسابك أولاً لتتمكن من استخدام روابط التواصل"
+            )
 
         if channel is None:
             channel = request.communication_channel

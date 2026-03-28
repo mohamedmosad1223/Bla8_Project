@@ -212,6 +212,92 @@
   animation: spin 1s linear infinite;
 }
 
+/* ── Chart Cards ── */
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #F3F4F6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.chart-card h3 {
+  font-size: 16px;
+  color: #111827;
+  font-weight: 600;
+  margin: 0;
+}
+
+.chart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.granularity-toggle {
+  display: flex;
+  background-color: #F3F4F6;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.granularity-toggle button {
+  border: none;
+  background: none;
+  padding: 5px 15px;
+  font-size: 12px;
+  font-family: 'Cairo', sans-serif;
+  color: #6B7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.granularity-toggle button.active {
+  background-color: #FFFFFF;
+  color: #DBA841;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+.granularity-toggle button:hover:not(.active) {
+  color: #374151;
+}
+
+.chart-content {
+  width: 100%;
+}
+
+.refresh-btn-icon {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn-icon:hover {
+  background: #F9FAFB;
+  color: #ca8a04;
+  border-color: #ca8a04;
+}
+
+.refresh-btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

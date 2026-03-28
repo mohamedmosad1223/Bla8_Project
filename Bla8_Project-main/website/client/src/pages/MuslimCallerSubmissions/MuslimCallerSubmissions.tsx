@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
+import { Search, Calendar, Clock } from 'lucide-react';
 import { dawahRequestService } from '../../services/dawahRequestService';
 import './MuslimCallerSubmissions.css';
 
@@ -80,9 +80,6 @@ const MuslimCallerSubmissions = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="mcd-filter-btn" title="فلتر">
-          <SlidersHorizontal size={20} />
-        </button>
       </div>
 
       {/* Filter Tags */}

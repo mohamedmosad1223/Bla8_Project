@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
-  LineChart, Line, CartesianGrid,
+  AreaChart, Area, CartesianGrid,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { ministerService } from '../../services/ministerService';
@@ -24,7 +24,7 @@ interface GlobalDashboardResponse {
   top_cards: Array<{ title: string; value: number | string; icon: string }>;
   charts: {
     status_distribution: Array<{ label: string; value: number }>;
-    acceptance_rate_trend: Array<{ month: string; rate: number }>;
+    acceptance_rate_trend: Array<{ period: string; rate: number }>;
     preacher_comparison: Array<{ name: string; value: number }>;
   };
   top_preachers: Array<{
@@ -63,6 +63,7 @@ const AwqafPreacherPerformance = () => {
   const [data, setData] = useState<GlobalDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<'day' | 'month'>('month');
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -86,7 +87,7 @@ const AwqafPreacherPerformance = () => {
         setLoading(true);
         setError(null);
         const orgId = appliedAssociation === 'all' ? undefined : Number(appliedAssociation);
-        const result = await ministerService.getGlobalDashboardStats(orgId, appliedPeriod);
+        const result = await ministerService.getGlobalDashboardStats(orgId, appliedPeriod, granularity);
         setData(result);
       } catch (err) {
         console.error('Global dashboard fetch error:', err);
@@ -96,7 +97,7 @@ const AwqafPreacherPerformance = () => {
       }
     };
     fetchDashboard();
-  }, [appliedAssociation, appliedPeriod]);
+  }, [appliedAssociation, appliedPeriod, granularity]);
 
   const performanceStats = useMemo(() => {
     if (!data?.top_cards) return [];
@@ -123,17 +124,21 @@ const AwqafPreacherPerformance = () => {
   }, [data]);
 
   const barData = data?.charts?.preacher_comparison || [];
-  const lineData = (data?.charts?.acceptance_rate_trend || []).map((item) => ({ name: item.month, value1: item.rate }));
-  const pieData = (data?.charts?.status_distribution || []).map((item, idx) => {
-    const colors = ['#DBA841', '#166088', '#CA8A04', '#E5E7EB', '#9CA3AF'];
-    const labels: Record<string, string> = {
-      converted: 'من أسلموا',
-      rejected: 'من رفضوا',
-      in_progress: 'قيد المتابعة',
-      pending: 'قيد الانتظار',
-      cancelled: 'تم الإلغاء'
+  const acceptanceData = (data?.charts?.acceptance_rate_trend || []).map((item) => ({ 
+    name: item.period, 
+    value: item.rate 
+  }));
+  const pieData = (data?.charts?.status_distribution || []).map((item) => {
+    const statusConfig: Record<string, { name: string; color: string }> = {
+      converted: { name: 'أسلم', color: '#10B981' },
+      rejected: { name: 'رفض', color: '#EF4444' },
+      under_persuasion: { name: 'قيد الإقناع', color: '#2563EB' },
+      in_progress: { name: 'قيد المتابعة', color: '#EAB308' },
+      pending: { name: 'قيد الانتظار', color: '#9CA3AF' },
+      cancelled: { name: 'تم الإلغاء', color: '#6B7280' }
     };
-    return { name: labels[item.label] || item.label, value: item.value, color: colors[idx % colors.length] };
+    const config = statusConfig[item.label] || { name: item.label, color: '#6B7280' };
+    return { name: config.name, value: item.value, color: config.color };
   });
   const topPreachers = data?.top_preachers || [];
 
@@ -219,16 +224,62 @@ const AwqafPreacherPerformance = () => {
         </div>
 
         <div className="chart-card">
-          <h3>نسبة قبول الطلبات الشهرية</h3>
+          <div className="chart-header-row">
+            <h3>نسبة قبول الطلبات</h3>
+            <div className="granularity-toggle">
+              <button 
+                className={granularity === 'day' ? 'active' : ''} 
+                onClick={() => setGranularity('day')}
+              >
+                يومي
+              </button>
+              <button 
+                className={granularity === 'month' ? 'active' : ''} 
+                onClick={() => setGranularity('month')}
+              >
+                شهري
+              </button>
+            </div>
+          </div>
           <div className="chart-content" style={{ minHeight: '280px' }}>
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={lineData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+              <AreaChart data={acceptanceData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#DBA841" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#DBA841" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} domain={[0, 100]} orientation="right" label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }} />
-                <Line type="linear" dataKey="value1" stroke="#9f1239" strokeWidth={2} dot={{ r: 4, fill: '#9f1239', strokeWidth: 0 }} />
-              </LineChart>
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} 
+                  dy={10} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#6B7280', fontSize: 12 }} 
+                  domain={[0, 100]} 
+                  orientation="right" 
+                  label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo', offset: 10 }} 
+                />
+                <Tooltip 
+                  formatter={(value: any) => [`${value}%`, 'نسبة القبول']}
+                  labelStyle={{ fontFamily: 'Cairo', textAlign: 'right' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }} 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#DBA841" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#colorRate)" 
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

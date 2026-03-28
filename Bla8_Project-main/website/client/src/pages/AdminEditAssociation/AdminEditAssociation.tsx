@@ -4,10 +4,6 @@ import { ChevronDown, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import '../AdminAddAssociation/AdminAddAssociation.css';
 
-interface Country {
-  id: number;
-  name: string;
-}
 
 const AdminEditAssociation = () => {
   const navigate = useNavigate();
@@ -17,7 +13,6 @@ const AdminEditAssociation = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showStatusModal, setShowStatusModal] = useState<'success' | 'error' | null>(null);
-  const [countries, setCountries] = useState<Country[]>([]);
   
   const [formData, setFormData] = useState({
     organization_name: '',
@@ -39,13 +34,9 @@ const AdminEditAssociation = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [orgRes, countriesRes] = await Promise.all([
-          api.get(`/organizations/${id}`),
-          api.get('/preachers/countries')
-        ]);
+        const orgRes = await api.get(`/organizations/${id}`);
         
         const org = orgRes.data.data;
-        setCountries(countriesRes.data.data);
         
         setFormData({
           organization_name: org.organization_name || '',
@@ -180,9 +171,9 @@ const AdminEditAssociation = () => {
                 className="aadd-input aadd-select"
               >
                 <option value="">الدولة</option>
-                {countries.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                <option value="1">مصر</option>
+                <option value="2">السعودية</option>
+                <option value="5">الكويت</option>
               </select>
               <ChevronDown className="aadd-select-icon" size={18} />
             </div>
