@@ -75,13 +75,11 @@ class SafeSQLExecutor:
             logger.warning(f"SafeSQLExecutor BLOCKED: {reason} | SQL: {sql[:200]}")
             return f"[تم رفض الاستعلام: {reason}]"
 
-        # لو مشرف جمعية → أضف فلتر org_id تلقائياً
         final_sql = sql
         params: dict = {}
-        if role == "organization" and org_id is not None:
-            # نلف الـ Query الأصلية كـ CTE ونضيف شرط org_id
-            final_sql = f"SELECT * FROM ({sql}) AS _sub WHERE _sub.org_id = :__org_id"
-            params["__org_id"] = org_id
+        # NOTE: We do not use the CTE wrapper `(SELECT * FROM ({sql}) AS _sub WHERE _sub.org_id = :__org_id)` 
+        # because it crashes when queries use aggregations like COUNT() without explicitly selecting org_id.
+        # Instead, we rely strictly on the system prompt injection to provide `org_id` to the LLM.
 
         try:
             result = db.execute(text(final_sql), params)
@@ -133,8 +131,18 @@ class AnalyticsAIOrchestrator:
         role: 'minister' أو 'organization'
         org_id: مطلوب فقط لو role == 'organization'
         """
+        request_messages = messages.copy()
+        if role == "organization" and org_id is not None:
+            org_filter_msg = {
+                "role": "system",
+                "content": f"تنبيه أمني صارم: أنت تعمل حالياً لحساب جمعية معرفها هو (org_id = {org_id}). "
+                           f"يجب أن تتأكد بنسبة 100% أن أي استعلام SQL تقوم بإنشائه يحتوي على الفلترة المناسبة: `WHERE org_id = {org_id}` في جداول مثل preachers، "
+                           f"و `WHERE assigned_preacher_id IN (SELECT preacher_id FROM preachers WHERE org_id = {org_id})` في الجداول المرتبطة مثل dawah_requests و preacher_statistics."
+            }
+            request_messages.append(org_filter_msg)
+
         # الجولة الأولى: رسالة المستخدم → LLM
-        ai_response = LLMService.generate_chat_response(messages, role=role)
+        ai_response = LLMService.generate_chat_response(request_messages, role=role)
 
         # تحقق هل الـ AI طلب SQL؟
         sql_match = SQL_TAG_PATTERN.search(ai_response)

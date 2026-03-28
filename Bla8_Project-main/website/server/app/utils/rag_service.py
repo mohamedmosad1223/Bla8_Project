@@ -235,8 +235,15 @@ def retrieve_context(query: str, role: str = "interested", top_k: int = TOP_K) -
         return None
 
     try:
+        from app.utils.llm_service import LLMService
+        analysis = LLMService.analyze_query(query)
+        print(f"RAG LOG - LLM Query Analysis -> {analysis}", flush=True)
+        
+        category = analysis.get("category") or ROLE_CATEGORY_MAP.get(role)
+        
+        print(f"RAG LOG - Applying Qdrant Filters -> Category: {category}", flush=True)
+
         conditions = []
-        category = ROLE_CATEGORY_MAP.get(role)
         if category:
             conditions.append(
                 FieldCondition(
@@ -257,15 +264,16 @@ def retrieve_context(query: str, role: str = "interested", top_k: int = TOP_K) -
         )
 
         # Fallback: لو الفلتر ماجبش نتائج (اختلاف payload values)، جرّب من غير فلتر
-        if not hits and category:
-            hits = _qdrant_client.search(
+        if not hits and (category or language):
+            print("RAG LOG - Filtered search returned 0 hits. Falling back to search without filters.", flush=True)
+            hits = _qdrant_client.query_points(
                 collection_name=COLLECTION_NAME,
-                query_vector=query_vector,
+                query=query_vector,
                 limit=top_k,
                 query_filter=None,
                 score_threshold=SCORE_THRESHOLD,
                 with_payload=True,
-            )
+            ).points
 
         # Fallback إضافي: لو مفيش hits حتى بعد الفلتر/بدونه، جرّب normalize_embeddings=false
         # (مفيد لو كان بناء الـ DB متخزن بدون normalisation)
@@ -287,11 +295,16 @@ def retrieve_context(query: str, role: str = "interested", top_k: int = TOP_K) -
     if not hits:
         return None
 
+    print(f"RAG LOG - Successfully retrieved {len(hits)} hits from Qdrant.", flush=True)
     context_parts: List[str] = []
     total_chars = 0
 
     for hit in hits:
         p: Dict[str, Any] = (hit.payload or {})
+        score_pct = int((hit.score or 0) * 100)
+        
+        print(f"RAG LOG - >> Hit ID: {hit.id} | Score: {score_pct}% | Category: {p.get(PAYLOAD_CATEGORY_KEY)} | Language: {p.get('language')}", flush=True)
+        
         chunk = p.get("text") or p.get("content") or ""
         if not chunk:
             continue

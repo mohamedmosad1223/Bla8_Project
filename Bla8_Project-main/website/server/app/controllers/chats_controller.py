@@ -314,12 +314,12 @@ class ChatsController:
         user_role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
 
         # تأكد من الصلاحية
-        if user.role not in (UserRole.minister, UserRole.organization):
+        if user_role_val not in ("minister", "organization"):
             raise HTTPException(status_code=403, detail="هذا الشات مخصص لوزير الأوقاف ومشرفي الجمعيات فقط.")
 
         # لو كان مشرف جمعية → جيب org_id تلقائياً
         org_id: Optional[int] = None
-        if user.role == UserRole.organization:
+        if user_role_val == "organization":
             from app.models.organization import Organization
             org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
             if org:

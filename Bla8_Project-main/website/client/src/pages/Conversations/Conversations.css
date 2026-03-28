@@ -223,14 +223,70 @@
 }
 
 
-/* ─── Left Column: AI Assistant ─── */
+/* ─── Left Column: AI Assistant (Floating Modal) ─── */
 .conv-ai-col {
-  width: 320px;
-  min-width: 280px;
+  position: fixed;
+  bottom: 100px;
+  left: 30px;
+  z-index: 1000;
+  width: 360px;
+  max-height: 70vh;
   background: #fff;
-  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.conv-ai-col.closed {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.95);
+}
+
+.conv-ai-col.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.conv-ai-col.open:hover {
+  width: 1000px;
+  max-height: 85vh;
+}
+
+/* ─── Floating Action Button ─── */
+.ai-fab-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  z-index: 999;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #0A304E;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(10, 48, 78, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s ease;
+}
+
+.ai-fab-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 8px 25px rgba(10, 48, 78, 0.6);
+}
+
+.ai-fab-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
 }
 
 .conv-ai-header {
@@ -411,6 +467,42 @@
   background-color: #f1f5f9;
   font-style: italic;
   color: #475569;
+}
+
+/* ─── Markdown Tables ─── */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.85rem;
+  direction: rtl;
+}
+
+.markdown-content thead {
+  background: #0A304E;
+  color: #fff;
+}
+
+.markdown-content th {
+  padding: 10px 14px;
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.markdown-content td {
+  padding: 8px 14px;
+  text-align: right;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.markdown-content tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.markdown-content tbody tr:hover {
+  background-color: #fef3c7;
 }
 
 .conv-msg-time {
