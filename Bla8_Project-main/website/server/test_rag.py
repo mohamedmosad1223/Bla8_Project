@@ -1,7 +1,8 @@
 import os
 import sys
 from pathlib import Path
-
+import logging
+logging.basicConfig(level=logging.INFO)
 # Add the server directory to sys.path
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))

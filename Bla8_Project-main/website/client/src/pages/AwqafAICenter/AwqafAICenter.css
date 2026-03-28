@@ -173,14 +173,13 @@
   background: #ffffff;
   border: 1px solid #e5e7eb;
   color: #1F2937;
-  padding: 12px 14px;
+  padding: 14px 18px;
   border-radius: 12px 12px 12px 4px;
-  font-size: 0.92rem;
-  line-height: 1.7;
-  max-width: 88%;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 90%;
   align-self: flex-start;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  white-space: pre-wrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .ai-chat-bubble.user {
@@ -189,6 +188,56 @@
   border-color: #2563eb;
   align-self: flex-end;
   border-radius: 12px 12px 4px 12px;
+}
+
+/* ─── Markdown Tables ─── */
+.markdown-table-wrapper {
+  margin: 1.25rem 0;
+  border-radius: 10px;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: #fff;
+}
+
+.ai-chat-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  direction: rtl;
+  min-width: 300px;
+}
+
+.ai-chat-bubble thead {
+  background: #0A304E;
+  color: #fff;
+}
+
+.ai-chat-bubble th {
+  padding: 12px 16px;
+  text-align: right;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-chat-bubble td {
+  padding: 10px 16px;
+  text-align: right;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  transition: background 0.2s;
+}
+
+.ai-chat-bubble tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ai-chat-bubble tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.ai-chat-bubble tbody tr:hover td {
+  background-color: #fef3c7;
 }
 
 .ai-chat-loading {

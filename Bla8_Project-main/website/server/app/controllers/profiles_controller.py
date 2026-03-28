@@ -78,12 +78,14 @@ class ProfilesController:
     def update_profile(db: Session, user: User, payload: ProfileUpdate, profile_picture: Optional[UploadFile] = None):
         """Universal profile update across all roles"""
         
+        email_changed = False
         # 1. Handle Email Update on User table
         if payload.email and payload.email != user.email:
             exists = db.query(User).filter(User.email == payload.email, User.user_id != user.user_id).first()
             if exists:
                 raise HTTPException(status_code=409, detail="البريد الإلكتروني مسجل مسبقاً")
             user.email = payload.email
+            email_changed = True
 
         if payload.app_language:
             user.app_language = payload.app_language
@@ -111,6 +113,10 @@ class ProfilesController:
         if payload.phone:
             profile_record.phone = payload.phone
 
+        # Sync email to profile record if it has the field (e.g. Preacher, Organization)
+        if email_changed and hasattr(profile_record, "email"):
+            profile_record.email = payload.email
+
         # 4. Handle Profile Picture
         if profile_picture:
             if hasattr(profile_record, "profile_picture"):
@@ -120,7 +126,10 @@ class ProfilesController:
 
         db.commit()
         db.refresh(user)
-        return ProfilesController.get_user_profile(db, user)
+        return {
+            "profile": ProfilesController.get_user_profile(db, user),
+            "email_changed": email_changed
+        }
 
     @staticmethod
     def set_app_language(db: Session, user: User, payload: AppLanguageUpdate):

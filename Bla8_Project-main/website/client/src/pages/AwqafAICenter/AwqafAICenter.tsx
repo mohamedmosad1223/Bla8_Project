@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Settings, Clock, Send, ChevronDown, Loader2, Trash2, Plus } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ministerService } from '../../services/ministerService';
 import './AwqafAICenter.css';
 
@@ -186,7 +188,18 @@ const AwqafAICenter = () => {
           <div className="ai-chat-area" ref={chatAreaRef}>
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`ai-chat-bubble ${msg.role === 'user' ? 'user' : ''}`}>
-                {msg.content}
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    table: ({ ...props }) => (
+                      <div className="markdown-table-wrapper">
+                        <table {...props} />
+                      </div>
+                    )
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
               </div>
             ))}
             {chatLoading && (

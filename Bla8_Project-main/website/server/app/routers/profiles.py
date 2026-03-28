@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, create_access_token
+from app.config import settings
 from app.models.user import User
 from app.schemas.schemas import (
     ProfileRead, ProfileUpdate, ChangePasswordRequest, 
@@ -21,6 +22,7 @@ def get_my_profile(db: Session = Depends(get_db), current_user: User = Depends(g
 
 @router.patch("/me", response_model=ProfileRead)
 def update_my_profile(
+    response: Response,
     full_name: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
@@ -31,7 +33,22 @@ def update_my_profile(
 ):
     """تحديث بيانات الملف الشخصي (الاسم، البريد، الهاتف، اللغة المختارة، الصورة)"""
     payload = ProfileUpdate(full_name=full_name, email=email, phone=phone, app_language=app_language)
-    return ProfilesController.update_profile(db, current_user, payload, profile_picture)
+    result = ProfilesController.update_profile(db, current_user, payload, profile_picture)
+    
+    # If email changed, we MUST re-issue the access token cookie or the next request will be 401
+    if result.get("email_changed"):
+        new_token = create_access_token(data={"sub": current_user.email, "role": current_user.role})
+        response.set_cookie(
+            key="access_token",
+            value=new_token,
+            httponly=True,
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            samesite="lax",
+            secure=True
+        )
+        
+    return result["profile"]
 
 @router.patch("/app-language")
 def set_app_language(payload: AppLanguageUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

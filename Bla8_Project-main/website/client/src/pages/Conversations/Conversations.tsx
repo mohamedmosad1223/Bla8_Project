@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Send } from 'lucide-react';
+import { Search, Send, X } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './Conversations.css';
 import api from '../../services/api';
 
@@ -89,6 +90,7 @@ const Conversations = () => {
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<number | null>(null);
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const aiEndRef = useRef<HTMLDivElement>(null);
 
   // ─── Fetch Chats List ────────────────────────────────────────────────────
@@ -406,13 +408,23 @@ const Conversations = () => {
         )}
       </div>
 
-      {/* ─── Left: AI Assistant ─── */}
-      <div className="conv-ai-col">
+      {/* ─── Floating AI Button ─── */}
+      <button className={`ai-fab-btn ${isAIOpen ? 'hidden' : ''}`} onClick={() => setIsAIOpen(true)}>
+        <AIBotIcon size={32} />
+      </button>
+
+      {/* ─── Left: AI Assistant (Now a Popup) ─── */}
+      <div className={`conv-ai-col ${isAIOpen ? 'open' : 'closed'}`}>
         <div className="conv-ai-header">
-          <div className="conv-ai-title-wrap">
-            <h3 className="conv-ai-title">المساعد الشخصي</h3>
-            <div className="conv-ai-avatar">
-              <AIBotIcon />
+          <div className="conv-ai-title-wrap" style={{ justifyContent: 'space-between', width: '100%' }}>
+            <button className="conv-icon-btn" onClick={() => setIsAIOpen(false)} aria-label="أغلق المساعد">
+              <X size={24} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h3 className="conv-ai-title">المساعد الشخصي</h3>
+              <div className="conv-ai-avatar">
+                <AIBotIcon />
+              </div>
             </div>
           </div>
         </div>
@@ -432,7 +444,7 @@ const Conversations = () => {
               <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
                 {msg.role === 'assistant' ? (
                   <div className="conv-msg-text markdown-content">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
                   <p className="conv-msg-text">{msg.content}</p>
