@@ -4,6 +4,7 @@ import { Search, Send, User } from 'lucide-react';
 import api from '../../services/api';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import ErrorModal from '../../components/common/Modal/ErrorModal';
 import './NonMuslimConversation.css';
 
@@ -252,7 +253,7 @@ const NonMuslimConversation: React.FC = () => {
                       <p className="nm-msg-text">{msg.message_text}</p>
                     ) : (
                       <div className="nm-msg-text markdown-content">
-                        <ReactMarkdown>{msg.message_text}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.message_text}</ReactMarkdown>
                       </div>
                     )}
                     <span className="nm-msg-time">
