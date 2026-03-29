@@ -283,9 +283,11 @@ Map the category to one of the values in this mapping based on the topic:
 Return ONLY a valid JSON object with keys "category". Do not output any other text or markdown block formatting.
 Example: {{"category": "introducing_islam"}}
 """
+
+#  Another Model: llama-3.3-70b-versatile
         try:
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="openai/gpt-oss-120b",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": query}
@@ -317,7 +319,7 @@ Example: {{"category": "introducing_islam"}}
         api_messages = build_isolated_messages(system_prompt, question, context or "")
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             messages=api_messages,
             temperature=0.3,
             frequency_penalty=0.5,
@@ -342,7 +344,7 @@ Example: {{"category": "introducing_islam"}}
         api_messages = build_isolated_messages(system_prompt, question, context or "")
 
         completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             messages=api_messages,
             temperature=0.3,
             frequency_penalty=0.5,
