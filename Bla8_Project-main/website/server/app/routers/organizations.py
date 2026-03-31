@@ -60,7 +60,7 @@ def list_organizations(
     governorate: Optional[str] = Query(None),
     created_after: Optional[datetime] = Query(None),
     created_before: Optional[datetime] = Query(None),
-    order_by: str = Query("latest", regex="^(latest|oldest)$"),
+    order_by: str = Query("latest", pattern="^(latest|oldest)$"),
     db: Session = Depends(get_db),
 ):
     """قائمة كل الجمعيات"""

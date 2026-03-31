@@ -171,3 +171,16 @@ class AnalyticsAIOrchestrator:
 
         final_response = LLMService.generate_chat_response(follow_up_messages, role=role)
         return final_response
+        logger.info(f"Analytics: executing SQL: {sql_query[:200]}")
+
+        # نفّذ الـ SQL بأمان
+        db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id)
+        logger.info(f"Analytics: DB result preview: {db_result[:200]}")
+
+        # الجولة النهائية: منسّق صارم — يعرض الداتا فقط بدون اختراع
+        final_response = LLMService.format_db_result(
+            user_question=messages[-1]["content"] if messages else "",
+            db_result=db_result,
+        )
+        return final_response
+

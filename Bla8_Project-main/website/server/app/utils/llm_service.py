@@ -1,5 +1,6 @@
 from typing import List, Dict
 import os
+import re
 from groq import Groq
 from app.config import settings
 from app.utils.rag_service import retrieve_context
@@ -80,54 +81,27 @@ Start the conversation warmly and ask how you can help them today.
 - Suggest they ask again or explore together another angle of the topic
 """
 
-DAWAH_SUPPORT_PROMPT = """You are an AI assistant designed specifically to support Islamic dawah workers (du'at). 
-You serve two modes — the user will tell you which mode they need:
+DAWAH_SUPPORT_PROMPT = """You are a highly knowledgeable and supportive AI assistant designed specifically to help Islamic dawah workers (du'at) and preachers.
 
----
+## Your role:
+- Provide accurate, well-referenced answers to their Islamic questions using the provided Context.
+- Help them respond to non-Muslims by suggesting logical, clear, and empathetic arguments for objections.
+- Provide relevant Quranic verses, Hadiths, and scholarly quotes from the Context.
+- Suggest practical dawah strategies and ways to handle difficult questions.
+- Keep your answers direct, actionable, and supportive. Answer the user's question directly without asking them to choose a mode or situation.
 
-### MODE 1: "I'm talking to a non-Muslim"
-The da'i is actively in a conversation with a non-Muslim and needs real-time support.
-
-Your role:
-- Suggest what to say next based on the conversation context the da'i shares with you
-- Provide Quranic verses, Hadiths, or logical arguments relevant to the topic (using the provided Context)
-- Suggest how to respond to objections or tough questions
-- Keep suggestions concise and practical — the da'i needs quick, usable answers
-- Adapt language and tone based on the non-Muslim's apparent background 
-  (atheist, Christian, Jewish, Hindu, etc.) if mentioned
-
----
-
-### MODE 2: "I have a question / I need help"
-The da'i is consulting you for their own knowledge or preparation.
-
-Your role:
-- Answer Islamic questions with depth and references from the provided Context
-- Help prepare arguments for common objections to Islam
-- Suggest dawah strategies for specific situations
-- Help draft messages, scripts, or talking points
-
----
-
-## General rules for both modes:
-- Always respond as the SAME language as user's question
-- Be grounded in authentic Quran and Sunnah (use the provided Context)
-- Never fabricate Hadith or misquote — if unsure, say so
-- Be practical, not just theoretical
-- Treat the da'i as a partner, not a student
-
----
-
-Begin by asking the da'i: which mode do they need today?
+## Rules:
+- Always respond in the SAME language as the user's question.
+- Be grounded in authentic Quran and Sunnah (use the provided Context).
+- Never fabricate Hadith or misquote — if unsure, say so.
+- Be practical, not just theoretical.
+- Treat the da'i as a partner and a peer, maintaining a respectful and scholarly tone.
 
 ## If you don't know the answer (or it's not in the context):
-- Be honest: "I don't have a confident answer for this specific point."
-- Never fabricate a Hadith or misattribute a quote — this is critical
-- Offer what's adjacent: "I'm not certain about this, but a related 
-  point you could use is..."
-- Suggest the da'i consult a scholar for that specific issue
-- Keep the tone collaborative and supportive — you're a helper, not 
-  an encyclopedia
+- Be honest: "I don't have a confident answer for this specific point based on the available texts."
+- Never fabricate a Hadith or misattribute a quote — this is critical.
+- Offer what's adjacent: "I'm not certain about this, but a related point from the context you could use is..."
+- Keep the tone collaborative and supportive.
 """
 
 INTERESTED_SYSTEM_PROMPT = (
@@ -249,6 +223,25 @@ LANGUAGE_MAP = {
 }
 
 # ─────────────────────────────────────────────
+# Helper: detect greetings / small talk (bypass RAG gate)
+_GREETING_RE = re.compile(
+    r"^\s*(hi|hello|hey|howdy|greetings|sup|what'?s up"
+    r"|salam|assalamu|السلام|مرحب[اً]?|أهل[اً]?|هلا|هلو"
+    r"|كيف حالك|كيف الحال|صباح الخير|مساء الخير"
+    r"|good\s+(morning|evening|afternoon|day|night)"
+    r"|how are you|nice to meet you|شكراً|شكرا|thank|thanks|جزاك الله"
+    r"|okay|ok|yes|no|نعم|لا|ماشي|تمام|حسناً"
+    r"|ازيك|عامل إيه|عاملة إيه|أهلاً وسهلاً|وعليكم السلام"
+    r")\b",
+    re.IGNORECASE,
+)
+
+def _is_greeting(text: str) -> bool:
+    """Return True if the message is a greeting / small talk with no Islamic substance."""
+    return bool(_GREETING_RE.match(text.strip()))
+
+
+# ─────────────────────────────────────────────
 # Helper: isolate messages (NO HISTORY)
 def build_isolated_messages(system_prompt: str, question: str, context: str):
     user_content = f"Question:\n{question}"
@@ -311,10 +304,6 @@ Example: {{"category": "introducing_islam"}}
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
 
         context = retrieve_context(question, role)
-        rag_roles = {"preacher", "guest", "interested"}
-        
-        if role in rag_roles and (not context or not context.strip()):
-            return "لم أجد إجابة صريحة لهذا السؤال في النصوص المتاحة."
 
         api_messages = build_isolated_messages(system_prompt, question, context or "")
 
@@ -335,9 +324,57 @@ Example: {{"category": "introducing_islam"}}
         system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         context = retrieve_context(question, role)
-
         rag_roles = {"preacher", "guest", "interested"}
-        if role in rag_roles and (not context or not context.strip()):
+
+        if role in rag_roles and not _is_greeting(question) and (not context or not context.strip()):
+            yield "لم أجد إجابة صريحة لهذا السؤال في النصوص المتاحة."
+            return
+
+        api_messages = build_isolated_messages(system_prompt, question, context or "")
+
+        completion = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=api_messages,
+            temperature=0.3,
+            frequency_penalty=0.5,
+            stream=True,
+            max_tokens=2048,
+        )
+
+        for chunk in completion:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.contentTED_SYSTEM_PROMPT)
+
+        if role in {"minister", "organization"}:
+            # Inject org_id directly into system prompt so the LLM always knows it
+            if role == "organization" and org_id is not None:
+                system_prompt = system_prompt + f"\n\n[معلومة من النظام]: رقم الجمعية الخاصة بهذا المشرف هو org_id = {org_id}. استخدم هذا الرقم دائماً كفلتر في اي استعلام SQL. لا تسأل المستخدم عنه أبداً."
+            api_messages = [{"role": "system", "content": system_prompt}] + messages
+        else:
+            question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+            context = retrieve_context(question, role)
+            api_messages = build_isolated_messages(system_prompt, question, context or "")
+
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=api_messages,
+            temperature=0.3,
+            frequency_penalty=0.5,
+            max_tokens=2048,
+        )
+
+        return response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد. حاول مرة أخرى."
+
+    @staticmethod
+    def generate_chat_response_stream(messages: List[Dict[str, str]], role: str = "interested"):
+        LLMService._ensure_client()
+
+        system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
+        question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        context = retrieve_context(question, role)
+        rag_roles = {"preacher", "guest", "interested"}
+
+        if role in rag_roles and not _is_greeting(question) and (not context or not context.strip()):
             yield "لم أجد إجابة صريحة لهذا السؤال في النصوص المتاحة."
             return
 
@@ -355,3 +392,41 @@ Example: {{"category": "introducing_islam"}}
         for chunk in completion:
             if chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
+
+    @staticmethod
+    def format_db_result(user_question: str, db_result: str) -> str:
+        """
+        دالة منعزلة لتنسيق نتائج الداتابيز فقط — بدون أي خيال أو اختراع.
+        تستخدم system prompt صارم جداً معزول عن أي context آخر.
+        """
+        LLMService._ensure_client()
+
+        STRICT_FORMATTER_PROMPT = """أنت نظام عرض بيانات. مهمتك الوحيدة هي تنسيق البيانات الواردة في رسالة المستخدم وعرضها بشكل جميل.
+
+قواعد صارمة — كسرها يعتبر فشلاً كاملاً:
+1. يُحظر تماماً اختراع أي رقم أو اسم أو معلومة غير موجودة في البيانات المرسلة.
+2. إذا كانت البيانات تقول "لا توجد سجلات" → اكتب جملة واحدة تقول ذلك فقط.
+3. استخدم جداول Markdown لعرض الأرقام إن وُجدت.
+4. لا تكتب مقدمات ولا خواتيم ولا توصيات ولا تحليلات — فقط اعرض ما هو موجود.
+5. الرد بنفس لغة سؤال المستخدم."""
+
+        api_messages = [
+            {"role": "system", "content": STRICT_FORMATTER_PROMPT},
+            {"role": "user", "content": (
+                f"سؤال المستخدم: {user_question}\n\n"
+                f"البيانات الحقيقية من قاعدة البيانات:\n```\n{db_result}\n```\n\n"
+                "اعرض هذه البيانات فقط بشكل منظم. لا تضف شيئاً من عندك."
+            )}
+        ]
+
+        try:
+            response = client.chat.completions.create(
+                model="openai/gpt-oss-120b",
+                messages=api_messages,
+                temperature=0.0,
+                max_tokens=1500,
+            )
+            return response.choices[0].message.content or db_result
+        except Exception as e:
+            # fallback: إرجاع النتيجة الخام لو فشل الـ LLM
+            return f"**نتائج قاعدة البيانات:**\n\n```\n{db_result}\n```"
