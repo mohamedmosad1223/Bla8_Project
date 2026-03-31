@@ -177,9 +177,13 @@ class ChatsController:
             messages.append({"role": mapped_role, "content": msg.content})
 
         # 4. الـ Generator اللي هيعمل الـ Stream ويسيف في الآخر
+        # ⚠️ احسب user_role هنا (بره الـ generator) لأن الـ generator بيشتغل في thread
+        # منفصل بعد ما الـ SQLAlchemy session تتقفل — فـ user.role هيطلع DetachedInstanceError
+        # لو اتحسبت جوه الـ generator.
+        user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+
         def stream_generator():
             full_response = ""
-            user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
             
             for chunk in LLMService.generate_chat_response_stream(messages, role=user_role):
                 full_response += chunk

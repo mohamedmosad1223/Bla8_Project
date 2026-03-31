@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Conversations.css';
 import api from '../../services/api';
+import { useSSEStream } from '../../hooks/useSSEStream';
 import ErrorModal from '../../components/common/Modal/ErrorModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -92,7 +93,10 @@ const Conversations = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<number | null>(null);
   const [isAIOpen, setIsAIOpen] = useState(false);
+  /** Holds the in-progress accumulated SSE text while streaming */
+  const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const aiEndRef = useRef<HTMLDivElement>(null);
+  const { stream: startStream, abort: abortStream } = useSSEStream();
 
   // Error Modal State
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -239,29 +243,67 @@ const Conversations = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  // ─── Send AI Message ─────────────────────────────────────────────────────
+  // ─── Send AI Message (SSE streaming) ────────────────────────────────────
   const sendAI = async () => {
     if (!aiInput.trim() || aiLoading) return;
     const text = aiInput.trim();
     setAiInput('');
     setAiMessages(p => [...p, { role: 'user', content: text }]);
     setAiLoading(true);
-    try {
-      const payload: any = { content: text };
-      if (aiConversationId) payload.conversation_id = aiConversationId;
+    setStreamingContent('');   // show the streaming bubble immediately
 
-      const res = await api.post('/chat/ai/send', payload);
-      const reply = res.data?.ai_response?.content || '...';
-      const newConvId = res.data?.conversation_id;
-      if (newConvId) setAiConversationId(newConvId);
+    const payload: Record<string, unknown> = { content: text };
+    if (aiConversationId) payload.conversation_id = aiConversationId;
 
-      setAiMessages(p => [...p, { role: 'assistant', content: reply }]);
-    } catch {
-      setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
-    } finally {
-      setAiLoading(false);
-    }
+    // `stream` is a query param on the backend, NOT part of the POST body
+    startStream('/api/chat/ai/send?stream=true', {
+      body: payload,
+      onChunk: (accumulated) => {
+        setStreamingContent(accumulated);
+        // Keep scroll pinned to bottom while streaming
+        aiEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      },
+      onDone: () => {
+        setStreamingContent(null); // clear the streaming bubble
+        // Re-fetch the full history from the backend (canonical source of truth)
+        api.get('/chat/ai/history')
+          .then(res => {
+            const msgs: AIMessage[] = (res.data?.history || []).map((m: any) => ({
+              role: m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user',
+              content: m.content,
+              created_at: m.created_at,
+            }));
+            if (msgs.length > 0) {
+              setAiMessages(msgs);
+              const lastM = res.data?.history?.[res.data.history.length - 1];
+              if (lastM?.conversation_id) setAiConversationId(lastM.conversation_id);
+            } else {
+              // Fallback if history is empty for some reason
+              setAiMessages(p => [...p, { role: 'assistant', content: 'لم أجد إجابة لهذا السؤال.' }]);
+            }
+          })
+          .catch(() => {
+            setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
+          })
+          .finally(() => {
+            setAiLoading(false);
+          });
+      },
+      onError: () => {
+        setStreamingContent(null);
+        setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
+        setAiLoading(false);
+      },
+    });
   };
+
+  // Abort any in-flight stream when the AI panel is closed
+  const closeAIPanel = useCallback(() => {
+    abortStream();
+    setStreamingContent(null);
+    setAiLoading(false);
+    setIsAIOpen(false);
+  }, [abortStream]);
 
   const handleAIKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAI(); }
@@ -415,7 +457,7 @@ const Conversations = () => {
       </div>
 
       {/* ─── Floating AI Button ─── */}
-      <button className={`ai-fab-btn ${isAIOpen ? 'hidden' : ''}`} onClick={() => setIsAIOpen(true)}>
+      <button className={`ai-fab-btn ${isAIOpen ? 'hidden' : ''}`} onClick={() => setIsAIOpen(true)} aria-label="افتح المساعد">
         <AIBotIcon size={32} />
       </button>
 
@@ -423,7 +465,7 @@ const Conversations = () => {
       <div className={`conv-ai-col ${isAIOpen ? 'open' : 'closed'}`}>
         <div className="conv-ai-header">
           <div className="conv-ai-title-wrap" style={{ justifyContent: 'space-between', width: '100%' }}>
-            <button className="conv-icon-btn" onClick={() => setIsAIOpen(false)} aria-label="أغلق المساعد">
+            <button className="conv-icon-btn" onClick={closeAIPanel} aria-label="أغلق المساعد">
               <X size={24} />
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -443,7 +485,7 @@ const Conversations = () => {
           )}
           {aiMessages.map((msg, i) => (
             <div key={i} className={`conv-msg-row conv-msg-ai ${msg.role === 'user' ? 'conv-msg-sent' : 'conv-msg-received'}`}>
-              {msg.role === 'user' && ( /* User is mine */
+              {msg.role === 'user' && (
                 <div className="conv-msg-avatar bg-red-100"><AvatarIcon /></div>
               )}
 
@@ -458,15 +500,24 @@ const Conversations = () => {
                 {msg.created_at && <span className="conv-msg-time">{formatTime(msg.created_at)}</span>}
               </div>
 
-              {msg.role === 'assistant' && ( /* Assistant is received */
+              {msg.role === 'assistant' && (
                 <div className="conv-msg-avatar"><AIBotIcon size={36} /></div>
               )}
             </div>
           ))}
-          {aiLoading && (
+
+          {/* ─── Streaming bubble: shows the live accumulating text ─── */}
+          {streamingContent !== null && (
             <div className="conv-msg-row conv-msg-ai conv-msg-received">
-              <div className="conv-msg-bubble bg-gold" style={{ opacity: 0.6 }}>
-                <p className="conv-msg-text">...</p>
+              <div className="conv-msg-bubble bg-gold">
+                {streamingContent === '' ? (
+                  /* Still waiting for first chunk — show dots */
+                  <p className="conv-msg-text" style={{ opacity: 0.6 }}>...</p>
+                ) : (
+                  <div className="conv-msg-text markdown-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
+                  </div>
+                )}
               </div>
               <div className="conv-msg-avatar"><AIBotIcon size={36} /></div>
             </div>

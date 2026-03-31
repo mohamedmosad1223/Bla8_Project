@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Plus, Send, MessageCircle, Calendar } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import api from '../../services/api';
 import './NonMuslimDashboard.css';
 
@@ -253,6 +255,37 @@ const NonMuslimDashboard: React.FC = () => {
       }));
     } finally {
       setLoading(false);
+
+      // ─── Auto-sync: re-fetch history from API after stream ends ───────────
+      // The backend saves the full message after streaming completes.
+      // Fetching it here ensures the UI shows the clean API version
+      // (identical to what a manual page refresh would do).
+      const currentId = activeChatId; // capture in closure before any state change
+      if (currentId) {
+        const historyUrl = isGuest
+          ? `/chat/ai/guest/history/${currentId}`
+          : `/chat/ai/conversations/${currentId}/messages`;
+
+        api.get(historyUrl)
+          .then(res => {
+            const history: Array<{ id?: number; role: string; content: string; created_at: string }> =
+              res.data?.history || [];
+            if (history.length > 0) {
+              const fresh: Message[] = history.map(m => ({
+                id: m.id?.toString() ?? Date.now().toString(),
+                sender: (m.role === 'ai' || m.role === 'assistant') ? 'bot' : 'user',
+                text: m.content,
+                timestamp: new Date(m.created_at),
+              }));
+              setSessions(prev => prev.map(s =>
+                s.id === currentId ? { ...s, messages: fresh } : s
+              ));
+            }
+          })
+          .catch(() => { /* silent — local state already looks fine */ });
+      }
+      // ──────────────────────────────────────────────────────────────────────
+
     }
   };
 
@@ -330,7 +363,13 @@ const NonMuslimDashboard: React.FC = () => {
                   key={msg.id}
                   className={`nm-message ${msg.sender === 'bot' ? 'nm-bot-message' : 'nm-user-message'}`}
                 >
-                  {msg.text}
+                  {msg.sender === 'bot' ? (
+                    <div className="markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
               ))}
               <div ref={messagesEndRef} />

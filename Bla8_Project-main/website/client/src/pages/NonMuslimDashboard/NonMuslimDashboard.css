@@ -421,3 +421,54 @@
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(220,168,62,0.5);
 }
+
+/* ─── Markdown rendering inside bot bubbles ─── */
+.nm-bot-message .markdown-content { text-align: right; }
+.nm-bot-message .markdown-content h1,
+.nm-bot-message .markdown-content h2,
+.nm-bot-message .markdown-content h3 {
+  font-weight: 700;
+  margin: 0.5em 0 0.25em;
+  color: #1a202c;
+}
+.nm-bot-message .markdown-content p { margin: 0.4em 0; }
+.nm-bot-message .markdown-content p:last-child { margin-bottom: 0; }
+.nm-bot-message .markdown-content strong { font-weight: 700; }
+.nm-bot-message .markdown-content em { font-style: italic; }
+.nm-bot-message .markdown-content ul,
+.nm-bot-message .markdown-content ol {
+  padding-right: 1.4em;
+  margin: 0.4em 0;
+}
+.nm-bot-message .markdown-content li { margin: 0.2em 0; }
+.nm-bot-message .markdown-content hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 0.6em 0;
+}
+.nm-bot-message .markdown-content blockquote {
+  border-right: 3px solid #dca83e;
+  padding-right: 0.8em;
+  margin: 0.5em 0;
+  color: #718096;
+  font-style: italic;
+}
+.nm-bot-message .markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0;
+  font-size: 0.88rem;
+}
+.nm-bot-message .markdown-content th,
+.nm-bot-message .markdown-content td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 10px;
+  text-align: right;
+}
+.nm-bot-message .markdown-content thead { background: #f0f7ff; font-weight: 700; }
+.nm-bot-message .markdown-content code {
+  background: #f4f6fa;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.88em;
+}

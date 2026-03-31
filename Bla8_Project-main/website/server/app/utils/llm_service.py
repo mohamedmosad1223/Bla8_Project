@@ -160,16 +160,19 @@ SELECT ...
 """
 
 ORGANIZATION_SYSTEM_PROMPT = f"""أنت مساعد ذكي ومحلل بيانات مخصص لمشرفي الجمعيات الدعوية.
-هدفك الأساسي كـ Agent هو عمل تقارير وتحليلات دقيقة عن أداء الجمعية، دعاتها، وطلباتها (بناءً على جمعية المشرف الحالي فقط).
+هدفك الأساسي كـ Agent هو عمل تقارير وتحليلات دقيقة عن أداء الجمعية، دعاتها، وطلباتها (بناءً على جمعية المشرف الحالي فقط) بالاعتماد على بيانات قاعدة البيانات الفعلية فقط.
 
 قواعد صارمة جداً:
 1. يجب أن تكون تحليلاتك واستعلاماتك (SELECT) مقيدة دائماً بالجمعية الخاصة بالمشرف الحالي (org_id). يمنع تماماً منعاً باتاً البحث أو عرض بيانات أي جمعية أخرى أو دعاة خارجيين.
 2. يمنع تماماً منعاً باتاً تعديل أو حذف أي شيء (صلاحياتك SELECT فقط).
 3. يمنع تماماً إظهار أسماء الأعمدة (Columns) للمستخدم في الرد النهائي. أنت تعرفها لكن لا تظهرها.
-4. تحدث بالعربية الفصحى وادخل في التحليل والحقائق مباشرة.
-5. عرض الإحصائيات في جداول Markdown مريحة للعين.
-6. لا تعرض كود الـ SQL للمستخدم النهائي أبداً.
-7. الرد دائما بنفس لغة السؤال
+4. يمنع تماماً اختراع أي رقم أو نسبة أو عدّاد غير مستخرج من قاعدة البيانات عبر استعلام SQL فعلي.
+5. إذا احتجت أي رقم أو إحصائية أو نسبة مئوية، يجب أولاً أن تنشئ استعلام SQL داخل الوسوم <SQL>...</SQL> ليقوم النظام بتنفيذه، ثم تعتمد فقط على النتائج الراجعة منه.
+6. إذا لم تستطع الوصول لبيانات مناسبة عبر SQL (أو لم تُرجع أي صفوف)، يجب أن تشرح ذلك بصراحة للمستخدم بدون اختراع بدائل.
+7. تحدث بالعربية الفصحى وادخل في التحليل والحقائق مباشرة.
+8. عرض الإحصائيات في جداول Markdown مريحة للعين.
+9. لا تعرض كود الـ SQL للمستخدم النهائي أبداً.
+10. الرد دائما بنفس لغة السؤال.
 
 {DB_SCHEMA_PROMPT}
 
@@ -306,54 +309,6 @@ Example: {{"category": "introducing_islam"}}
         context = retrieve_context(question, role)
 
         api_messages = build_isolated_messages(system_prompt, question, context or "")
-
-        response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
-            messages=api_messages,
-            temperature=0.3,
-            frequency_penalty=0.5,
-            max_tokens=2048,
-        )
-
-        return response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد. حاول مرة أخرى."
-
-    @staticmethod
-    def generate_chat_response_stream(messages: List[Dict[str, str]], role: str = "interested"):
-        LLMService._ensure_client()
-
-        system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
-        question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
-        context = retrieve_context(question, role)
-        rag_roles = {"preacher", "guest", "interested"}
-
-        if role in rag_roles and not _is_greeting(question) and (not context or not context.strip()):
-            yield "لم أجد إجابة صريحة لهذا السؤال في النصوص المتاحة."
-            return
-
-        api_messages = build_isolated_messages(system_prompt, question, context or "")
-
-        completion = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
-            messages=api_messages,
-            temperature=0.3,
-            frequency_penalty=0.5,
-            stream=True,
-            max_tokens=2048,
-        )
-
-        for chunk in completion:
-            if chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.contentTED_SYSTEM_PROMPT)
-
-        if role in {"minister", "organization"}:
-            # Inject org_id directly into system prompt so the LLM always knows it
-            if role == "organization" and org_id is not None:
-                system_prompt = system_prompt + f"\n\n[معلومة من النظام]: رقم الجمعية الخاصة بهذا المشرف هو org_id = {org_id}. استخدم هذا الرقم دائماً كفلتر في اي استعلام SQL. لا تسأل المستخدم عنه أبداً."
-            api_messages = [{"role": "system", "content": system_prompt}] + messages
-        else:
-            question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
-            context = retrieve_context(question, role)
-            api_messages = build_isolated_messages(system_prompt, question, context or "")
 
         response = client.chat.completions.create(
             model="openai/gpt-oss-120b",
