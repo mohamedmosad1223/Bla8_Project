@@ -10,15 +10,8 @@ interface ResponseTimeChartProps {
   data?: ResponseTimeData[];
 }
 
-// بيانات افتراضية في حالة عدم وجود داتا
-const defaultData = [
-  { name: 'يناير', time: 0 },
-  { name: 'فبراير', time: 0 },
-  { name: 'مارس', time: 0 },
-];
-
 const ResponseTimeChart = ({ data }: ResponseTimeChartProps) => {
-  const chartData = data && data.length > 0 ? data : defaultData;
+  const chartData = data && data.length > 0 ? data : [];
 
   return (
     <div className="response-time-chart-wrapper">
@@ -28,7 +21,7 @@ const ResponseTimeChart = ({ data }: ResponseTimeChartProps) => {
           margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
         >
           <defs>
-            <linearGradient id="colorTime" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="colorTimeDetail" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#DBA841" stopOpacity={0.3} />
               <stop offset="95%" stopColor="#DBA841" stopOpacity={0} />
             </linearGradient>
@@ -37,30 +30,31 @@ const ResponseTimeChart = ({ data }: ResponseTimeChartProps) => {
             dataKey="name"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: '#6B7280', fontSize: 11 }}
+            tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }}
             dy={10}
-            reversed
           />
           <YAxis
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#6B7280', fontSize: 12 }}
-            tickFormatter={(v) => `${v} دقيقة`}
+            tickFormatter={(v) => `${v} د`}
             orientation="right"
-            width={70}
+            width={50}
           />
           <Tooltip
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }}
             formatter={(value) => [`${value} دقيقة`, 'وقت الاستجابة']}
+            labelStyle={{ fontFamily: 'Cairo', textAlign: 'right' }}
           />
           <Area
             type="monotone"
             dataKey="time"
             stroke="#DBA841"
-            strokeWidth={2.5}
-            fill="url(#colorTime)"
+            strokeWidth={3}
+            fill="url(#colorTimeDetail)"
             dot={false}
             activeDot={{ r: 6, fill: '#DBA841', stroke: 'white', strokeWidth: 2 }}
+            connectNulls={true}
           />
         </AreaChart>
       </ResponsiveContainer>

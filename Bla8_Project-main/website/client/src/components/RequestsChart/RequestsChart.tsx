@@ -15,8 +15,8 @@ const STATUS_CONFIG: Record<string, { name: string; color: string }> = {
   converted:         { name: 'أسلم',         color: '#10B981' },
   rejected:          { name: 'رفض',          color: '#EF4444' },
   under_persuasion:  { name: 'قيد الإقناع',  color: '#2563EB' }, // Blue
-  in_progress:       { name: 'قيد التنفيذ',  color: '#EAB308' },
-  pending:           { name: 'قيد التنفيذ',  color: '#EAB308' },
+  in_progress:       { name: 'قيد الإقناع',  color: '#2563EB' }, // Merged into Blue
+  pending:           { name: 'قيد الإقناع',  color: '#2563EB' }, // Merged into Blue
   cancelled:         { name: 'تم الإلغاء',   color: '#9CA3AF' },
 };
 

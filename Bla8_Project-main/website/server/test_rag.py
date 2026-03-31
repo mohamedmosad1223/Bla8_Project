@@ -1,38 +1,35 @@
-import os
 import sys
-from pathlib import Path
 import logging
+from app.utils.rag_service import retrieve_context
+
 logging.basicConfig(level=logging.INFO)
-# Add the server directory to sys.path
-BASE_DIR = Path(__file__).resolve().parent
-sys.path.append(str(BASE_DIR))
 
-from app.utils.rag_service import embed_query, retrieve_context
-from app.utils.llm_service import LLMService
-
-def test_rag():
-    print("--- Testing HF Embedding API ---")
-    test_query = "ما معنى التوحيد؟"
-    vector = embed_query(test_query)
-    if vector:
-        print(f"✅ Success! Vector dimension: {len(vector)}")
-    else:
-        print("❌ Failed to get embedding.")
-        return
-
-    print("\n--- Testing Qdrant Retrieval ---")
-    context = retrieve_context(test_query, role="preacher")
+def test_rag_query(query: str):
+    print(f"\n--- Testing Query: '{query}' ---")
+    
+    # Retrieve top 5 most relevant contexts for the query
+    context = retrieve_context(query=query, role="interested", top_k=5)
+    
     if context:
-        print("✅ Success! Retrieved context:")
-        print(context[:500] + "...")
+        print("\n✅ Retrieved Context Data:")
+        print("=" * 80)
+        print(context)
+        print("=" * 80)
     else:
-        print("❌ No context found. Check if the collection 'islamic_knowledge' exists and has data.")
-
-    print("\n--- Testing Full LLM Response ---")
-    messages = [{"role": "user", "content": test_query}]
-    response = LLMService.generate_chat_response(messages, role="preacher")
-    print("Response:")
-    print(response)
+        print("\n❌ No context retrieved (or score was below the accepted threshold).")
 
 if __name__ == "__main__":
-    test_rag()
+    # Test a few default questions, or use the one provided via terminal
+    queries_to_test = [
+        "ما هو الاسلام؟",
+        "هل انتشر الاسلام بالسيف؟",
+        "هل استخدم المسلمون الحروب لنشر الاسلام؟",
+        "ما الفرق بين الحرب والغزوه؟",
+        "هل الاسلام دين سلام؟"
+    ]
+    
+    if len(sys.argv) > 1:
+        queries_to_test = [" ".join(sys.argv[1:])]
+        
+    for q in queries_to_test:
+        test_rag_query(q)

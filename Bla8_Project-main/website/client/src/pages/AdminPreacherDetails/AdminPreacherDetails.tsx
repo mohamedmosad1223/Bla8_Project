@@ -51,6 +51,7 @@ const AdminPreacherDetails = () => {
   const [data, setData] = useState<PreacherDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [interval, setInterval] = useState<'day' | 'month'>('month');
 
   // Error Modal State
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -64,7 +65,7 @@ const AdminPreacherDetails = () => {
     try {
       setLoading(true);
       const targetId = preacherId || id; 
-      const response = await api.get(`/dashboard/preacher/${targetId}`);
+      const response = await api.get(`/dashboard/preacher/${targetId}?interval=${interval}`);
       setData(response.data);
     } catch (err) {
       console.error('Error fetching preacher stats:', err);
@@ -76,7 +77,7 @@ const AdminPreacherDetails = () => {
 
   useEffect(() => {
     fetchStats();
-  }, [id, preacherId]);
+  }, [id, preacherId, interval]);
 
   const toggleStatus = async () => {
     if (!data) return;
@@ -301,8 +302,13 @@ const AdminPreacherDetails = () => {
         <div className="apreach-chart-card main-chart">
           <div className="apreach-chart-header row-between">
             <h3>سرعة الاستجابة الاولي</h3>
-            <select className="apreach-chart-select">
-              <option>الشهر</option>
+            <select 
+              className="apreach-chart-select"
+              value={interval}
+              onChange={(e) => setInterval(e.target.value as 'day' | 'month')}
+            >
+              <option value="month">شهري</option>
+              <option value="day">يومي</option>
             </select>
           </div>
           <div className="apreach-chart-content">

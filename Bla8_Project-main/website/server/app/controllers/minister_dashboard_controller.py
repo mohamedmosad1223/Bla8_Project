@@ -62,10 +62,16 @@ class MinisterDashboardController:
             {"name": g.governorate or "غير محدد", "value": g.count} for g in governorate_stats
         ]
 
-        # 10. Request Distribution (Filtered to 3 statuses)
+        # 10. Request Distribution (Filtered to 4 statuses)
         dist_data = db.query(
             DawahRequest.status, func.count(DawahRequest.request_id)
-        ).filter(DawahRequest.status.in_([RequestStatus.converted, RequestStatus.rejected, RequestStatus.under_persuasion])).group_by(DawahRequest.status).all()
+        ).filter(DawahRequest.status.in_([
+            RequestStatus.converted, 
+            RequestStatus.rejected, 
+            RequestStatus.under_persuasion,
+            RequestStatus.in_progress
+        ])).group_by(DawahRequest.status).all()
+        
         requests_distribution = [{"label": s.value, "value": count} for s, count in dist_data]
         
         # If no data for specific statuses, ensure they are at least represented if expected by frontend
@@ -137,9 +143,15 @@ class MinisterDashboardController:
         ).join(
             Preacher, DawahRequest.assigned_preacher_id == Preacher.preacher_id
         ).filter(
-            DawahRequest.status.in_([RequestStatus.converted, RequestStatus.rejected, RequestStatus.under_persuasion]),
+            DawahRequest.status.in_([
+                RequestStatus.converted, 
+                RequestStatus.rejected, 
+                RequestStatus.under_persuasion,
+                RequestStatus.in_progress
+            ]),
             org_filter
         ).group_by(DawahRequest.status).all()
+        
         requests_distribution = [{"label": s.value, "value": count} for s, count in dist_data]
 
         # 4. Conversion Trends (Monthly Bar Chart)
@@ -284,9 +296,26 @@ class MinisterDashboardController:
         nationalities = [{"label": c, "value": count} for c, count in nationality_data]
 
         # 3. Response Time Trend (Average first response speed by day/month)
-        # Computed as minutes between request submission and acceptance time.
+        from datetime import datetime, timedelta
+        now = datetime.now()
         normalized_granularity = (trend_granularity or "monthly").lower()
         granularity = "day" if normalized_granularity in ["daily", "day"] else "month"
+        date_format = "%d %b %Y" if granularity == "day" else "%b %Y"
+
+        # Generate Date Range for Trends (Padding)
+        trend_dates = []
+        if granularity == 'day':
+            start_range = (now - timedelta(days=13)).replace(hour=0, minute=0, second=0, microsecond=0)
+            curr = start_range
+            while curr <= now:
+                trend_dates.append(curr)
+                curr += timedelta(days=1)
+        else:
+            curr = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            for _ in range(6):
+                trend_dates.insert(0, curr)
+                if curr.month == 1: curr = curr.replace(year=curr.year-1, month=12)
+                else: curr = curr.replace(month=curr.month-1)
 
         response_data = db.query(
             func.date_trunc(granularity, DawahRequest.accepted_at).label('bucket'),
@@ -298,13 +327,16 @@ class MinisterDashboardController:
             DawahRequest.accepted_at.isnot(None)
         ).group_by('bucket').order_by('bucket').all()
 
+        trend_results = {r.bucket.replace(tzinfo=None) if r.bucket else None: r for r in response_data}
+
         response_time_trend = []
-        for item in response_data:
-            if item.bucket:
-                response_time_trend.append({
-                    "month": item.bucket.strftime("%d %b %Y") if granularity == "day" else item.bucket.strftime("%b %Y"),
-                    "value": round(item.avg_speed_minutes or 0, 1)
-                })
+        for dt in trend_dates:
+            key = dt.replace(tzinfo=None)
+            res = trend_results.get(key)
+            response_time_trend.append({
+                "month": dt.strftime(date_format),
+                "value": round(res.avg_speed_minutes or 0, 1) if res else 0
+            })
 
         return {
             "preacher_info": {
@@ -425,30 +457,67 @@ class MinisterDashboardController:
         
         overall_performance_pct = round((total_converts / total_activities * 100), 1) if total_activities > 0 else 0
 
-        # 3. Request Status Distribution (Donut Chart) - Filtered to 3 statuses
+        # 3. Request Status Distribution (Donut Chart) - Filtered
         status_data = db.query(
             DawahRequest.status, func.count(DawahRequest.request_id)
         ).join(Preacher).filter(
-            DawahRequest.status.in_([RequestStatus.converted, RequestStatus.rejected, RequestStatus.under_persuasion]),
+            DawahRequest.status.in_([
+                RequestStatus.converted, 
+                RequestStatus.rejected, 
+                RequestStatus.under_persuasion,
+                RequestStatus.in_progress
+            ]),
             *request_filter
         ).group_by(DawahRequest.status).all()
+        
+        status_distribution = [{"label": s.value, "value": count} for s, count in status_data]
 
         # 4. Acceptance Rate (Daily/Monthly Area Chart)
+        from datetime import datetime, timedelta
+        now = datetime.now()
         # Ensure trend_granularity is safe
         valid_granularity = trend_granularity if trend_granularity in ["day", "month"] else "month"
-        
-        trend_data = db.query(
+        date_format = "%d %b" if valid_granularity == "day" else "%b %Y"
+
+        # Generate Date Range for Trends (Padding)
+        trend_dates = []
+        if valid_granularity == 'day':
+            # If period is month-based, show the whole month. Otherwise last 14 days.
+            if period in ["this_month", "last_month"]:
+                # Use start_date from the period filter logic above (already defined in outer scope)
+                start_range = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_range = end_date.replace(hour=23, minute=59, second=59) if period == "last_month" else now
+            else:
+                start_range = (now - timedelta(days=13)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_range = now
+            
+            curr = start_range
+            while curr <= end_range:
+                trend_dates.append(curr)
+                curr += timedelta(days=1)
+        else:
+            # Last 6 months
+            curr = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            for _ in range(6):
+                trend_dates.insert(0, curr)
+                if curr.month == 1: curr = curr.replace(year=curr.year-1, month=12)
+                else: curr = curr.replace(month=curr.month-1)
+
+        trend_query = db.query(
             func.date_trunc(valid_granularity, DawahRequest.created_at).label('period'),
             func.count(DawahRequest.request_id).label('total'),
             func.count(DawahRequest.request_id).filter(DawahRequest.status == RequestStatus.converted).label('accepted')
-        ).join(Preacher).filter(*request_filter).group_by('period').order_by('period').all()
+        ).join(Preacher).filter(*request_filter).group_by('period').order_by('period')
+        
+        trend_results = {r.period.replace(tzinfo=None) if r.period else None: r for r in trend_query.all()}
         
         acceptance_rate_trend = []
-        date_format = "%d %b" if valid_granularity == "day" else "%b %Y"
-        for d in trend_data:
-            rate = (d.accepted / d.total * 100) if d.total > 0 else 0
+        for dt in trend_dates:
+            key = dt.replace(tzinfo=None)
+            res = trend_results.get(key)
+            rate = (res.accepted / res.total * 100) if res and res.total > 0 else 0
             acceptance_rate_trend.append({
-                "period": d.period.strftime(date_format), 
+                "period": dt.strftime(date_format), 
                 "rate": round(rate, 1)
             })
 
@@ -489,7 +558,7 @@ class MinisterDashboardController:
                 {"title": "نسبة الأداء العام", "value": f"{overall_performance_pct}%", "icon": "performance"},
             ],
             "charts": {
-                "status_distribution": [{"label": s.value, "value": count} for s, count in status_data],
+                "status_distribution": status_distribution,
                 "acceptance_rate_trend": acceptance_rate_trend,
                 "preacher_comparison": preacher_comparison
             },
