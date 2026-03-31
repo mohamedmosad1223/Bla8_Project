@@ -321,6 +321,27 @@ Example: {{"category": "introducing_islam"}}
         return response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد. حاول مرة أخرى."
 
     @staticmethod
+    def generate_analytics_response(messages: List[Dict[str, str]], role: str) -> str:
+        """
+        خاص بـ Analytics (Minister/Organization):
+        يحتفظ بسياق المحادثة كاملاً والرسائل المحقونة (مثل org_id) ولا يتجاهلها.
+        تستخدم درجة حرارة 0.0 لضمان دقة توليد الـ SQL.
+        """
+        LLMService._ensure_client()
+        system_prompt = PROMPT_MAP.get(role, MINISTER_SYSTEM_PROMPT)
+        
+        # إضافة الـ System Prompt الأساسي في البداية
+        api_messages = [{"role": "system", "content": system_prompt}] + messages
+        
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=api_messages,
+            temperature=0.0,
+            max_tokens=2048,
+        )
+        return response.choices[0].message.content or ""
+
+    @staticmethod
     def generate_chat_response_stream(messages: List[Dict[str, str]], role: str = "interested"):
         LLMService._ensure_client()
 

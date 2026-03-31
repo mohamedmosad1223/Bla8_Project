@@ -135,51 +135,43 @@ class AnalyticsAIOrchestrator:
         if role == "organization" and org_id is not None:
             org_filter_msg = {
                 "role": "system",
-                "content": f"تنبيه أمني صارم: أنت تعمل حالياً لحساب جمعية معرفها هو (org_id = {org_id}). "
-                           f"يجب أن تتأكد بنسبة 100% أن أي استعلام SQL تقوم بإنشائه يحتوي على الفلترة المناسبة: `WHERE org_id = {org_id}` في جداول مثل preachers، "
-                           f"و `WHERE assigned_preacher_id IN (SELECT preacher_id FROM preachers WHERE org_id = {org_id})` في الجداول المرتبطة مثل dawah_requests و preacher_statistics."
+                "content": (
+                    f"تنبيه أمني صارم: أنت تعمل حالياً لحساب جمعية معرفها هو (org_id = {org_id}). "
+                    f"يجب أن تتأكد بنسبة 100% أن أي استعلام SQL تقوم بإنشائه يحتوي على الفلترة المناسبة: "
+                    f"`WHERE org_id = {org_id}` في جداول مثل preachers، "
+                    f"و `WHERE assigned_preacher_id IN (SELECT preacher_id FROM preachers WHERE org_id = {org_id})` "
+                    f"في الجداول المرتبطة مثل dawah_requests و preacher_statistics."
+                )
             }
             request_messages.append(org_filter_msg)
 
         # الجولة الأولى: رسالة المستخدم → LLM
-        ai_response = LLMService.generate_chat_response(request_messages, role=role)
+        ai_response = LLMService.generate_analytics_response(request_messages, role=role)
+        logger.info(f"Analytics [{role}]: first LLM turn done.")
 
         # تحقق هل الـ AI طلب SQL؟
         sql_match = SQL_TAG_PATTERN.search(ai_response)
         if not sql_match:
-            # لا SQL → أعد الرد مباشرة
+            with open("analytics_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"\n--- NO SQL GENERATED ---\nRole: {role}, OrgID: {org_id}\nAI Response:\n{ai_response}\n")
+            # لا SQL → أعد الرد مباشرة (مثلاً سؤال توضيحي أو رسالة خطأ)
             return ai_response
 
         sql_query = sql_match.group(1).strip()
-
-        # نفّذ الـ SQL بأمان
-        db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id)
-
-        # الجولة الثانية: أرسل نتيجة الداتابيز للـ AI عشان يصوغ رد نهائي
-        follow_up_messages = messages + [
-            {"role": "assistant", "content": ai_response},
-            {
-                "role": "user",
-                "content": (
-                    f"### نتائج استعلام قاعدة البيانات\n\n```text\n{db_result}\n```\n\n"
-                    "بناءً على هذه البيانات، قدّم تقريراً مـوجـزاً ومـباشـراً جداً للمستخدم بالعربية الفصحى. "
-                    "تحذير هام: لَا تَقُم بـاخـتـراع بـيـانـات، ولا تـكـتـب مـقـدّمـات (مثل 'إليك التقرير') أو خـواتـيـم. "
-                    "ابدأ مـباشـرة بالـجـدول أو الـمـعـلومـة الـمـطـلـوبة بأسلوب مهني مـوجـز."
-                )
-            }
-        ]
-
-        final_response = LLMService.generate_chat_response(follow_up_messages, role=role)
-        return final_response
         logger.info(f"Analytics: executing SQL: {sql_query[:200]}")
+        with open("analytics_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"\n--- SQL GENERATED ---\nRole: {role}, OrgID: {org_id}\nQuery:\n{sql_query}\n")
 
         # نفّذ الـ SQL بأمان
         db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id)
         logger.info(f"Analytics: DB result preview: {db_result[:200]}")
+        with open("analytics_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"DB Result:\n{db_result[:500]}\n")
 
         # الجولة النهائية: منسّق صارم — يعرض الداتا فقط بدون اختراع
+        user_question = messages[-1]["content"] if messages else ""
         final_response = LLMService.format_db_result(
-            user_question=messages[-1]["content"] if messages else "",
+            user_question=user_question,
             db_result=db_result,
         )
         return final_response

@@ -93,10 +93,7 @@ const Conversations = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<number | null>(null);
   const [isAIOpen, setIsAIOpen] = useState(false);
-  /** Holds the in-progress accumulated SSE text while streaming */
-  const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const aiEndRef = useRef<HTMLDivElement>(null);
-  const { stream: startStream, abort: abortStream } = useSSEStream();
 
   // Error Modal State
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -243,67 +240,32 @@ const Conversations = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  // ─── Send AI Message (SSE streaming) ────────────────────────────────────
+  // ─── Send AI Message (No streaming for Analytics) ────────────────────────────────────
   const sendAI = async () => {
     if (!aiInput.trim() || aiLoading) return;
     const text = aiInput.trim();
     setAiInput('');
     setAiMessages(p => [...p, { role: 'user', content: text }]);
     setAiLoading(true);
-    setStreamingContent('');   // show the streaming bubble immediately
 
-    const payload: Record<string, unknown> = { content: text };
-    if (aiConversationId) payload.conversation_id = aiConversationId;
+    try {
+      const response = await api.post('/chat/analytics/send', { content: text });
+      
+      const content = response.data?.ai_response?.content || response.data?.content || 'تعذر الحصول على رد.';
+      setAiMessages(p => [...p, { role: 'assistant', content }]);
 
-    // `stream` is a query param on the backend, NOT part of the POST body
-    startStream('/api/chat/ai/send?stream=true', {
-      body: payload,
-      onChunk: (accumulated) => {
-        setStreamingContent(accumulated);
-        // Keep scroll pinned to bottom while streaming
-        aiEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      },
-      onDone: () => {
-        setStreamingContent(null); // clear the streaming bubble
-        // Re-fetch the full history from the backend (canonical source of truth)
-        api.get('/chat/ai/history')
-          .then(res => {
-            const msgs: AIMessage[] = (res.data?.history || []).map((m: any) => ({
-              role: m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user',
-              content: m.content,
-              created_at: m.created_at,
-            }));
-            if (msgs.length > 0) {
-              setAiMessages(msgs);
-              const lastM = res.data?.history?.[res.data.history.length - 1];
-              if (lastM?.conversation_id) setAiConversationId(lastM.conversation_id);
-            } else {
-              // Fallback if history is empty for some reason
-              setAiMessages(p => [...p, { role: 'assistant', content: 'لم أجد إجابة لهذا السؤال.' }]);
-            }
-          })
-          .catch(() => {
-            setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
-          })
-          .finally(() => {
-            setAiLoading(false);
-          });
-      },
-      onError: () => {
-        setStreamingContent(null);
-        setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
-        setAiLoading(false);
-      },
-    });
+    } catch (err) {
+      setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
-  // Abort any in-flight stream when the AI panel is closed
+  // Close the AI Panel
   const closeAIPanel = useCallback(() => {
-    abortStream();
-    setStreamingContent(null);
     setAiLoading(false);
     setIsAIOpen(false);
-  }, [abortStream]);
+  }, []);
 
   const handleAIKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAI(); }
@@ -506,22 +468,6 @@ const Conversations = () => {
             </div>
           ))}
 
-          {/* ─── Streaming bubble: shows the live accumulating text ─── */}
-          {streamingContent !== null && (
-            <div className="conv-msg-row conv-msg-ai conv-msg-received">
-              <div className="conv-msg-bubble bg-gold">
-                {streamingContent === '' ? (
-                  /* Still waiting for first chunk — show dots */
-                  <p className="conv-msg-text" style={{ opacity: 0.6 }}>...</p>
-                ) : (
-                  <div className="conv-msg-text markdown-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
-                  </div>
-                )}
-              </div>
-              <div className="conv-msg-avatar"><AIBotIcon size={36} /></div>
-            </div>
-          )}
           <div ref={aiEndRef} />
         </div>
 

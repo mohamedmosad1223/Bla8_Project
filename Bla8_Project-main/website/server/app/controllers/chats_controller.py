@@ -70,7 +70,23 @@ class ChatsController:
         
         # 4. استدعاء الـ LLM واصطناع رد
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
-        ai_response_text = LLMService.generate_chat_response(messages, role=user_role)
+
+        # وزير الأوقاف ومشرف الجمعية → Orchestrator التحليلي
+        if user_role in ("minister", "organization"):
+            org_id = None
+            if user_role == "organization":
+                from app.models.organization import Organization
+                org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
+                if org:
+                    org_id = org.org_id
+            ai_response_text = AnalyticsAIOrchestrator.chat(
+                messages=messages,
+                role=user_role,
+                db=db,
+                org_id=org_id,
+            )
+        else:
+            ai_response_text = LLMService.generate_chat_response(messages, role=user_role)
         
         # 5. حفظ رد الذكاء الاصطناعي في نفس الجلسة
         ai_msg = AIChatMessage(
@@ -177,20 +193,44 @@ class ChatsController:
             messages.append({"role": mapped_role, "content": msg.content})
 
         # 4. الـ Generator اللي هيعمل الـ Stream ويسيف في الآخر
-        # ⚠️ احسب user_role هنا (بره الـ generator) لأن الـ generator بيشتغل في thread
-        # منفصل بعد ما الـ SQLAlchemy session تتقفل — فـ user.role هيطلع DetachedInstanceError
-        # لو اتحسبت جوه الـ generator.
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+
+        # وزير الأوقاف ومشرف الجمعية → Orchestrator التحليلي (لا يدعم streaming — نجمع الرد ثم نبثه)
+        if user_role in ("minister", "organization"):
+            org_id = None
+            if user_role == "organization":
+                from app.models.organization import Organization
+                org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
+                if org:
+                    org_id = org.org_id
+
+            def stream_generator():
+                ai_response_text = AnalyticsAIOrchestrator.chat(
+                    messages=messages,
+                    role=user_role,
+                    db=db,
+                    org_id=org_id,
+                )
+                if ai_response_text:
+                    ai_msg = AIChatMessage(
+                        user_id=user.user_id,
+                        conversation_id=conversation_id,
+                        role="ai",
+                        content=ai_response_text
+                    )
+                    db.add(ai_msg)
+                    db.commit()
+                    yield f"data: {ai_response_text}\n\n"
+
+            return stream_generator()
 
         def stream_generator():
             full_response = ""
-            
+
             for chunk in LLMService.generate_chat_response_stream(messages, role=user_role):
                 full_response += chunk
-                # استخدام صيغة SSE (Server-Sent Events) لتجنب الـ Buffering
                 yield f"data: {chunk}\n\n"
-            
-            # 5. حفظ الرد الكامل بعد انتهاء الستريم
+
             if full_response:
                 ai_msg = AIChatMessage(
                     user_id=user.user_id,
