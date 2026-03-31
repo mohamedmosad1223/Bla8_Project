@@ -44,6 +44,17 @@ class Settings:
     # LLM Settings
     GROQ_API_KEY: str = _get("GROQ_API_KEY", "")
 
+    # Qdrant / RAG Settings
+    URL_QDRANT:       str   = _get("URL_QDRANT", "")
+    API_KEY_QDRANT:   str   = _get("API_KEY_QDRANT", "")
+    COLLECTION_NAME:  str   = _get("COLLECTION_NAME", "islamic_knowledge")
+    RAG_TOP_K:        int   = int(_get("RAG_TOP_K", "3"))
+    SCORE_THRESHOLD:  float = float(_get("RAG_SCORE_THRESHOLD", "0.35"))
+    MAX_CONTEXT_CHARS: int  = int(_get("RAG_MAX_CONTEXT_CHARS", "2000"))
+    RAG_EMBEDDING_BACKEND: str = _get("RAG_EMBEDDING_BACKEND", "local")
+    HF_TOKEN:         str   = _get("HF_TOKEN", "")
+    RAG_HF_EMBEDDING_MODEL: str = _get("RAG_HF_EMBEDDING_MODEL", "intfloat/multilingual-e5-large")
+
 
 settings = Settings()
 

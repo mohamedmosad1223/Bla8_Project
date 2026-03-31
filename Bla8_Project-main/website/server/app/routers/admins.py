@@ -117,7 +117,7 @@ def list_organizations(
     approval_status: Optional[ApprovalStatus] = Query(None),
     created_after: Optional[datetime] = Query(None),
     created_before: Optional[datetime] = Query(None),
-    order_by: str = Query("latest", regex="^(latest|oldest)$"),
+    order_by: str = Query("latest", pattern="^(latest|oldest)$"),
     db: Session = Depends(get_db)
 ):
     """قائمة الجمعيات مع إحصائيات (للأدمن)"""
@@ -153,7 +153,7 @@ def list_preachers(
     languages: List[int] = Query([], description="قائمة معرفات اللغات (فلترة متعددة)"),
     joined_after: Optional[datetime] = Query(None),
     joined_before: Optional[datetime] = Query(None),
-    order_by: str = Query("latest", regex="^(latest|oldest)$"),
+    order_by: str = Query("latest", pattern="^(latest|oldest)$"),
     db: Session = Depends(get_db)
 ):
     """قائمة كل الدعاة (أو تابعين لجمعية) مع إحصائيات"""

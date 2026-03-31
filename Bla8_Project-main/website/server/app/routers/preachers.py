@@ -106,7 +106,7 @@ def list_preachers(
     languages: List[int] = Query([], description="قائمة معرفات اللغات (فلترة متعددة)"),
     joined_after: Optional[datetime] = Query(None),
     joined_before: Optional[datetime] = Query(None),
-    order_by: str = Query("latest", regex="^(latest|oldest)$"),
+    order_by: str = Query("latest", pattern="^(latest|oldest)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
