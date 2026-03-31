@@ -225,7 +225,7 @@ const AwqafPreacherPerformance = () => {
 
         <div className="chart-card">
           <div className="chart-header-row">
-            <h3>نسبة قبول الطلبات</h3>
+            <h3>نسبة استجابة الطلبات</h3>
             <div className="granularity-toggle">
               <button 
                 className={granularity === 'day' ? 'active' : ''} 
@@ -245,7 +245,7 @@ const AwqafPreacherPerformance = () => {
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={acceptanceData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
                 <defs>
-                  <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorRatePerformance" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#DBA841" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#DBA841" stopOpacity={0}/>
                   </linearGradient>
@@ -264,10 +264,10 @@ const AwqafPreacherPerformance = () => {
                   tick={{ fill: '#6B7280', fontSize: 12 }} 
                   domain={[0, 100]} 
                   orientation="right" 
-                  label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo', offset: 10 }} 
+                  label={{ value: 'نسبة الاستجابة (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo', offset: 10 }} 
                 />
                 <Tooltip 
-                  formatter={(value: any) => [`${value}%`, 'نسبة القبول']}
+                  formatter={(value: any) => [`${value}%`, 'نسبة الاستجابة']}
                   labelStyle={{ fontFamily: 'Cairo', textAlign: 'right' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }} 
                 />
@@ -277,7 +277,8 @@ const AwqafPreacherPerformance = () => {
                   stroke="#DBA841" 
                   strokeWidth={3} 
                   fillOpacity={1} 
-                  fill="url(#colorRate)" 
+                  fill="url(#colorRatePerformance)" 
+                  connectNulls={true}
                 />
               </AreaChart>
             </ResponsiveContainer>

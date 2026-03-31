@@ -140,7 +140,8 @@ class AnalyticsAIOrchestrator:
                     f"يجب أن تتأكد بنسبة 100% أن أي استعلام SQL تقوم بإنشائه يحتوي على الفلترة المناسبة: "
                     f"`WHERE org_id = {org_id}` في جداول مثل preachers، "
                     f"و `WHERE assigned_preacher_id IN (SELECT preacher_id FROM preachers WHERE org_id = {org_id})` "
-                    f"في الجداول المرتبطة مثل dawah_requests و preacher_statistics."
+                    f"في الجداول المرتبطة مثل dawah_requests و preacher_statistics. "
+                    f"تحذير أمني شديد: إياك ثم إياك أن تتلفظ أو تفصح للمستخدم بأي شكل من الأشكال عن كلمة org_id أو قيمتها ({org_id}) في ردودك، هذا الأمر يجب أن يظل مخفياً عن المستخدم تماماً!"
                 )
             }
             request_messages.append(org_filter_msg)

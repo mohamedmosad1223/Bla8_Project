@@ -6,7 +6,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Conversations.css';
 import api from '../../services/api';
-import { useSSEStream } from '../../hooks/useSSEStream';
 import ErrorModal from '../../components/common/Modal/ErrorModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -249,10 +248,17 @@ const Conversations = () => {
     setAiLoading(true);
 
     try {
-      const response = await api.post('/chat/analytics/send', { content: text });
-      
+      const payload: any = { content: text };
+      if (aiConversationId) payload.conversation_id = aiConversationId;
+
+      const response = await api.post('/chat/ai/send', payload);
+
       const content = response.data?.ai_response?.content || response.data?.content || 'تعذر الحصول على رد.';
       setAiMessages(p => [...p, { role: 'assistant', content }]);
+
+      if (response.data?.conversation_id && !aiConversationId) {
+        setAiConversationId(response.data.conversation_id);
+      }
 
     } catch (err) {
       setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
@@ -488,10 +494,10 @@ const Conversations = () => {
         </div>
       </div>
 
-      <ErrorModal 
-        isOpen={isErrorModalOpen} 
-        onClose={() => setIsErrorModalOpen(false)} 
-        message={errorMessage} 
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        message={errorMessage}
       />
 
     </div>

@@ -156,8 +156,8 @@ const STATUS_ARABIC_LABELS: Record<string, string> = {
   pending: 'قيد الانتظار',
   rejected: 'مرفوض',
   assigned: 'مُسند',
-  in_progress: 'قيد المتابعة',
-  under_persuasion: 'قيد المتابعة',
+  in_progress: 'قيد الإقناع',
+  under_persuasion: 'قيد الإقناع',
   cancelled: 'ملغي',
   closed: 'مغلق',
 };

@@ -62,16 +62,32 @@ const AwqafAICenter = () => {
   }, [chatMessages, chatLoading]);
 
   const handleCreateReport = async () => {
-    const selectedOrg =
-      filter === 'all'
-        ? 'كل الجمعيات'
-        : filter === '0'
-          ? 'الدعاة المتعاونين'
-          : organizations.find((org) => String(org.org_id) === filter)?.organization_name || 'جمعية محددة';
     const timeframeLabel =
       timeframe === 'all_time' ? 'كل الوقت' : timeframe === 'this_month' ? 'هذا الشهر' : 'الشهر السابق';
 
-    const builtPrompt = `أنشئ ${reportType} للإطار الزمني ${timeframeLabel} مع فلتر ${selectedOrg}، واعرض أهم 5 مؤشرات ونقاط التحسين.`;
+    let builtPrompt = '';
+
+    if (reportType === 'أداء ومقارنة الجمعيات') {
+      if (filter === 'all') {
+        builtPrompt = `أنشئ تقرير أداء ومقارنة الجمعيات للإطار الزمني ${timeframeLabel} مع فلتر "كل الجمعيات"، واعرض أهم 5 مؤشرات ونقاط التحسين لكل جهة في جدول مقارنة شامل.`;
+      } else if (filter === '0') {
+        builtPrompt = `أنشئ أداء ومقارنة بين الدعاه للإطار الزمني ${timeframeLabel} مع فلتر "الدعاة المنفردين" (المتطوعين)، واعرض أهم 5 مؤشرات ونقاط التحسين مع توضيح اسم الداعية وتفاصيل أدائه.`;
+      } else {
+        const orgName = organizations.find((org) => String(org.org_id) === filter)?.organization_name || 'جمعية محددة';
+        builtPrompt = `أنشئ أداء ومقارنة الجمعيات للإطار الزمني ${timeframeLabel} مع فلتر الجمعيات باسم "${orgName}"، واعرض أهم 5 مؤشرات ونقاط التحسين. مع عرض بيانات هذه الجمعية فقط في الجدول.`;
+      }
+    } else {
+      // Logic for 'تقرير استجابة الدعاة' (Preacher Response Report)
+      if (filter === 'all') {
+        builtPrompt = `أنشئ تقرير استجابة الدعاة للإطار الزمني ${timeframeLabel} لجميع الدعاة في المنصة، واعرض جدولاً يوضح لكل داعية: اسمه، الجمعية التابع لها، عدد الطلبات، ونسبة النجاح.`;
+      } else if (filter === '0') {
+        builtPrompt = `أنشئ تقرير استجابة الدعاة للإطار الزمني ${timeframeLabel} لجميع "الدعاة المنفردين" (المتطوعين) فقط، واعرض جدولاً يوضح لكل داعية: اسمه، عدد الطلبات، وعدد الذين أسلموا.`;
+      } else {
+        const orgName = organizations.find((org) => String(org.org_id) === filter)?.organization_name || 'جمعية محددة';
+        // USE THE SUCCESSFUL TEMPLATE FOUND BY THE USER
+        builtPrompt = `أريد تقرير شامل عن "${orgName}" يشمل دعاتها بشكل كامل للإطار الزمني ${timeframeLabel}، مع عرض جدول يوضح (اسم الداعية، الحالة، إجمالي الطلبات، عدد المسلمين، ونسبة النجاح).`;
+      }
+    }
 
     setChatMessages((prev) => [...prev, { role: 'user', content: builtPrompt }]);
     try {
@@ -121,7 +137,7 @@ const AwqafAICenter = () => {
   return (
     <div className="ai-center-page">
       <div className="ai-breadcrumb-right">الذكاء الاصطناعي</div>
-      
+
       <div className="ai-center-title-area">
         <h1 className="ai-main-title">مركز التقارير الذكية</h1>
       </div>
@@ -144,7 +160,7 @@ const AwqafAICenter = () => {
                 <ChevronDown size={16} className="ai-select-icon" />
               </div>
             </div>
-            
+
             <div className="ai-form-group">
               <label>الإطار الزمني</label>
               <div className="ai-select-wrapper">
@@ -188,7 +204,7 @@ const AwqafAICenter = () => {
           <div className="ai-chat-area" ref={chatAreaRef}>
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`ai-chat-bubble ${msg.role === 'user' ? 'user' : ''}`}>
-                <ReactMarkdown 
+                <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
                     table: ({ ...props }) => (
@@ -214,9 +230,9 @@ const AwqafAICenter = () => {
               <button className="ai-send-btn" onClick={handleSendChat} disabled={chatLoading}>
                 <Send size={16} />
               </button>
-              <input 
-                type="text" 
-                placeholder="اطرح سؤالا حول بيانات منصة بلاغ..." 
+              <input
+                type="text"
+                placeholder="اطرح سؤالا حول بيانات منصة بلاغ..."
                 className="ai-chat-input"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}

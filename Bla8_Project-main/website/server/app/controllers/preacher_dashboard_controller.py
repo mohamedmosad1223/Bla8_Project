@@ -56,14 +56,33 @@ class PreacherDashboardController:
             DawahRequest.status == RequestStatus.rejected
         ).count()
 
-        # 2. Requests by Status (Donut Chart)
+        # 2. Requests by Status (Donut Chart) - Merged
         status_counts = db.query(
             DawahRequest.status, func.count(DawahRequest.request_id)
-        ).filter(DawahRequest.assigned_preacher_id == preacher_id).group_by(DawahRequest.status).all()
+        ).filter(
+            DawahRequest.assigned_preacher_id == preacher_id,
+            DawahRequest.status.in_([
+                RequestStatus.converted,
+                RequestStatus.rejected,
+                RequestStatus.under_persuasion,
+                RequestStatus.in_progress,
+                RequestStatus.pending
+            ])
+        ).group_by(DawahRequest.status).all()
         
-        requests_by_status = [
-            {"label": s.value, "value": count} for s, count in status_counts
-        ]
+        status_map = {
+            RequestStatus.converted: "converted",
+            RequestStatus.rejected: "rejected",
+            RequestStatus.under_persuasion: "under_persuasion",
+            RequestStatus.in_progress: "under_persuasion",
+            RequestStatus.pending: "pending"
+        }
+        merged_dist = {}
+        for s, count in status_counts:
+            lbl = status_map.get(s, s.value)
+            merged_dist[lbl] = merged_dist.get(lbl, 0) + count
+            
+        requests_by_status = [{"label": label, "value": count} for label, count in merged_dist.items()]
 
         # 3. Response Speed (Line Chart)
         trunc_unit = 'month' if interval == 'month' else 'day'
@@ -81,12 +100,14 @@ class PreacherDashboardController:
         response_data = db.query(
             func.date_trunc(trunc_unit, DawahRequest.accepted_at).label('period'),
             func.avg(
-                func.extract('epoch', 
-                    func.least(
-                        func.coalesce(first_msg_sq.c.first_msg, sa.literal(datetime(9999, 12, 31, tzinfo=timezone.utc))),
-                        func.coalesce(first_contact_sq.c.first_click, sa.literal(datetime(9999, 12, 31, tzinfo=timezone.utc)))
-                    ) - DawahRequest.accepted_at
-                ) / 60
+                func.greatest(0,
+                    func.extract('epoch', 
+                        func.least(
+                            func.coalesce(first_msg_sq.c.first_msg, sa.literal(datetime(9999, 12, 31, tzinfo=timezone.utc))),
+                            func.coalesce(first_contact_sq.c.first_click, sa.literal(datetime(9999, 12, 31, tzinfo=timezone.utc)))
+                        ) - DawahRequest.accepted_at
+                    ) / 60
+                )
             ).label('avg_speed')
         ).outerjoin(first_msg_sq, DawahRequest.request_id == first_msg_sq.c.request_id
         ).outerjoin(first_contact_sq, DawahRequest.request_id == first_contact_sq.c.request_id
@@ -101,7 +122,7 @@ class PreacherDashboardController:
         final_chart = []
         now_dt = datetime.now(timezone.utc)
         if interval == 'day':
-            for i in range(6, -1, -1):
+            for i in range(13, -1, -1):
                 d = (now_dt - timedelta(days=i)).date()
                 final_chart.append({"name": d.strftime("%d %b"), "time": raw_map.get(d, 0)})
         else:
