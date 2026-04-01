@@ -211,12 +211,14 @@ const NonMuslimDashboard: React.FC = () => {
           if (done) break;
           
           const chunk = decoder.decode(value, { stream: true });
+          console.log("[Stream] Raw chunk received:", chunk.length, "bytes");
           const lines = (partialLine + chunk).split('\n');
           partialLine = lines.pop() || ''; // الحفاظ على الجزء غير الكامل للchunk القادم
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const content = line.substring(6);
+              console.log("[Stream] Data content:", content);
               fullContent += content;
 
               // تحديث الواجهة لحظياً بالقطعة الجديدة

@@ -239,29 +239,64 @@ const Conversations = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  // ─── Send AI Message (No streaming for Analytics) ────────────────────────────────────
+  // ─── Send AI Message (Streaming) ────────────────────────────────────
   const sendAI = async () => {
     if (!aiInput.trim() || aiLoading) return;
     const text = aiInput.trim();
     setAiInput('');
-    setAiMessages(p => [...p, { role: 'user', content: text }]);
+    setAiMessages(p => [...p, { role: 'user', content: text }, { role: 'assistant', content: '...' }]);
     setAiLoading(true);
 
     try {
       const payload: any = { content: text };
       if (aiConversationId) payload.conversation_id = aiConversationId;
 
-      const response = await api.post('/chat/ai/send', payload);
+      const response = await fetch('/api/chat/ai/send?stream=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
 
-      const content = response.data?.ai_response?.content || response.data?.content || 'تعذر الحصول على رد.';
-      setAiMessages(p => [...p, { role: 'assistant', content }]);
+      if (!response.ok) throw new Error('فشل الاتصال');
 
-      if (response.data?.conversation_id && !aiConversationId) {
-        setAiConversationId(response.data.conversation_id);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const content = line.substring(6);
+              fullContent += content;
+              
+              setAiMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === 'assistant') {
+                  last.content = fullContent;
+                }
+                return updated;
+              });
+            }
+          }
+        }
       }
 
     } catch (err) {
-      setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
+      setAiMessages(p => {
+         const updated = [...p];
+         if (updated[updated.length-1].content === '...') {
+            updated[updated.length-1].content = 'حدث خطأ، يرجى المحاولة مجدداً.';
+         }
+         return updated;
+      });
     } finally {
       setAiLoading(false);
     }

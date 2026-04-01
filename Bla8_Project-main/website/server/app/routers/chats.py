@@ -24,7 +24,15 @@ def send_ai_message(payload: AIChatMessageCreate, stream: bool = False, db: Sess
     """إرسال رسالة للمساعد الذكي واستلام رد آلي (للمسجلين)"""
     if stream:
         generator = ChatsController.send_ai_message_stream(db, current_user, payload)
-        return StreamingResponse(generator, media_type="text/event-stream")
+        return StreamingResponse(
+            generator, 
+            media_type="text/event-stream", 
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
     return ChatsController.send_ai_message(db, current_user, payload)
 
 @router.post("/ai/guest/send")
@@ -32,7 +40,15 @@ def send_guest_ai_message(payload: GuestAIChatCreate, stream: bool = False, db: 
     """إرسال رسالة للمساعد الذكي للزوار (بدون تسجيل)"""
     if stream:
         generator = ChatsController.send_guest_ai_message_stream(db, payload)
-        return StreamingResponse(generator, media_type="text/event-stream")
+        return StreamingResponse(
+            generator, 
+            media_type="text/event-stream", 
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
     return ChatsController.send_guest_ai_message(db, payload)
 
 @router.get("/ai/guest/history/{session_id}")
@@ -46,8 +62,19 @@ def cleanup_guest_chats(days: int = 30, db: Session = Depends(get_db), current_u
     return ChatsController.cleanup_guest_chats(db, current_user, days)
 
 @router.post("/analytics/send")
-def send_analytics_ai_message(payload: AIChatMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def send_analytics_ai_message(payload: AIChatMessageCreate, stream: bool = False, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """شات تحليل الأداء الخاص بوزير الأوقاف ومشرفي الجمعيات — Read-Only آمن"""
+    if stream:
+        generator = ChatsController.send_analytics_ai_message_stream(db, current_user, payload)
+        return StreamingResponse(
+            generator, 
+            media_type="text/event-stream", 
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
     return ChatsController.send_analytics_ai_message(db, current_user, payload)
 
 @router.get("/preachers")
@@ -83,5 +110,13 @@ def send_message_to_conversation(conversation_id: int, payload: AIChatMessageCre
     payload.conversation_id = conversation_id
     if stream:
         generator = ChatsController.send_ai_message_stream(db, current_user, payload)
-        return StreamingResponse(generator, media_type="text/event-stream")
+        return StreamingResponse(
+            generator, 
+            media_type="text/event-stream", 
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
     return ChatsController.send_ai_message(db, current_user, payload)

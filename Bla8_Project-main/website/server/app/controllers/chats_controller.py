@@ -205,6 +205,7 @@ class ChatsController:
                     org_id = org.org_id
 
             def stream_generator():
+                yield f": { ' ' * 4096 }\n\n" # Padding to force flush buffers
                 ai_response_text = AnalyticsAIOrchestrator.chat(
                     messages=messages,
                     role=user_role,
@@ -225,6 +226,7 @@ class ChatsController:
             return stream_generator()
 
         def stream_generator():
+            yield f": { ' ' * 4096 }\n\n"
             full_response = ""
 
             for chunk in LLMService.generate_chat_response_stream(messages, role=user_role):
@@ -265,6 +267,7 @@ class ChatsController:
             messages.append({"role": mapped_role, "content": msg.content})
 
         def stream_generator():
+            yield f": { ' ' * 4096 }\n\n"
             full_response = ""
             for chunk in LLMService.generate_chat_response_stream(messages, role="guest"):
                 full_response += chunk
@@ -380,7 +383,33 @@ class ChatsController:
             db.refresh(new_conv)
             conversation_id = new_conv.id
 
-        # 1. حفظ رسالة المستخدم
+        return {
+            "user_message": user_msg,
+            "ai_response": ai_msg
+        }
+
+    @staticmethod
+    def send_analytics_ai_message_stream(db: Session, user: User, payload: AIChatMessageCreate):
+        """Streaming version of the analytics AI response."""
+        user_role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
+        org_id = None
+        if user_role_val == "organization":
+            from app.models.organization import Organization
+            org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
+            if org:
+                org_id = org.org_id
+
+        conversation_id = payload.conversation_id
+        # (Simplified title logic for now, or just reuse)
+        if not conversation_id:
+             from app.models.schemas import AIChatConversation
+             new_conv = AIChatConversation(user_id=user.user_id, title=payload.content[:30])
+             db.add(new_conv)
+             db.commit()
+             db.refresh(new_conv)
+             conversation_id = new_conv.id
+
+        # 1. Save user msg
         user_msg = AIChatMessage(
             user_id=user.user_id,
             conversation_id=conversation_id,
@@ -390,7 +419,7 @@ class ChatsController:
         db.add(user_msg)
         db.commit()
 
-        # 2. جلب تاريخ المحادثة (آخر 10 رسائل في هذه الجلسة تحديداً)
+        # 2. History
         recent_history = (
             db.query(AIChatMessage)
             .filter(AIChatMessage.conversation_id == conversation_id)
@@ -399,35 +428,34 @@ class ChatsController:
             .all()
         )
         recent_history.reverse()
-
         messages = []
         for msg in recent_history:
             mapped_role = "assistant" if msg.role == "ai" else "user"
             messages.append({"role": mapped_role, "content": msg.content})
 
-        # 3. أرسل للذكاء الاصطناعي واجلب البيانات بأمان
-        ai_response_text = AnalyticsAIOrchestrator.chat(
-            messages=messages,
-            role=user_role_val,
-            db=db,
-            org_id=org_id
-        )
+        def stream_generator():
+            yield f": { ' ' * 4096 }\n\n"
+            full_response = ""
+            for chunk in AnalyticsAIOrchestrator.chat_stream(
+                messages=messages,
+                role=user_role_val,
+                db=db,
+                org_id=org_id
+            ):
+                full_response += chunk
+                yield f"data: {chunk}\n\n"
 
-        # 4. حفظ رد الذكاء الاصطناعي
-        ai_msg = AIChatMessage(
-            user_id=user.user_id,
-            conversation_id=conversation_id,
-            role="ai",
-            content=ai_response_text
-        )
-        db.add(ai_msg)
-        db.commit()
-        db.refresh(ai_msg)
+            if full_response:
+                ai_msg = AIChatMessage(
+                    user_id=user.user_id,
+                    conversation_id=conversation_id,
+                    role="ai",
+                    content=full_response
+                )
+                db.add(ai_msg)
+                db.commit()
 
-        return {
-            "user_message": user_msg,
-            "ai_response": ai_msg
-        }
+        return stream_generator()
 
     @staticmethod
     def clear_my_ai_chat_history(db: Session, user: User):

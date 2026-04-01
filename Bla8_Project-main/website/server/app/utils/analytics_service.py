@@ -177,3 +177,46 @@ class AnalyticsAIOrchestrator:
         )
         return final_response
 
+    @staticmethod
+    def chat_stream(
+        messages: List[Dict[str, str]],
+        role: str,
+        db: Session,
+        org_id: Optional[int] = None
+    ):
+        """Streaming version of the analytics conversation."""
+        request_messages = messages.copy()
+        if role == "organization" and org_id is not None:
+            org_filter_msg = {
+                "role": "system",
+                "content": (
+                    f"تنبيه أمني صارم: أنت تعمل حالياً لحساب جمعية معرفها هو (org_id = {org_id}). "
+                    f"يجب أن تتأكد بنسبة 100% أن أي استعلام SQL تقوم بإنشائه يحتوي على الفلترة المناسبة: "
+                    f"`WHERE org_id = {org_id}` في جداول مثل preachers، "
+                    f"و `WHERE assigned_preacher_id IN (SELECT preacher_id FROM preachers WHERE org_id = {org_id})` "
+                    f"في الجداول المرتبطة مثل dawah_requests و preacher_statistics. "
+                )
+            }
+            request_messages.append(org_filter_msg)
+
+        # Step 1: AI generates SQL (Non-streaming for now as we need the full tag)
+        ai_response = LLMService.generate_analytics_response(request_messages, role=role)
+        
+        sql_match = SQL_TAG_PATTERN.search(ai_response)
+        if not sql_match:
+            yield ai_response
+            return
+
+        sql_query = sql_match.group(1).strip()
+        
+        # Step 2: Execute SQL
+        db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id)
+        
+        # Step 3: Stream the final formatted result
+        user_question = messages[-1]["content"] if messages else ""
+        for chunk in LLMService.format_db_result_stream(
+            user_question=user_question,
+            db_result=db_result
+        ):
+            yield chunk
+

@@ -10,6 +10,7 @@ from typing import Optional, List, Dict
 import logging
 import requests
 import json
+import re
 
 from qdrant_client import QdrantClient
 from app.config import settings
@@ -108,12 +109,23 @@ def retrieve_context(query: str, role: str = "interested", top_k: int = settings
     if client is None:
         return None
 
+    # Language Detection: if query has Arabic chars, filter for 'ar'
+    has_arabic = bool(re.search(r"[\u0600-\u06FF]", query))
+    lang_filter = None
+    if has_arabic:
+        from qdrant_client.http import models as rest
+        lang_filter = rest.Filter(
+            must=[rest.FieldCondition(key="language", match=rest.MatchValue(value="ar"))]
+        )
+        logger.info(f"RAG: Arabic detected, applying 'ar' filter.")
+
     try:
         results = client.query_points(
             collection_name=settings.COLLECTION_NAME,
             query=query_vector,
             limit=top_k,
             score_threshold=settings.SCORE_THRESHOLD,
+            query_filter=lang_filter,
             with_payload=True,
         )
 
@@ -125,16 +137,40 @@ def retrieve_context(query: str, role: str = "interested", top_k: int = settings
         chunks: List[str] = []
         total_chars = 0
 
+        # Known payload field names to try (in priority order)
+        TEXT_KEYS = ("text", "content", "chunk", "passage", "body", "page_content")
+
         for r in points:
             payload = r.payload or {}
-            text = payload.get("text") or payload.get("content") or ""
+
+            # Log the actual keys and score so we can diagnose payload structure
+            logger.info(f"RAG point score={r.score:.3f} | payload keys={list(payload.keys())}")
+
+            # Try known keys first
+            text = ""
+            for key in TEXT_KEYS:
+                val = payload.get(key)
+                if val and isinstance(val, str) and val.strip():
+                    text = val.strip()
+                    break
+
+            # Fallback: grab the first non-empty string value in the payload
             if not text:
+                for val in payload.values():
+                    if val and isinstance(val, str) and len(val.strip()) > 20:
+                        text = val.strip()
+                        logger.debug(f"RAG: used fallback payload key, len={len(text)}")
+                        break
+
+            if not text:
+                logger.warning(f"RAG: point has no usable text. Payload keys: {list(payload.keys())}")
                 continue
+
             if total_chars + len(text) > settings.MAX_CONTEXT_CHARS:
                 break
 
             score_pct = int((r.score or 0) * 100)
-            source = payload.get("source") or payload.get("author") or ""
+            source = payload.get("source") or payload.get("author") or payload.get("book") or ""
             header = f"[{source} | match {score_pct}%]" if source else f"[match {score_pct}%]"
             chunks.append(f"{header}\n{text}")
             total_chars += len(text)
