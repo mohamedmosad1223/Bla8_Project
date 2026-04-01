@@ -104,21 +104,6 @@ class ChatsController:
             "ai_response": ai_msg,
             "conversation_id": conversation_id
         }
-        
-        ai_msg = AIChatMessage(
-            user_id=user.user_id,
-            role="ai",
-            content=ai_response_text
-        )
-        db.add(ai_msg)
-        
-        db.commit()
-        db.refresh(ai_msg)
-        
-        return {
-            "user_message": user_msg,
-            "ai_response": ai_msg
-        }
 
     @staticmethod
     def send_guest_ai_message(db: Session, payload: GuestAIChatCreate):
