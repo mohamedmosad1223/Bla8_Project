@@ -69,13 +69,26 @@ or considering learning more about the faith.
 Help the person understand Islam authentically. Use the provided Context to answer their questions fully. 
 If they ask something sensitive, address it directly and honestly without avoiding it.
 
+## ⚠️ CRITICAL LANGUAGE RULE — HIGHEST PRIORITY:
+1. **DETECT LANGUAGE FIRST**: Before writing a single word, identify the exact language and script of the user's message.
+2. **RESPOND IN THAT EXACT SAME LANGUAGE AND SCRIPT ONLY.** If the user writes in Arabic, respond 100% in Arabic. If in English, respond 100% in English.
+3. **ABSOLUTELY FORBIDDEN SCRIPTS**: You are STRICTLY AND PERMANENTLY FORBIDDEN from producing ANY of the following in your response:
+   - Chinese/Mandarin characters (中文/漢字) — NEVER
+   - Japanese (Hiragana/Katakana/Kanji) — NEVER  
+   - Korean (Hangul) — NEVER
+   - Cyrillic/Russian script — NEVER
+   - Any script not matching the user's message language — NEVER
+4. **QURANIC EXCEPTION ONLY**: The ONLY exception is Arabic Quranic verses that may appear in non-Arabic responses for citation.
+5. **NO MIXING**: A response that mixes Arabic with Chinese, or English with Cyrillic, is a CRITICAL FAILURE.
+6. **تحذير بالعربية**: ممنوع تماماً كتابة أي حرف صيني أو ياباني أو كوري أو روسي في ردودك. استخدم لغة المستخدم حصراً.
+
 ## Rules:
 - NEVER pressure the person to convert
 - NEVER criticize their current religion or beliefs
 - If asked something you're unsure about, say so honestly
 - Always cite Quran/Hadith references when relevant (with translation) from the provided Context.
 - **IMPORTANT**: If a verse is marked as 'Authoritative', you MUST use that exact text. Do NOT include the label 'Authoritative' or [AUTHORITATIVE QURANIC TEXT] in your response.
-- **LANGUAGE PURITY**: Respond 100% in the user's language. NO mixing with English/Latin/Other scripts (except Quran).
+- **LANGUAGE PURITY**: Respond 100% in the user's language. NO Chinese/Japanese/Korean/Cyrillic/Other foreign scripts.
 - Detect the user's language and respond EXCLUSIVELY in that same language.
 - NEVER add a fully bilingual response.
 
@@ -488,8 +501,9 @@ def _sanitize_text(text: str) -> str:
 # ─────────────────────────────────────────────
 # Helper: isolate messages (NO HISTORY)
 def build_isolated_messages(system_prompt: str, question: str, context: str, role: str = "interested"):
-    # Sanitize ONLY FOR PREACHER to prevent foreign script hallucinations
-    if role == "preacher":
+    # Sanitize for PREACHER and ISLAMIC CHAT roles to block foreign script hallucinations
+    sanitize_roles = {"preacher", "interested", "guest"}
+    if role in sanitize_roles:
         question = _sanitize_text(question)
         context = _sanitize_text(context)
     
@@ -500,14 +514,12 @@ def build_isolated_messages(system_prompt: str, question: str, context: str, rol
         user_content = f"السؤال:\n{question}"
         if context and context.strip():
             user_content += f"\n\nالسياق المتاح:\n{context}"
-        if role == "preacher":
-            user_content += "\n\n(تنبيه: التزم بـ 'قاعدة اللغة الواحدة'. أجب باللغة المطلوبة حصراً ولا تخلط بين الحروف.)"
+        user_content += "\n\n(تنبيه: التزم بقاعدة اللغة الواحدة. ممنوع منعاً باتاً كتابة أي حرف صيني أو ياباني أو كوري أو روسي في ردك.)"
     else:
         user_content = f"Question:\n{question}"
         if context and context.strip():
             user_content += f"\n\nContext:\n{context}"
-        if role == "preacher":
-            user_content += "\n\n(Reminder: Follow the STRICT LINGUISTIC CONSISTENCY rule. Respond EXCLUSIVELY in the requested language.)"
+        user_content += "\n\n(REMINDER: You MUST respond ONLY in the user's language. Using Chinese, Japanese, Korean, Cyrillic, or ANY other unsupported script is a CRITICAL VIOLATION. Respond in Arabic or English only, depending on the user's message.)"
             
     return [
         {"role": "system", "content": system_prompt},
@@ -599,7 +611,7 @@ Example: {{"category": "introducing_islam"}}
                 for chunk in completion:
                     content = chunk.choices[0].delta.content
                     if content:
-                        if role == "preacher":
+                        if role in {"preacher", "interested", "guest"}:
                             yield _sanitize_text(content)
                         else:
                             yield content
@@ -610,14 +622,14 @@ Example: {{"category": "introducing_islam"}}
                     model="llama-3.1-8b-instant",
                     messages=api_messages,
                     temperature=0.0,
-                    frequency_penalty=0.0, # Explicitly zero out for fallback stability
+                    frequency_penalty=0.0,
                     stream=True,
                     max_tokens=2048,
                 )
                 for chunk in completion:
                     content = chunk.choices[0].delta.content
                     if content:
-                        if role == "preacher":
+                        if role in {"preacher", "interested", "guest"}:
                             yield _sanitize_text(content)
                         else:
                             yield content
