@@ -6,6 +6,7 @@ import { formatTimeAgo } from '../../utils/dateUtils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import ErrorModal from '../../components/common/Modal/ErrorModal';
+import { useLanguage } from '../../i18n';
 import './NonMuslimConversation.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,6 +31,7 @@ interface Message {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NonMuslimConversation: React.FC = () => {
+  const { t, dir } = useLanguage();
   const [searchParams] = useSearchParams();
   const initRequestId = searchParams.get('request_id');
 
@@ -74,7 +76,7 @@ const NonMuslimConversation: React.FC = () => {
           const placeholder: ChatPreview = {
             request_id: Number(initRequestId),
             other_user_id: null,
-            other_party_name: searchParams.get('name') || `محادثة طلب #${initRequestId}`,
+            other_party_name: searchParams.get('name') || `${t('nonMuslimConversation.requestChat')}${initRequestId}`,
             last_message: null,
             last_message_at: null,
             unread_count: 0,
@@ -90,7 +92,7 @@ const NonMuslimConversation: React.FC = () => {
     } catch { /* silent */ } finally {
       setLoadingChats(false);
     }
-  }, [initRequestId, searchParams]);
+  }, [initRequestId, searchParams, t]);
 
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
@@ -132,7 +134,7 @@ const NonMuslimConversation: React.FC = () => {
       await openChat(activeContact);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
-      setErrorMessage(error.response?.data?.detail || 'حدث خطأ أثناء إرسال الرسالة');
+      setErrorMessage(error.response?.data?.detail || t('nonMuslimConversation.sendError'));
       setIsErrorModalOpen(true);
     } finally {
       setSending(false);
@@ -151,17 +153,17 @@ const NonMuslimConversation: React.FC = () => {
   );
 
   return (
-    <div className="nm-conversation-page" dir="rtl">
+    <div className="nm-conversation-page" dir={dir}>
 
       {/* ─── Contacts Sidebar (Right) ─── */}
       <div className="nm-contacts-sidebar">
         <div className="nm-contacts-header">
-          <h2 className="nm-contacts-title">الرسائل</h2>
+          <h2 className="nm-contacts-title">{t('nonMuslimConversation.messages')}</h2>
           <div className="nm-search-box">
             <Search size={18} className="nm-search-icon" />
             <input 
               type="text" 
-              placeholder="ابحث في المحادثات..." 
+              placeholder={t('nonMuslimConversation.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -170,9 +172,9 @@ const NonMuslimConversation: React.FC = () => {
 
         <div className="nm-contacts-list">
           {loadingChats ? (
-            <p style={{ textAlign: 'center', padding: '20px', color: '#666' }}>جاري التحميل...</p>
+            <p style={{ textAlign: 'center', padding: '20px', color: '#666' }}>{t('nonMuslimDashboard.loading')}</p>
           ) : filteredContacts.length === 0 ? (
-            <p style={{ textAlign: 'center', padding: '20px', color: '#666' }}>لا توجد محادثات تطابق بحثك</p>
+            <p style={{ textAlign: 'center', padding: '20px', color: '#666' }}>{t('nonMuslimConversation.noResults')}</p>
           ) : filteredContacts.map((c) => {
             const isActive = c.request_id
               ? activeContact?.request_id === c.request_id
@@ -223,8 +225,8 @@ const NonMuslimConversation: React.FC = () => {
                   <span className="nm-status-dot" 
                         style={{ backgroundColor: (activeContact.is_online || (activeContact.last_seen && (new Date().getTime() - new Date(activeContact.last_seen).getTime() < 60000))) ? '#10b981' : '#94a3b8' }}></span>
                   {(activeContact.is_online || (activeContact.last_seen && (new Date().getTime() - new Date(activeContact.last_seen).getTime() < 60000))) 
-                    ? 'متصل الآن' 
-                    : (activeContact.last_seen ? `آخر ظهور ${formatTimeAgo(activeContact.last_seen)}` : 'غير متصل')}
+                    ? t('nonMuslimConversation.online') 
+                    : (activeContact.last_seen ? `${t('nonMuslimConversation.lastSeen')} ${formatTimeAgo(activeContact.last_seen)}` : t('nonMuslimConversation.offline'))}
                 </div>
               </div>
             </div>
@@ -235,11 +237,11 @@ const NonMuslimConversation: React.FC = () => {
         <div className="nm-chat-messages">
           {!activeContact ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#999' }}>
-              قم باختيار محادثة من القائمة الجانبية
+              {t('nonMuslimConversation.selectChat')}
             </div>
           ) : messages.length === 0 ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#999' }}>
-              لا توجد رسائل سابقة. ابدأ المحادثة الآن.
+              {t('nonMuslimConversation.noMessages')}
             </div>
           ) : (
             <>
@@ -257,7 +259,7 @@ const NonMuslimConversation: React.FC = () => {
                       </div>
                     )}
                     <span className="nm-msg-time">
-                      {new Date(msg.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.created_at).toLocaleTimeString(dir === 'rtl' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 </div>
@@ -271,15 +273,15 @@ const NonMuslimConversation: React.FC = () => {
         <div className="nm-chat-input-area">
           <div className="nm-input-wrapper">
             <button
-              className="nm-input-btn nm-input-send"
+              className="nm-send-btn"
               onClick={handleSend}
               disabled={!activeContact || !msgInput.trim() || sending}
             >
-              <Send size={18} style={{ transform: 'rotate(180deg)' }} />
+              <Send size={18} style={{ transform: dir === 'ltr' ? 'none' : 'rotate(180deg)' }} />
             </button>
             <input
               type="text"
-              placeholder="اكتب رسالتك هنا..."
+              placeholder={t('nonMuslimConversation.typeMessage')}
               className="nm-input"
               value={msgInput}
               onChange={(e) => setMsgInput(e.target.value)}

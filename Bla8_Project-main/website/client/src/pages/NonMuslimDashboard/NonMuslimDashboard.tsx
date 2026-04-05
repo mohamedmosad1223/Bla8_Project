@@ -3,6 +3,7 @@ import { Bot, Plus, Send, MessageCircle, Calendar } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import api from '../../services/api';
+import { useLanguage } from '../../i18n';
 import './NonMuslimDashboard.css';
 
 interface Message {
@@ -21,6 +22,7 @@ interface ChatSession {
 }
 
 const NonMuslimDashboard: React.FC = () => {
+  const { t, dir } = useLanguage();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -53,7 +55,7 @@ const NonMuslimDashboard: React.FC = () => {
           const userSessions: ChatSession[] = conversations.map((c: any) => ({
             id: c.id.toString(),
             title: c.title,
-            lastMessage: 'محادثة سابقة',
+            lastMessage: t('nonMuslimDashboard.previousChat'),
             timestamp: new Date(c.created_at),
             messages: []
           }));
@@ -121,8 +123,8 @@ const NonMuslimDashboard: React.FC = () => {
       const newId = Date.now().toString();
       const newSession: ChatSession = {
         id: newId,
-        title: `محادثة زائر ${sessions.length + 1}`,
-        lastMessage: 'أهلاً 👋 أنا مساعدك...',
+        title: `${t('nonMuslimDashboard.guestSession')} ${sessions.length + 1}`,
+        lastMessage: t('nonMuslimDashboard.welcomeMsg'),
         timestamp: new Date(),
         messages: [] // الرسالة الترحيبية ستأتي من الباكيند
       };
@@ -131,12 +133,12 @@ const NonMuslimDashboard: React.FC = () => {
     } else {
       // إنشاء جلسة جديدة في الباكيند للمستخدم المسجل
       try {
-        const res = await api.post('/chat/conversations', { title: `محادثة ${sessions.length + 1}` });
+        const res = await api.post('/chat/conversations', { title: `${t('nonMuslimDashboard.newChat')} ${sessions.length + 1}` });
         const newConv = res.data;
         const newSession: ChatSession = {
           id: newConv.id.toString(),
           title: newConv.title,
-          lastMessage: 'بداية المحادثة',
+          lastMessage: '...',
           timestamp: new Date(newConv.created_at),
           messages: []
         };
@@ -198,7 +200,7 @@ const NonMuslimDashboard: React.FC = () => {
         credentials: 'include' // للحفاظ على الجلسة (HttpOnly Cookies)
       });
 
-      if (!response.ok) throw new Error('فشل الاتصال بالخادم');
+      if (!response.ok) throw new Error('connection error');
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -240,7 +242,7 @@ const NonMuslimDashboard: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error in streaming:', error);
-      const errorText = 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.';
+      const errorText = t('nonMuslimDashboard.connectionError');
       
       setSessions(prev => prev.map(session => {
         if (session.id === activeChatId) {
@@ -290,7 +292,7 @@ const NonMuslimDashboard: React.FC = () => {
   };
 
   return (
-    <div className="nm-page" dir="rtl">
+    <div className="nm-page" dir={dir}>
       {/* ── Right Sidebar: Sessions ── */}
       <aside className="nm-sidebar">
         {/* Bot header */}
@@ -300,21 +302,21 @@ const NonMuslimDashboard: React.FC = () => {
             <div className="nm-online-dot" />
           </div>
           <div>
-            <h2 className="nm-sidebar-title">المساعد الآلي</h2>
-            <span className="nm-sidebar-status">متاح الآن</span>
+            <h2 className="nm-sidebar-title">{t('nonMuslimDashboard.aiAssistant')}</h2>
+            <span className="nm-sidebar-status">{t('nonMuslimDashboard.available')}</span>
           </div>
         </div>
 
         {/* New chat button */}
         <button className="nm-new-chat-btn" onClick={startNewChat}>
           <Plus size={18} />
-          محادثة جديدة
+          {t('nonMuslimDashboard.newChat')}
         </button>
 
         {/* Sessions list */}
         <div className="nm-sessions-list">
           {sessions.length === 0 ? (
-            <p className="nm-no-sessions">لا توجد محادثات بعد</p>
+            <p className="nm-no-sessions">{t('nonMuslimDashboard.noChats')}</p>
           ) : (
             sessions.map(session => (
               <div
@@ -330,7 +332,7 @@ const NonMuslimDashboard: React.FC = () => {
                     <span className="nm-session-name">{session.title}</span>
                     <span className="nm-session-time">
                       <Calendar size={10} />
-                      {session.timestamp.toLocaleDateString('ar-EG')}
+                      {session.timestamp.toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}
                     </span>
                   </div>
                   <p className="nm-session-last-msg">{session.lastMessage}</p>
@@ -351,8 +353,8 @@ const NonMuslimDashboard: React.FC = () => {
                 <Bot size={22} color="#f6ad55" />
               </div>
               <div className="nm-header-bot-info">
-                <span className="nm-header-name">المساعد الآلي</span>
-                <span className="nm-header-sub">متاح الآن • {activeSession.title}</span>
+                <span className="nm-header-name">{t('nonMuslimDashboard.aiAssistant')}</span>
+                <span className="nm-header-sub">{t('nonMuslimDashboard.available')} • {activeSession.title}</span>
               </div>
             </div>
 
@@ -380,7 +382,7 @@ const NonMuslimDashboard: React.FC = () => {
               <MessageCircle size={20} color="#17648B" style={{ flexShrink: 0, opacity: 0.6 }} />
               <input
                 type="text"
-                placeholder="اكتب رسالتك هنا..."
+                placeholder={t('nonMuslimDashboard.typeMessage')}
                 className="nm-chat-input"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -397,11 +399,11 @@ const NonMuslimDashboard: React.FC = () => {
               <Bot size={56} color="#f6ad55" />
               <div className="nm-online-dot" />
             </div>
-            <h3 className="nm-empty-title">أهلاً بك 👋</h3>
-            <p className="nm-empty-text">اختر محادثة من القائمة أو ابدأ محادثة جديدة</p>
+            <h3 className="nm-empty-title">{t('nonMuslimDashboard.welcome')}</h3>
+            <p className="nm-empty-text">{t('nonMuslimDashboard.selectOrStart')}</p>
             <button className="nm-start-btn" onClick={startNewChat}>
               <Plus size={18} />
-              بدء محادثة جديدة
+              {t('nonMuslimDashboard.startNewChat')}
             </button>
           </div>
         )}

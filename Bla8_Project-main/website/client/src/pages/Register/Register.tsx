@@ -6,6 +6,7 @@ import Input from '../../components/common/Input/Input';
 import { interestedPersonService } from '../../services/interestedPersonService';
 import { muslimCallerService } from '../../services/muslimCallerService';
 import { preacherService } from '../../services/preacherService';
+import { useLanguage } from '../../i18n';
 import './Register.css';
 
 /* ── Reusable Autocomplete Field ─────────────────────────────────── */
@@ -137,8 +138,10 @@ const FormSelect: React.FC<{
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { t, dir } = useLanguage();
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') || sessionStorage.getItem('registerRole');
+  const isNonMuslim = role === 'non_muslim' || (localStorage.getItem('appLanguage') !== null && localStorage.getItem('appLanguage') !== 'SA');
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -268,18 +271,18 @@ const Register: React.FC = () => {
 
   return (
     <AuthLayout>
-      <button className="back-btn" onClick={() => navigate(-1)}>
-        عودة <ChevronRight size={18} />
+      <button className="back-btn" onClick={() => navigate(-1)} dir={isNonMuslim ? dir : 'rtl'}>
+        {isNonMuslim ? t('common.back') : 'عودة'} <ChevronRight size={18} />
       </button>
 
-      <div className="register-container">
+      <div className="register-container" dir={isNonMuslim ? dir : 'rtl'}>
         <div className="form-container">
           <div className="header-text register-header">
             <div className="top-logo">
                <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
             </div>
-            <h2>إنشاء حساب {role === 'muslim_caller' ? '(مسلم داعي)' : ''}</h2>
-            <p>من فضلك قم بملأ البيانات التالية لإنشاء حساب جديد</p>
+            <h2>{isNonMuslim ? t('register.title') : `إنشاء حساب ${role === 'muslim_caller' ? '(مسلم داعي)' : ''}`}</h2>
+            <p>{isNonMuslim ? t('register.subtitle') : 'من فضلك قم بملأ البيانات التالية لإنشاء حساب جديد'}</p>
           </div>
 
           <form className="register-form" onSubmit={handleSubmit}>
@@ -290,19 +293,19 @@ const Register: React.FC = () => {
             )}
 
             <Input
-              name="fullName" type="text" placeholder="الاسم كامل"
+              name="fullName" type="text" placeholder={isNonMuslim ? t('register.fullName') : 'الاسم كامل'}
               icon={<User size={18} />} value={formData.fullName}
               onChange={handleInputChange} required
             />
 
             <Input
-              name="email" type="email" placeholder="البريد الالكتروني"
+              name="email" type="email" placeholder={isNonMuslim ? t('register.email') : 'البريد الالكتروني'}
               icon={<Mail size={18} />} value={formData.email}
               onChange={handleInputChange} required autoComplete="none"
             />
 
             <Input
-              name="phone" type="tel" placeholder="رقم الهاتف (اختياري)"
+              name="phone" type="tel" placeholder={isNonMuslim ? t('register.phone') : 'رقم الهاتف (اختياري)'}
               icon={<Phone size={18} />} value={formData.phone}
               onChange={handleInputChange} autoComplete="none"
             />
@@ -311,12 +314,12 @@ const Register: React.FC = () => {
               <>
                 <div className="register-row">
                   <FormAutocomplete 
-                    name="nationality_country_id" placeholder="الجنسية" icon={<Flag size={18} />}
+                    name="nationality_country_id" placeholder={isNonMuslim ? t('register.nationality') : 'الجنسية'} icon={<Flag size={18} />}
                     options={options.countries.map(c => ({ value: String(c.id), label: c.name }))}
                     value={formData.nationality_country_id} onChange={handleValueChange} required
                   />
                   <FormAutocomplete 
-                    name="current_country_id" placeholder="بلد الإقامة" icon={<Globe size={18} />}
+                    name="current_country_id" placeholder={isNonMuslim ? t('register.residence') : 'بلد الإقامة'} icon={<Globe size={18} />}
                     options={options.countries.map(c => ({ value: String(c.id), label: c.name }))}
                     value={formData.current_country_id} onChange={handleValueChange} required
                   />
@@ -324,50 +327,50 @@ const Register: React.FC = () => {
 
                 <div className="register-row">
                   <FormAutocomplete 
-                    name="religion_id" placeholder="الديانة الحالية" icon={<BookOpen size={18} />}
+                    name="religion_id" placeholder={isNonMuslim ? t('register.religion') : 'الديانة الحالية'} icon={<BookOpen size={18} />}
                     options={options.religions.map(r => ({ value: String(r.id), label: r.name }))}
                     value={formData.religion_id} onChange={handleValueChange} required
                   />
                   <FormAutocomplete 
-                    name="communication_lang_id" placeholder="لغة التواصل" icon={<Languages size={18} />}
+                    name="communication_lang_id" placeholder={isNonMuslim ? t('register.language') : 'لغة التواصل'} icon={<Languages size={18} />}
                     options={options.languages.map(l => ({ value: String(l.id), label: l.name }))}
                     value={formData.communication_lang_id} onChange={handleValueChange} required
                   />
                 </div>
 
                 <FormSelect 
-                  name="gender" placeholder="الجنس" icon={<Users size={18} />}
-                  options={[{ value: 'male', label: 'ذكر' }, { value: 'female', label: 'أنثى' }]}
+                  name="gender" placeholder={isNonMuslim ? t('register.gender') : 'الجنس'} icon={<Users size={18} />}
+                  options={[{ value: 'male', label: isNonMuslim ? t('common.male') : 'ذكر' }, { value: 'female', label: isNonMuslim ? t('common.female') : 'أنثى' }]}
                   value={formData.gender} onChange={handleValueChange} required
                 />
               </>
             )}
 
             <Input
-              name="password" type={showPassword ? 'text' : 'password'} placeholder="الباسورد (حرف كبير + رقم)"
+              name="password" type={showPassword ? 'text' : 'password'} placeholder={isNonMuslim ? t('register.password') : 'الباسورد (حرف كبير + رقم)'}
               icon={<KeyRound size={18} />} value={formData.password}
               onChange={handleInputChange} required autoComplete="new-password"
               rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               onRightIconClick={() => setShowPassword((p) => !p)}
-              rightIconLabel={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+              rightIconLabel={showPassword ? (isNonMuslim ? t('login.hidePassword') : 'إخفاء كلمة المرور') : (isNonMuslim ? t('login.showPassword') : 'إظهار كلمة المرور')}
             />
 
             <Input
-              name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="تأكيد الباسورد"
+              name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder={isNonMuslim ? t('register.confirmPassword') : 'تأكيد الباسورد'}
               icon={<KeyRound size={18} />} value={formData.confirmPassword}
               onChange={handleInputChange} required autoComplete="new-password"
               rightIcon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               onRightIconClick={() => setShowConfirmPassword((p) => !p)}
-              rightIconLabel={showConfirmPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+              rightIconLabel={showConfirmPassword ? (isNonMuslim ? t('login.hidePassword') : 'إخفاء كلمة المرور') : (isNonMuslim ? t('login.showPassword') : 'إظهار كلمة المرور')}
             />
 
             <button type="submit" className="auth-btn primary-btn register-btn" disabled={loading}>
-              {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
+              {loading ? (isNonMuslim ? t('register.loading') : 'جاري إنشاء الحساب...') : (isNonMuslim ? t('register.submit') : 'إنشاء حساب')}
             </button>
           </form>
 
           <p className="bottom-link">
-            لديك حساب بالفعل؟ <Link to={role ? `/login?role=${role}` : '/login'}>تسجيل الدخول</Link>
+            {isNonMuslim ? t('register.haveAccount') : 'لديك حساب بالفعل؟'} <Link to={role ? `/login?role=${role}` : '/login'}>{isNonMuslim ? t('register.login') : 'تسجيل الدخول'}</Link>
           </p>
         </div>
       </div>

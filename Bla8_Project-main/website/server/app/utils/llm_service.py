@@ -20,6 +20,15 @@ try:
 except Exception as e:
     logger.error(f"Failed to initialize Groq client: {e}")
 
+# Initialize DeepSeek client
+from openai import OpenAI
+ds_client = None
+try:
+    if settings.DEEPSEEK_API_KEY:
+        ds_client = OpenAI(api_key=settings.DEEPSEEK_API_KEY.strip("'\""), base_url="https://api.deepseek.com/v1")
+except Exception as e:
+    logger.error(f"Failed to initialize DeepSeek client: {e}")
+
 # ─────────────────────────────────────────────
 # 📘 English Islamic Terms (English only)
 
@@ -532,14 +541,14 @@ def build_isolated_messages(system_prompt: str, question: str, context: str, rol
 class LLMService:
 
     @staticmethod
-    def _ensure_client():
-        global client
-        if not client:
-            raise RuntimeError("Groq client not initialized")
+    def _ensure_clients():
+        global client, ds_client
+        if not client and not ds_client:
+            raise RuntimeError("Neither Groq nor DeepSeek client initialized")
 
     @staticmethod
     def analyze_query(query: str) -> Dict[str, str]:
-        LLMService._ensure_client()
+        LLMService._ensure_clients()
         import json
         
         system_prompt = f"""You are a helpful text classification assistant.
@@ -551,17 +560,28 @@ Return ONLY a valid JSON object with keys "category". Do not output any other te
 Example: {{"category": "introducing_islam"}}
 """
 
-#  Another Model: llama-3.3-70b-versatile
         try:
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": query}
-                ],
-                temperature=0.0,
-                max_tokens=200,
-            )
+            if ds_client:
+                response = ds_client.chat.completions.create(
+                    model=settings.DEEPSEEK_MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": query}
+                    ],
+                    temperature=0.0,
+                    max_tokens=200,
+                )
+            else:
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": query}
+                    ],
+                    temperature=0.0,
+                    max_tokens=200,
+                )
+            
             content = response.choices[0].message.content.strip()
             # Clean up markdown code blocks if any
             if content.startswith("```"):
@@ -572,7 +592,7 @@ Example: {{"category": "introducing_islam"}}
 
     @staticmethod
     def generate_chat_response_stream(messages: List[Dict[str, str]], role: str = "interested"):
-        LLMService._ensure_client()
+        LLMService._ensure_clients()
 
         system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
@@ -597,34 +617,18 @@ Example: {{"category": "introducing_islam"}}
         api_messages = build_isolated_messages(system_prompt, question, context or "", role=role)
 
         try:
-            print(f"--- AI Stream Request (Role: {role}) using 70B ---")
+            print(f"--- AI Stream Request (Role: {role}) using DEEPSEEK ---")
             try:
-                completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=api_messages,
-                    temperature=0.0,
-                    frequency_penalty=0.0, # Reset to 0 to prevent "boring" language token exploration
-                    stream=True,
-                    max_tokens=2048,
-                    timeout=20.0 # Increase timeout to avoid aggressive fallback to 8B
-                )
-                for chunk in completion:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        if role in {"preacher", "interested", "guest"}:
-                            yield _sanitize_text(content)
-                        else:
-                            yield content
-                print("--- 70B Stream Success! ---")
-            except Exception as e_70b:
-                print(f"--- 70B Stream FAILED: {e_70b}. Falling back to 8B... ---")
-                completion = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                if not ds_client:
+                    raise Exception("DeepSeek client not available")
+                completion = ds_client.chat.completions.create(
+                    model=settings.DEEPSEEK_MODEL,
                     messages=api_messages,
                     temperature=0.0,
                     frequency_penalty=0.0,
                     stream=True,
                     max_tokens=2048,
+                    timeout=30.0
                 )
                 for chunk in completion:
                     content = chunk.choices[0].delta.content
@@ -633,37 +637,63 @@ Example: {{"category": "introducing_islam"}}
                             yield _sanitize_text(content)
                         else:
                             yield content
-                print("--- 8B Fallback Stream Success! ---")
+                print("--- DeepSeek Stream Success! ---")
+            except Exception as e_ds:
+                print(f"--- DeepSeek Stream FAILED: {e_ds}. Falling back to Groq 70B... ---")
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=api_messages,
+                    temperature=0.0,
+                    frequency_penalty=0.0,
+                    stream=True,
+                    max_tokens=2048,
+                    timeout=20.0
+                )
+                for chunk in completion:
+                    content = chunk.choices[0].delta.content
+                    if content:
+                        if role in {"preacher", "interested", "guest"}:
+                            yield _sanitize_text(content)
+                        else:
+                            yield content
+                print("--- Groq Stream Success! ---")
         except Exception as e:
             logger.error(f"Global Stream Error: {e}")
             print(f"--- GLOBAL STREAM ERROR: {e} ---")
-            yield "عذراً، حدث خطأ أثناء الاتصال بالخادم (Groq Support). يرجى المحاولة لاحقاً."
+            yield "عذراً، حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً."
 
     @staticmethod
     def generate_analytics_response(messages: List[Dict[str, str]], role: str) -> str:
-        """
-        خاص بـ Analytics (Minister/Organization):
-        يحتفظ بسياق المحادثة كاملاً والرسائل المحقونة (مثل org_id) ولا يتجاهلها.
-        تستخدم درجة حرارة 0.0 لضمان دقة توليد الـ SQL.
-        """
-        LLMService._ensure_client()
+        LLMService._ensure_clients()
         system_prompt = PROMPT_MAP.get(role, MINISTER_SYSTEM_PROMPT)
-        
-        # إضافة الـ System Prompt الأساسي في البداية
         api_messages = [{"role": "system", "content": system_prompt}] + messages
         
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=api_messages,
-            temperature=0.0,
-            max_tokens=2048,
-        )
-        return response.choices[0].message.content or ""
+        try:
+            if not ds_client:
+                raise Exception("DeepSeek not available")
+            response = ds_client.chat.completions.create(
+                model=settings.DEEPSEEK_MODEL,
+                messages=api_messages,
+                temperature=0.0,
+                max_tokens=2048,
+            )
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            logger.error(f"DeepSeek analytics failed: {e}. Falling back to Groq.")
+            if client:
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=api_messages,
+                    temperature=0.0,
+                    max_tokens=2048,
+                )
+                return response.choices[0].message.content or ""
+            return ""
 
     # ─── generate_chat_response (non-stream fallback) ───────────────────────
     @staticmethod
     def generate_chat_response(messages: List[Dict[str, str]], role: str = "interested") -> str:
-        LLMService._ensure_client()
+        LLMService._ensure_clients()
         system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         context = retrieve_context(question, role)
@@ -674,8 +704,10 @@ Example: {{"category": "introducing_islam"}}
             context = (context or "") + ayah_context
         api_messages = build_isolated_messages(system_prompt, question, context or "", role=role)
         try:
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+            if not ds_client:
+                raise Exception("DeepSeek not available")
+            response = ds_client.chat.completions.create(
+                model=settings.DEEPSEEK_MODEL,
                 messages=api_messages,
                 temperature=0.0,
                 frequency_penalty=0.0,
@@ -684,16 +716,25 @@ Example: {{"category": "introducing_islam"}}
             content = response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد."
             return _sanitize_text(content) if role == "preacher" else content
         except Exception as e:
-            logger.error(f"LLM Error: {e}")
+            logger.error(f"DeepSeek Chat Error: {e}")
+            if client:
+                try:
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=api_messages,
+                        temperature=0.0,
+                        frequency_penalty=0.0,
+                        max_tokens=2048,
+                    )
+                    content = response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد."
+                    return _sanitize_text(content) if role == "preacher" else content
+                except Exception as e2:
+                    logger.error(f"Groq Chat Error: {e2}")
             return "عذراً، حدث خطأ أثناء الاتصال بالخادم."
 
     @staticmethod
     def format_db_result(user_question: str, db_result: str) -> str:
-        """
-        دالة منعزلة لتنسيق نتائج الداتابيز فقط — بدون أي خيال أو اختراع.
-        تستخدم system prompt صارم جداً معزول عن أي context آخر.
-        """
-        LLMService._ensure_client()
+        LLMService._ensure_clients()
 
         STRICT_FORMATTER_PROMPT = """أنت خبير تحليل بيانات محترف. مهمتك هي تنسيق البيانات الواردة بجدول Markdown أنيق وتقديم تحليل ذكي.
 
@@ -720,13 +761,26 @@ Example: {{"category": "introducing_islam"}}
         ]
 
         try:
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+            if not ds_client:
+                raise Exception("DeepSeek not available")
+            response = ds_client.chat.completions.create(
+                model=settings.DEEPSEEK_MODEL,
                 messages=api_messages,
                 temperature=0.0,
                 max_tokens=1500,
             )
             return response.choices[0].message.content or db_result
         except Exception as e:
-            # fallback: إرجاع النتيجة الخام لو فشل الـ LLM
+            logger.error(f"DeepSeek Formatter failed: {e}. Falling back to Groq.")
+            if client:
+                try:
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=api_messages,
+                        temperature=0.0,
+                        max_tokens=1500,
+                    )
+                    return response.choices[0].message.content or db_result
+                except Exception as e2:
+                    logger.error(f"Groq Formatter failed: {e2}")
             return f"**نتائج قاعدة البيانات:**\n\n```\n{db_result}\n```"

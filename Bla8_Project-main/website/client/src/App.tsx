@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LanguageProvider } from './i18n';
 import { useState, useEffect } from 'react';
 import RegistrationSelection from './pages/RegistrationSelection/RegistrationSelection';
 import Login from './pages/Login/Login';
@@ -58,7 +59,7 @@ const RoleDashboard = ({ role }: { role: string | null }) => {
   
   if (role === 'preacher') return <PreacherDashboard />;
   if (role === 'muslim_caller') return <MuslimCallerDashboard />;
-  if (role === 'non_muslim' || role === 'interested') return <NonMuslimDashboard />;
+  if (role === 'non_muslim' || role === 'interested') return <LanguageProvider><NonMuslimDashboard /></LanguageProvider>;
   if (role === 'minister') return <AwqafDashboard />;
   if (role === 'admin') return <AdminDashboard />;
   if (role === 'organization') return <Dashboard />;
@@ -69,7 +70,7 @@ const RoleDashboard = ({ role }: { role: string | null }) => {
 const RoleConversations = ({ role }: { role: string | null }) => {
   if (!role) return <Navigate to="/login" replace />;
   
-  if (role === 'non_muslim' || role === 'interested') return <NonMuslimConversation />;
+  if (role === 'non_muslim' || role === 'interested') return <LanguageProvider><NonMuslimConversation /></LanguageProvider>;
   if (role === 'muslim_caller') return <div style={{ padding: '2rem', textAlign: 'center' }}>عذراً، هذه الخاصية غير متاحة لنوع حسابك</div>;
   return <Conversations />;
 };
@@ -113,21 +114,21 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<RegistrationSelection />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/activate" element={<Activation />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-activation" element={<ResetActivation />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/login" element={<LanguageProvider><Login /></LanguageProvider>} />
+        <Route path="/register" element={<LanguageProvider><Register /></LanguageProvider>} />
+        <Route path="/activate" element={<LanguageProvider><Activation /></LanguageProvider>} />
+        <Route path="/forgot-password" element={<LanguageProvider><ForgotPassword /></LanguageProvider>} />
+        <Route path="/reset-activation" element={<LanguageProvider><ResetActivation /></LanguageProvider>} />
+        <Route path="/reset-password" element={<LanguageProvider><ResetPassword /></LanguageProvider>} />
         <Route path="/preacher-association-login" element={<PreacherAssociationLogin />} />
         <Route path="/partner-register" element={<PartnerRegister />} />
         <Route path="/preacher-register" element={<PreacherRegister />} />
         <Route path="/language-selection" element={<LanguageSelection />} />
-        <Route path="/how-to-start" element={<HowToStart />} />
+        <Route path="/how-to-start" element={<LanguageProvider><HowToStart /></LanguageProvider>} />
 
         {/* Standalone Non-Muslim Routes */}
-        <Route path="/guest/chat" element={<NonMuslimDashboard />} />
-        <Route path="/guest/library" element={<Library />} />
+        <Route path="/guest/chat" element={<LanguageProvider><NonMuslimDashboard /></LanguageProvider>} />
+        <Route path="/guest/library" element={<LanguageProvider><Library /></LanguageProvider>} />
 
         {/* Dashboard Routes wrapper */}
         <Route element={<DashboardLayout />}>

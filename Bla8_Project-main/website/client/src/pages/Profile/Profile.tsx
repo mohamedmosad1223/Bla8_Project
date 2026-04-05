@@ -1,69 +1,40 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText, Send, Image as ImageIcon } from 'lucide-react';
+import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText } from 'lucide-react';
 import { profileService } from '../../services/profileService';
 import { authService } from '../../services/authService';
 import ForgotPasswordModal from '../../components/common/Modal/ForgotPasswordModal';
+import { useLanguage } from '../../i18n';
 import './Profile.css';
 
 type ActiveSection = 'account-info' | 'change-password' | 'language' | 'help-center' | 'help-center-faq' | 'customer-service' | 'privacy-policy';
 
-const faqItems = [
-  { q: 'ما هي منصة "بلاغ"؟', a: 'منصة تهدف لتسهيل عملية التعريف بالإسلام وربط الدعاة بالمهتمين عبر أدوات ذكية ومتابعة احترافية.' },
-  { q: 'من أين تأتي المعلومات الدينية في المنصة؟', a: 'نعتمد على مكتبة دينية شاملة تضم أمهات الكتب الإسلامية، ونسخاً كاملة من الأحاديث النبوية والقراّن الكريم لضمان دقة المعلومة المقدمة.' },
-  { q: 'هل يمكنني الوصول للمصادر الدعوية؟', a: 'نعم، توفر المنصة قسماً خاصاً للمصادر يضم كتباً ومقالات بالعديد من اللغات العالمية لتسهيل عملية التعلم والتعليم.' },
-  { q: 'هل التواصل مع المهتمين آمن؟', a: 'نعم، المنصة تضمن خصوصية بياناتك وتوفر قنوات تواصل مهيئة للعمل الدعوى بشكل منظم.' },
-  { q: 'ماذا أفعل إذا واجهت مشكلة تقنية؟', a: 'يمكنك التواصل مع الدعم الفني عبر الضغط على "خدمة العملاء" ومراسلتنا مباشرة.' },
-];
-
-const privacySections = [
-  {
-    title: 'جمع البيانات الشخصية',
-    body: 'نقوم بجمع البيانات الضرورية لربط الدعاة بالمهتمين، مثل الاسم، البريد الإلكتروني، ورقم الهاتف، واللغات، لضمان تقديم أفضل تجربة دعوية.',
-  },
-  {
-    title: 'استخدام المعلومات',
-    body: 'تُستخدم بياناتك فقط لتنسيق طلبات الدعوة، وتحسين جودة الخدمة، والتواصل معك بشأن تحديثات النظام أو الطلبات المسندة إليك.',
-  },
-  {
-    title: 'حماية البيانات وخصوصيتها',
-    body: 'لا نقوم بمشاركة أو بيع بياناتك لأي جهة خارجية. البيانات متاحة فقط للأطراف المعنية داخل المنصة (الداعية، الجمعية المشرفة، والمسؤولين).',
-  },
-  {
-    title: 'أمن المعلومات',
-    body: 'نستخدم تقنيات تشفير متقدمة وبروتوكولات أمنية صارمة لحماية معلوماتك من الوصول غير المصرح به أو التلاعب.',
-  },
-  {
-    title: 'حقوق المستخدم وصلاحيات الحذف',
-    body: 'يمكنك تعديل بياناتك أو حذف حسابك بشكل كامل في أي وقت. عند حذف الحساب، يتم إزالة كافة بياناتك الشخصية من قواعد بياناتنا النشطة.',
-  },
-];
-
 // ── Help Center (3-card layout) ─────────────────────────
 const HelpCenter: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = ({ onSectionChange }) => {
+  const { t, dir } = useLanguage();
   return (
-    <div className="help-center-v2" dir="rtl">
+    <div className="help-center-v2" dir={dir}>
       <div className="help-header-simple">
         <div className="help-breadcrumbs">
-          <span className="inactive">مركز المساعدة</span>
+          <span className="inactive">{t('profile.helpCenter') || 'مركز المساعدة'}</span>
         </div>
-        <button className="help-back-btn" onClick={() => onSectionChange('account-info')}>
-          <span>عودة</span>
-          <ChevronRight size={20} />
+        <button className="help-back-btn" onClick={() => onSectionChange('account-info')} style={{flexDirection: dir === 'ltr' ? 'row-reverse' : 'row'}}>
+          <span>{t('profile.helpBack') || 'عودة'}</span>
+          {dir === 'ltr' ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>
       </div>
 
       <div className="help-cards-list">
-        <button className="help-card" onClick={() => onSectionChange('help-center-faq')}>
+        <button className="help-card" onClick={() => onSectionChange('help-center-faq')} style={{flexDirection: dir === 'ltr' ? 'row' : 'row'}}>
           <div className="help-card-right">
             <div className="help-card-icon-wrap blue">
               <HelpIcon size={24} />
             </div>
             <div className="help-card-info">
-              <h4>الأسئلة الشائعة</h4>
-              <p>راسل مساعدنا الافتراضي أو أحد ممثلينا مباشرة</p>
+              <h4>{t('profile.faqTitle') || 'الأسئلة الشائعة'}</h4>
+              <p>{t('profile.faqDesc') || 'راسل مساعدنا الافتراضي'}</p>
             </div>
           </div>
-          <ChevronLeft size={20} className="help-card-arrow" />
+          {dir === 'ltr' ? <ChevronRight size={20} className="help-card-arrow" /> : <ChevronLeft size={20} className="help-card-arrow" />}
         </button>
 
         <a 
@@ -77,11 +48,11 @@ const HelpCenter: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = 
               <Mail size={24} />
             </div>
             <div className="help-card-info">
-              <h4>خدمة العملاء</h4>
+              <h4>{t('profile.customerService') || 'خدمة العملاء'}</h4>
               <p>balagh.ai2026@gmail.com</p>
             </div>
           </div>
-          <ChevronLeft size={20} className="help-card-arrow" />
+          {dir === 'ltr' ? <ChevronRight size={20} className="help-card-arrow" /> : <ChevronLeft size={20} className="help-card-arrow" />}
         </a>
 
         <a href="tel:+20123232323" className="help-card">
@@ -90,15 +61,15 @@ const HelpCenter: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = 
               <PhoneCall size={24} />
             </div>
             <div className="help-card-info">
-              <h4>اتصل بنا الآن</h4>
+              <h4>{t('profile.callUs') || 'اتصل بنا الآن'}</h4>
               <p dir="ltr" className="help-phone">+20 123 232 323</p>
             </div>
           </div>
-          <ChevronLeft size={20} className="help-card-arrow" />
+          {dir === 'ltr' ? <ChevronRight size={20} className="help-card-arrow" /> : <ChevronLeft size={20} className="help-card-arrow" />}
         </a>
       </div>
 
-      <p className="help-working-hours">من السبت الى الخميس الساعة 08 صباحا الى 05 مساء</p>
+      <p className="help-working-hours">{t('profile.workingHours') || 'من السبت الى الخميس الساعة 08 صباحا الى 05 مساء'}</p>
     </div>
   );
 };
@@ -106,25 +77,34 @@ const HelpCenter: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = 
 // ── FAQ Section (Detailed View) ───────────────────────────
 const FAQSection: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = ({ onSectionChange }) => {
   const [openIdx, setOpenIdx] = useState<number | null>(1);
+  const { t, dir } = useLanguage();
+  const faqItems = [
+    { q: t('faq.q1') || 'ما هي منصة "بلاغ"؟', a: t('faq.a1') || 'منصة تهدف لتسهيل عملية التعريف بالإسلام وربط الدعاة بالمهتمين.' },
+    { q: t('faq.q2') || 'من أين تأتي المعلومات الدينية؟', a: t('faq.a2') || 'نعتمد على مكتبة دينية شاملة.' },
+    { q: t('faq.q3') || 'هل يمكنني الوصول للمصادر؟', a: t('faq.a3') || 'نعم، توفر المنصة قسماً خاصاً.' },
+    { q: t('faq.q4') || 'هل التواصل آمن؟', a: t('faq.a4') || 'نعم، المنصة تضمن خصوصية بياناتك.' },
+    { q: t('faq.q5') || 'ماذا أفعل لحل مشكلة تقنية؟', a: t('faq.a5') || 'يمكنك التواصل مع الدعم الفني.' },
+  ];
+
   return (
-    <div className="faq-v2-container" dir="rtl">
+    <div className="faq-v2-container" dir={dir}>
       <div className="help-header-simple">
         <div className="help-breadcrumbs">
-          <span className="active-bc">الأسئلة الشائعة</span>
-          <span className="sep">›</span>
-          <span className="inactive">مركز المساعدة</span>
+          <span className="active-bc">{t('profile.faqTitle') || 'الأسئلة الشائعة'}</span>
+          <span className="sep">{dir === 'ltr' ? '‹' : '›'}</span>
+          <span className="inactive">{t('profile.helpCenter') || 'مركز المساعدة'}</span>
         </div>
-        <button className="help-back-btn" onClick={() => onSectionChange('help-center')}>
-          <span>عودة</span>
-          <ChevronRight size={20} />
+        <button className="help-back-btn" onClick={() => onSectionChange('help-center')} style={{flexDirection: dir === 'ltr' ? 'row-reverse' : 'row'}}>
+          <span>{t('profile.helpBack') || 'عودة'}</span>
+          {dir === 'ltr' ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>
       </div>
 
-      <p className="faq-v2-intro">عندك أي أسئلة؟ تصفح الأسئلة الشائعة أدناه أو ابحث عن إجابة لسؤالك</p>
+      <p className="faq-v2-intro">{t('profile.faqIntro') || 'عندك أي أسئلة؟ تصفح الأسئلة الشائعة'}</p>
 
       <div className="faq-search-wrap">
         <Search size={20} className="faq-search-icon" />
-        <input type="text" placeholder="ابحث" className="faq-search-input" />
+        <input type="text" placeholder={t('profile.searchFaq') || 'ابحث'} className="faq-search-input" />
       </div>
 
       <div className="faq-v2-list">
@@ -145,107 +125,53 @@ const FAQSection: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = 
   );
 };
 
-const CustomerServiceChat: React.FC<{ onSectionChange: (sec: ActiveSection) => void }> = ({ onSectionChange }) => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'مرحباً بك في دعم منصة بلاغ! كيف يمكننا مساعدتك اليوم؟', sender: 'bot', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) },
-    { id: 2, text: 'يمكنك أيضاً مراسلتنا مباشرة عبر البريد الإلكتروني: balagh.ai2026@gmail.com', sender: 'bot', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) },
-  ]);
-  const [inputText, setInputText] = useState('');
-
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    const newMessage = {
-      id: Date.now(),
-      text: inputText,
-      sender: 'user',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-    };
-    setMessages([...messages, newMessage]);
-    setInputText('');
-  };
+// ── Privacy Policy ────────────────────────────────────────
+const PrivacyPolicy: React.FC = () => {
+  const { t, dir } = useLanguage();
+  const privacySections = [
+    { title: t('privacy.t1') || 'جمع البيانات', body: t('privacy.b1') || 'نقوم بجمع البيانات...' },
+    { title: t('privacy.t2') || 'استخدام المعلومات', body: t('privacy.b2') || 'تُستخدم بياناتك فقط...' },
+    { title: t('privacy.t3') || 'حماية البيانات', body: t('privacy.b3') || 'لا نقوم بمشاركة أو بيع بياناتك...' },
+    { title: t('privacy.t4') || 'أمن المعلومات', body: t('privacy.b4') || 'نستخدم تقنيات تشفير...' },
+    { title: t('privacy.t5') || 'حقوق المستخدم', body: t('privacy.b5') || 'يمكنك تعديل بياناتك...' },
+  ];
 
   return (
-    <div className="cs-chat-container" dir="rtl">
-      <div className="help-header-simple">
-        <div className="help-breadcrumbs">
-          <span className="active-bc">خدمة العملاء</span>
-          <span className="sep">›</span>
-          <span className="inactive">مركز المساعدة</span>
-        </div>
-        <button className="help-back-btn" onClick={() => onSectionChange('help-center')}>
-          <span>عودة</span>
-          <ChevronRight size={20} />
-        </button>
+    <div className="privacy-v2-container" dir={dir}>
+      <div className="privacy-header">
+        <Shield size={32} className="privacy-header-icon" />
+        <h3>{t('profile.privacyTitle') || 'سياسة الخصوصية'}</h3>
+        <p>{t('profile.privacyUpdated') || 'آخر تحديث: مارس 2024'}</p>
       </div>
 
-      <div className="cs-chat-messages">
-        <div className="cs-date-separator">أمس</div>
-        {messages.map((msg) => (
-          <div key={msg.id} className={`cs-message-group ${msg.sender}`}>
-            <div className="cs-message-bubble">
-              {msg.text}
+      <div className="privacy-sections">
+        {privacySections.map((sec, i) => (
+          <div key={i} className="privacy-v2-section">
+            <div className="privacy-v2-title">
+              <span className="dot" />
+              <h4>{sec.title}</h4>
             </div>
-            <span className="cs-message-time">{msg.time}</span>
+            <p className="privacy-v2-body">{sec.body}</p>
           </div>
         ))}
       </div>
 
-      <div className="cs-chat-input-area">
-        <div className="cs-input-wrapper">
-          <button className="cs-icon-btn">
-            <ImageIcon size={20} />
-          </button>
-          <input
-            type="text"
-            placeholder="اكتب هنا...."
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          />
-          <button className="cs-send-btn" onClick={handleSend}>
-            <Send size={20} />
-          </button>
-        </div>
+      <div className="privacy-footer">
+        <p>{t('profile.downloadDesc') || 'يمكنك تحميل نسخة كاملة...'}</p>
+        <a href="#" className="privacy-download-btn">
+          <FileText size={18} />
+          {t('profile.downloadFile') || 'تحميل الملف'}
+        </a>
       </div>
     </div>
   );
 };
 
-
-// ── Privacy Policy ────────────────────────────────────────
-const PrivacyPolicy: React.FC = () => (
-  <div className="privacy-v2-container" dir="rtl">
-    <div className="privacy-header">
-      <Shield size={32} className="privacy-header-icon" />
-      <h3>سياسة الخصوصية</h3>
-      <p>آخر تحديث: مارس 2024</p>
-    </div>
-
-    <div className="privacy-sections">
-      {privacySections.map((sec, i) => (
-        <div key={i} className="privacy-v2-section">
-          <div className="privacy-v2-title">
-            <span className="dot" />
-            <h4>{sec.title}</h4>
-          </div>
-          <p className="privacy-v2-body">{sec.body}</p>
-        </div>
-      ))}
-    </div>
-
-    <div className="privacy-footer">
-      <p>يمكنك تحميل نسخة كاملة من سياسة الخصوصية بصيغة PDF</p>
-      <a href="#" className="privacy-download-btn">
-        <FileText size={18} />
-        تحميل الملف
-      </a>
-    </div>
-  </div>
-);
-
-
 // ── Main Profile component ────────────────────────────────
 const Profile: React.FC = () => {
+  const { t, dir, lang, setLanguage } = useLanguage();
+  const userRole = localStorage.getItem('userRole');
+  const isNonMuslim = userRole === 'non_muslim' || userRole === 'interested';
   const [activeSection, setActiveSection] = useState<ActiveSection>('account-info');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -288,6 +214,13 @@ const Profile: React.FC = () => {
   const [modalPassword, setModalPassword] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  const [selectedLanguage, setSelectedLanguage] = useState(lang);
+
+  const handleLanguageSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLanguage(selectedLanguage as any);
+  };
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -468,8 +401,8 @@ const Profile: React.FC = () => {
   const showAvatar = !['help-center', 'help-center-faq', 'privacy-policy'].includes(activeSection);
 
   return (
-    <div className="profile-page" dir="rtl">
-      <h1 className="profile-title">الملف الشخصي</h1>
+    <div className="profile-page" dir={isNonMuslim ? dir : 'rtl'}>
+      <h1 className="profile-title">{isNonMuslim ? t('profile.title') : 'الملف الشخصي'}</h1>
 
       <div className="profile-layout">
 
@@ -509,7 +442,7 @@ const Profile: React.FC = () => {
               <div className="pf-input-icon">
                 <input 
                   type="text" 
-                  placeholder="الاسم بالكامل" 
+                  placeholder={isNonMuslim ? t('profile.fullName') : 'الاسم بالكامل'} 
                   value={form.fullName}
                   onChange={(e) => setForm({...form, fullName: e.target.value})}
                   disabled={!isEditing}
@@ -519,7 +452,7 @@ const Profile: React.FC = () => {
               <div className="pf-input-icon">
                 <input 
                   type="email" 
-                  placeholder="البريد الالكتروني" 
+                  placeholder={isNonMuslim ? t('profile.email') : 'البريد الالكتروني'} 
                   value={form.email}
                   onChange={(e) => setForm({...form, email: e.target.value})}
                   disabled={!isEditing}
@@ -529,7 +462,7 @@ const Profile: React.FC = () => {
               <div className="pf-input-icon">
                 <input 
                   type="tel" 
-                  placeholder="رقم الهاتف" 
+                  placeholder={isNonMuslim ? t('profile.phone') : 'رقم الهاتف'} 
                   value={form.phone}
                   onChange={(e) => setForm({...form, phone: e.target.value})}
                   disabled={!isEditing}
@@ -539,18 +472,18 @@ const Profile: React.FC = () => {
               
               {!isEditing ? (
                 <button type="button" className="pf-save-btn" onClick={() => setShowPasswordModal(true)}>
-                  تعديل البيانات
+                  {isNonMuslim ? t('profile.editData') : 'تعديل البيانات'}
                 </button>
               ) : (
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button type="submit" className="pf-save-btn" disabled={loading} style={{ flex: 1 }}>
-                    {loading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                    {loading ? (isNonMuslim ? t('profile.saving') : 'جاري الحفظ...') : (isNonMuslim ? t('profile.saveEdits') : 'حفظ التعديلات')}
                   </button>
                   <button type="button" className="pf-save-btn" style={{ flex: 1, backgroundColor: '#f44336' }} onClick={() => {
                     setIsEditing(false);
                     setErrorMsg('');
                   }}>
-                    إلغاء التعديل
+                    {isNonMuslim ? t('profile.cancelEdit') : 'إلغاء التعديل'}
                   </button>
                 </div>
               )}
@@ -564,7 +497,7 @@ const Profile: React.FC = () => {
               <div className="pf-input-icon">
                 <input 
                   type={showOldPassword ? "text" : "password"} 
-                  placeholder="كلمة المرور الحالية" 
+                  placeholder={isNonMuslim ? t('profile.currentPassword') : "كلمة المرور الحالية"} 
                   value={passwordForm.oldPassword}
                   onChange={(e) => setPasswordForm({...passwordForm, oldPassword: e.target.value})}
                   required
@@ -577,7 +510,7 @@ const Profile: React.FC = () => {
               <div className="pf-input-icon">
                 <input 
                   type={showNewPassword ? "text" : "password"} 
-                  placeholder="كلمة المرور الجديدة" 
+                  placeholder={isNonMuslim ? t('profile.newPassword') : "كلمة المرور الجديدة"} 
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
                   required
@@ -590,7 +523,7 @@ const Profile: React.FC = () => {
               <div className="pf-input-icon">
                 <input 
                   type={showConfirmPassword ? "text" : "password"} 
-                  placeholder="تأكيد كلمة المرور" 
+                  placeholder={isNonMuslim ? t('profile.confirmPassword') : "تأكيد كلمة المرور"} 
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
                   required
@@ -603,27 +536,31 @@ const Profile: React.FC = () => {
 
               <div className="pf-forgot-password">
                 <button type="button" onClick={handleForgotPassword} disabled={loading}>
-                  {loading ? 'جاري الإرسال...' : 'نسيت الرقم السري؟'}
+                  {loading ? (isNonMuslim ? t('profile.sendingReset') : 'جاري الإرسال...') : (isNonMuslim ? t('profile.forgotPin') : 'نسيت الرقم السري؟')}
                 </button>
               </div>
 
               <button type="submit" className="pf-save-btn" disabled={loading}>
-                {loading ? 'جاري الحفظ...' : 'حفظ'}
+                {loading ? (isNonMuslim ? t('profile.saving') : 'جاري الحفظ...') : (isNonMuslim ? t('profile.saveEdits') : 'حفظ')}
               </button>
             </form>
           )}
 
           {/* Language selector */}
           {activeSection === 'language' && (
-            <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
+            <form className="profile-form" onSubmit={handleLanguageSave}>
               <div className="pf-input-icon">
-                <select defaultValue="ar">
-                  <option value="ar">العربية</option>
-                  <option value="en">English</option>
+                <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)}>
+                  <option value="SA">العربية</option>
+                  <option value="US">English</option>
+                  <option value="PK">اردو</option>
+                  <option value="FR">Français</option>
+                  <option value="ES">Español</option>
+                  <option value="DE">Deutsch</option>
                 </select>
                 <span className="pf-icon"><Globe size={18} /></span>
               </div>
-              <button type="submit" className="pf-save-btn">حفظ</button>
+              <button type="submit" className="pf-save-btn">{t('profile.saveLanguage') || 'حفظ'}</button>
             </form>
           )}
 
@@ -633,8 +570,8 @@ const Profile: React.FC = () => {
           {/* Help Center FAQ */}
           {activeSection === 'help-center-faq' && <FAQSection onSectionChange={setActiveSection} />}
 
-          {/* Customer Service Chat */}
-          {activeSection === 'customer-service' && <CustomerServiceChat onSectionChange={setActiveSection} />}
+          {/* Customer Service Chat - Removed as it uses Mailto */}
+          {activeSection === 'customer-service' && <HelpCenter onSectionChange={setActiveSection} />}
 
           {/* Privacy Policy */}
           {activeSection === 'privacy-policy' && <PrivacyPolicy />}
@@ -644,14 +581,14 @@ const Profile: React.FC = () => {
         <div className="profile-settings-panel">
 
           <div className="settings-section">
-            <h3 className="settings-section-title">تعديل الحساب</h3>
+            <h3 className="settings-section-title">{isNonMuslim ? t('profile.editAccount') : 'تعديل الحساب'}</h3>
 
             <button
               className={`settings-item ${activeSection === 'account-info' ? 'active' : ''}`}
               onClick={() => setActiveSection('account-info')}
             >
               <ChevronLeft size={16} className="settings-chevron" />
-              <span>بيانات الحساب</span>
+              <span>{isNonMuslim ? t('profile.accountInfo') : 'بيانات الحساب'}</span>
               <User size={18} className="settings-item-icon" />
             </button>
 
@@ -660,29 +597,31 @@ const Profile: React.FC = () => {
               onClick={() => setActiveSection('change-password')}
             >
               <ChevronLeft size={16} className="settings-chevron" />
-              <span>تغيير الرقم السري</span>
+              <span>{isNonMuslim ? t('profile.changePassword') : 'تغيير الرقم السري'}</span>
               <Lock size={18} className="settings-item-icon" />
             </button>
 
-            <button
-              className={`settings-item ${activeSection === 'language' ? 'active' : ''}`}
-              onClick={() => setActiveSection('language')}
-            >
-              <ChevronLeft size={16} className="settings-chevron" />
-              <span>اللغة</span>
-              <Globe size={18} className="settings-item-icon" />
-            </button>
+            {isNonMuslim && (
+              <button
+                className={`settings-item ${activeSection === 'language' ? 'active' : ''}`}
+                onClick={() => setActiveSection('language')}
+              >
+                <ChevronLeft size={16} className="settings-chevron" />
+                <span>{isNonMuslim ? t('profile.language') : 'اللغة'}</span>
+                <Globe size={18} className="settings-item-icon" />
+              </button>
+            )}
           </div>
 
           <div className="settings-section">
-            <h3 className="settings-section-title">الدعم الفني والخصوصية</h3>
+            <h3 className="settings-section-title">{isNonMuslim ? t('profile.support') : 'الدعم الفني والخصوصية'}</h3>
 
             <button
               className={`settings-item ${['help-center', 'help-center-faq', 'customer-service'].includes(activeSection) ? 'active' : ''}`}
               onClick={() => setActiveSection('help-center')}
             >
               <ChevronLeft size={16} className="settings-chevron" />
-              <span>مركز المساعدة</span>
+              <span>{isNonMuslim ? t('profile.helpCenter') : 'مركز المساعدة'}</span>
               <HelpCircle size={18} className="settings-item-icon" />
             </button>
 
@@ -691,13 +630,13 @@ const Profile: React.FC = () => {
               onClick={() => setActiveSection('privacy-policy')}
             >
               <ChevronLeft size={16} className="settings-chevron" />
-              <span>سياسة الخصوصية</span>
+              <span>{isNonMuslim ? t('profile.privacyPolicy') : 'سياسة الخصوصية'}</span>
               <Shield size={18} className="settings-item-icon" />
             </button>
 
             <button className="settings-item danger" onClick={() => setShowDeleteModal(true)}>
               <ChevronLeft size={16} className="settings-chevron" />
-              <span>حذف الحساب</span>
+              <span>{isNonMuslim ? t('profile.deleteAccount') : 'حذف الحساب'}</span>
               <Trash2 size={18} className="settings-item-icon" />
             </button>
           </div>
@@ -714,16 +653,16 @@ const Profile: React.FC = () => {
               setModalError('');
               setModalPassword('');
             }}>×</button>
-            <h3 className="delete-modal-title">هل انت متأكد من حذف الحساب؟</h3>
+            <h3 className="delete-modal-title">{isNonMuslim ? t('profile.deleteConfirmTitle') : 'هل انت متأكد من حذف الحساب؟'}</h3>
             <p className="delete-modal-desc" style={{ marginBottom: '15px' }}>
-              سيتم حذف جميع بياناتك نهائياً من قاعدة البيانات. يرجى إدخال كلمة المرور للتأكيد.
+              {isNonMuslim ? t('profile.deleteConfirmDesc') : 'سيتم حذف جميع بياناتك نهائياً من قاعدة البيانات. يرجى إدخال كلمة المرور للتأكيد.'}
             </p>
             
             <form onSubmit={handleDeleteAccount}>
               <div className="pf-input-icon" style={{ marginBottom: '20px' }}>
                 <input 
                   type={showModalPasswordVisible ? "text" : "password"} 
-                  placeholder="كلمة المرور" 
+                  placeholder={isNonMuslim ? t('profile.passwordPlaceholder') : "كلمة المرور"} 
                   value={modalPassword}
                   onChange={(e) => setModalPassword(e.target.value)}
                   required
@@ -738,9 +677,9 @@ const Profile: React.FC = () => {
 
               <div className="delete-modal-actions">
                 <button type="submit" className="delete-modal-confirm" disabled={modalLoading}>
-                  {modalLoading ? 'جاري الحذف...' : 'حذف نهائياً'}
+                  {modalLoading ? (isNonMuslim ? t('profile.deleteLoading') : 'جاري الحذف...') : (isNonMuslim ? t('profile.deleteFinal') : 'حذف نهائياً')}
                 </button>
-                <button type="button" className="delete-modal-cancel" onClick={() => setShowDeleteModal(false)}>الغاء</button>
+                <button type="button" className="delete-modal-cancel" onClick={() => setShowDeleteModal(false)}>{isNonMuslim ? t('profile.cancelBtn') : 'الغاء'}</button>
               </div>
             </form>
           </div>
@@ -756,16 +695,16 @@ const Profile: React.FC = () => {
               setModalError('');
               setModalPassword('');
             }}>×</button>
-            <h3 className="delete-modal-title">تأكيد الهوية</h3>
+            <h3 className="delete-modal-title">{isNonMuslim ? t('profile.verifyTitle') : 'تأكيد الهوية'}</h3>
             <p className="delete-modal-desc" style={{ marginBottom: '20px' }}>
-              يرجى إدخال كلمة المرور الخاصة بك لتتمكن من تعديل بياناتك.
+              {isNonMuslim ? t('profile.verifyDesc') : 'يرجى إدخال كلمة المرور الخاصة بك لتتمكن من تعديل بياناتك.'}
             </p>
             
             <form onSubmit={handleVerifyPassword}>
               <div className="pf-input-icon" style={{ marginBottom: '20px' }}>
                 <input 
                   type={showModalPasswordVisible ? "text" : "password"} 
-                  placeholder="كلمة المرور" 
+                  placeholder={isNonMuslim ? t('profile.passwordPlaceholder') : "كلمة المرور"} 
                   value={modalPassword}
                   onChange={(e) => setModalPassword(e.target.value)}
                   autoFocus
@@ -780,7 +719,7 @@ const Profile: React.FC = () => {
               
               <div className="delete-modal-actions">
                 <button type="submit" className="delete-modal-confirm" disabled={modalLoading} style={{ backgroundColor: '#183141' }}>
-                  {modalLoading ? 'جاري التحقق...' : 'تأكيد'}
+                  {modalLoading ? (isNonMuslim ? t('profile.verifying') : 'جاري التحقق...') : (isNonMuslim ? t('common.confirm') : 'تأكيد')}
                 </button>
               </div>
             </form>
@@ -807,7 +746,7 @@ const Profile: React.FC = () => {
               className="success-modal-btn" 
               onClick={() => setShowSuccessModal(false)}
             >
-              تم
+              {isNonMuslim ? t('dashboard.successAction') || 'OK' : 'تم'}
             </button>
           </div>
         </div>

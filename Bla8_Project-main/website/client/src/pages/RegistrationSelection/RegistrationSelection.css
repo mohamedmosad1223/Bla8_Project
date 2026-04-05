@@ -144,13 +144,15 @@
   border-radius: 8px;
   padding: 1.5rem 1rem;
   text-align: center;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1.1rem;     /* Increased to make it look punchy */
+  font-weight: 600;       /* Made bolder */
   color: var(--text-dark);
   transition: all 0.3s ease;
-  line-height: 1.4;
-  height: 120px;
+  line-height: 1.2;
+  height: min-content;    /* Let padding handle height */
+  min-height: 100px;      /* Slightly shorter box */
   display: flex;
+  flex-direction: column; /* Better for icons if added later */
   align-items: center;
   justify-content: center;
 }

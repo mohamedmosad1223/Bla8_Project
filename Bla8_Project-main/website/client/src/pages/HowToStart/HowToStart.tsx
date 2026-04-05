@@ -1,21 +1,23 @@
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
+import { useLanguage } from '../../i18n';
 import './HowToStart.css';
 
 const HowToStart = () => {
   const navigate = useNavigate();
+  const { t, dir } = useLanguage();
 
   return (
     <AuthLayout>
-      <div className="how-to-start-container">
+      <div className="how-to-start-container" dir={dir}>
         
         <div className="top-logo">
            <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
         </div>
 
         <div className="header-text text-center">
-          <h2>من فضلك اختر <span className="highlight-gold">كيف تبدأ</span></h2>
-          <p className="subtitle-arabic">ابدأ الآن رحلتك للتعرف على الإسلام أو الاستفادة من مواردنا.</p>
+          <h2>{t('howToStart.title')} <span className="highlight-gold">{t('howToStart.titleHighlight')}</span></h2>
+          <p className="subtitle-arabic">{t('howToStart.subtitle')}</p>
         </div>
 
         <div className="options-list">
@@ -23,7 +25,7 @@ const HowToStart = () => {
           <button 
             className="option-card-start primary-card"
             onClick={() => {
-              localStorage.setItem('userRole', 'non_muslim'); // Set role just in case Dashboard uses it
+              localStorage.setItem('userRole', 'non_muslim');
               navigate('/guest/chat');
             }}
           >
@@ -35,12 +37,12 @@ const HowToStart = () => {
                 </svg>
               </div>
               <div className="card-info">
-                <span className="card-title">ابدأ المحادثة الآن</span>
-                <span className="card-subtitle">تحدث مباشرة مع مساعدك الذكي</span>
+                <span className="card-title">{t('howToStart.startChat')}</span>
+                <span className="card-subtitle">{t('howToStart.startChatSub')}</span>
               </div>
             </div>
             <div className="card-left">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: dir === 'ltr' ? 'rotate(180deg)' : 'none' }}>
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </div>
@@ -57,12 +59,12 @@ const HowToStart = () => {
                 </svg>
               </div>
               <div className="card-info">
-                <span className="card-title">إنشاء حساب</span>
-                <span className="card-subtitle">سجل بياناتك لتجربة مخصصة ومتابعة مع الدعاة.</span>
+                <span className="card-title">{t('howToStart.createAccount')}</span>
+                <span className="card-subtitle">{t('howToStart.createAccountSub')}</span>
               </div>
             </div>
             <div className="card-left">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: dir === 'ltr' ? 'rotate(180deg)' : 'none' }}>
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </div>
@@ -82,12 +84,12 @@ const HowToStart = () => {
                 </svg>
               </div>
               <div className="card-info">
-                <span className="card-title">المكتبة الرقمية</span>
-                <span className="card-subtitle">تصفح الكتب والمقالات والفيديوهات الصوتية.</span>
+                <span className="card-title">{t('howToStart.library')}</span>
+                <span className="card-subtitle">{t('howToStart.librarySub')}</span>
               </div>
             </div>
             <div className="card-left">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: dir === 'ltr' ? 'rotate(180deg)' : 'none' }}>
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </div>

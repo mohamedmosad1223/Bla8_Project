@@ -36,14 +36,14 @@ const RegistrationSelection = () => {
             className={`option-card ${selectedRole === 'non-muslim' ? 'selected' : ''}`}
             onClick={() => setSelectedRole('non-muslim')}
           >
-            غير مسلم يريد<br />التعرف علي الاسلام
+            اكتشف الاسلام
           </button>
 
           <button
             className={`option-card ${selectedRole === 'muslim' ? 'selected' : ''}`}
             onClick={() => setSelectedRole('muslim')}
           >
-            مسلم يدعو الناس<br />الي الاسلام
+          عرفهم بالاسلام
           </button>
         </div>
 

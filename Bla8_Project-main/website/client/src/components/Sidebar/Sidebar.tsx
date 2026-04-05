@@ -2,22 +2,23 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Users, FileText, Activity, User, LogOut, MessageCircle, BookOpen, BarChart2, Bot, ClipboardList } from 'lucide-react';
 import { authService } from '../../services/authService';
-
+import { useLanguage } from '../../i18n';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const { t, dir } = useLanguage();
   const userRole = localStorage.getItem('userRole');
   const isAssociation = userRole === 'organization';
   const isPreacher = userRole === 'preacher';
   const isAwqafManager = userRole === 'minister';
   const isAdmin = userRole === 'admin';
-  
+  const isNonMuslim = userRole === 'non_muslim' || userRole === 'interested';
+
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
-
     const fetchAdminLevel = async () => {
       try {
         const res = await fetch('/api/admins/me', { credentials: 'include' });
@@ -29,7 +30,6 @@ const Sidebar = () => {
         console.error('Could not fetch admin level', e);
       }
     };
-
     fetchAdminLevel();
   }, [isAdmin]);
 
@@ -39,18 +39,19 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" dir={isNonMuslim ? dir : 'rtl'}>
       <div className="sidebar-logo">
         <img src="/logo.png" alt="Logo" className="logo-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         <div className="logo-placeholder">
-          <span className="logo-text">البلاغ</span>
+          <span className="logo-text">{isNonMuslim ? t('nav.appName') : 'البلاغ'}</span>
         </div>
       </div>
 
       <nav className="sidebar-nav">
         <ul className="nav-list">
-          {/* Common */}
-          {userRole !== 'non_muslim' && userRole !== 'interested' && (
+
+          {/* Common – all roles except non-Muslim */}
+          {!isNonMuslim && (
             <li className="nav-item">
               <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
                 <Home size={20} className="nav-icon" />
@@ -119,8 +120,7 @@ const Sidebar = () => {
             </>
           )}
 
-
-          {/* Awqaf Manager nav items */}
+          {/* Awqaf Manager */}
           {isAwqafManager && (
             <>
               <li className="nav-item">
@@ -149,6 +149,7 @@ const Sidebar = () => {
               </li>
             </>
           )}
+
           {/* Admin-only */}
           {isAdmin && (
             <>
@@ -197,29 +198,30 @@ const Sidebar = () => {
             </li>
           )}
 
-          {/* Non-Muslim only */}
-          {(userRole === 'non_muslim' || userRole === 'interested') && (
+          {/* Non-Muslim – fully translated */}
+          {isNonMuslim && (
             <>
               <li className="nav-item">
                 <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
                   <Bot size={20} className="nav-icon" />
-                  المحادثات
+                  {t('nav.conversations')}
                 </NavLink>
               </li>
               <li className="nav-item">
                 <NavLink to="/conversations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <MessageCircle size={20} className="nav-icon" />
-                  الرسائل
+                  {t('nav.messages')}
                 </NavLink>
               </li>
               <li className="nav-item">
                 <NavLink to="/library" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   <BookOpen size={20} className="nav-icon" />
-                  المكتبة
+                  {t('nav.library')}
                 </NavLink>
               </li>
             </>
           )}
+
         </ul>
       </nav>
 
@@ -228,13 +230,13 @@ const Sidebar = () => {
           <li className="nav-item">
             <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <User size={20} className="nav-icon" />
-              الملف الشخصي
+              {isNonMuslim ? t('nav.profile') : 'الملف الشخصي'}
             </NavLink>
           </li>
           <li className="nav-item">
             <button className="nav-link logout-btn" onClick={handleLogout}>
               <LogOut size={20} className="nav-icon" />
-              تسجيل الخروج
+              {isNonMuslim ? t('nav.logout') : 'تسجيل الخروج'}
             </button>
           </li>
         </ul>

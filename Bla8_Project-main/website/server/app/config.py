@@ -43,6 +43,8 @@ class Settings:
 
     # LLM Settings
     GROQ_API_KEY: str = _get("GROQ_API_KEY", "")
+    DEEPSEEK_API_KEY: str = _get("DEEPSEEK_API_KEY", "")
+    DEEPSEEK_MODEL: str = _get("DEEPSEEK_MODEL", "deepseek-chat")
 
     # Qdrant / RAG Settings
     URL_QDRANT:       str   = _get("URL_QDRANT", "")

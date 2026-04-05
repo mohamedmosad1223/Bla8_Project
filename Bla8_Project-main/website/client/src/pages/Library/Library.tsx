@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, FileText, Book, Video, Mic, Play, X } from 'lucide-react';
+import { useLanguage } from '../../i18n';
 import './Library.css';
 
 interface LibraryItem {
@@ -166,6 +167,7 @@ const mockData: LibraryItem[] = [
 ];
 
 const Library: React.FC = () => {
+  const { t, dir } = useLanguage();
   const [activeTab, setActiveTab ] = useState<'article' | 'book' | 'video' | 'audio'>('article');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
@@ -174,7 +176,7 @@ const Library: React.FC = () => {
   const [pdfPages, setPdfPages] = useState<Record<string, string>>({});
 
   const formatAudioDuration = (seconds: number): string => {
-    if (!Number.isFinite(seconds) || seconds < 0) return 'غير متاحة';
+    if (!Number.isFinite(seconds) || seconds < 0) return t('library.notAvailable');
     const total = Math.floor(seconds);
     const hrs = Math.floor(total / 3600);
     const mins = Math.floor((total % 3600) / 60);
@@ -204,7 +206,7 @@ const Library: React.FC = () => {
 
       const handleError = () => {
         if (cancelled) return;
-        setAudioDurations((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+        setAudioDurations((prev) => ({ ...prev, [item.id]: t('library.notAvailable') }));
       };
 
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -243,7 +245,7 @@ const Library: React.FC = () => {
 
       const handleError = () => {
         if (cancelled) return;
-        setVideoDurations((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+        setVideoDurations((prev) => ({ ...prev, [item.id]: t('library.notAvailable') }));
       };
 
       video.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -286,14 +288,14 @@ const Library: React.FC = () => {
               setPdfPages((prev) => ({ ...prev, [item.id]: String(pdfDoc.numPages) }));
             } catch {
               if (cancelled) return;
-              setPdfPages((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+              setPdfPages((prev) => ({ ...prev, [item.id]: t('library.notAvailable') }));
             }
           }),
         );
       } catch {
         if (!cancelled) {
           pdfItems.forEach((item) => {
-            setPdfPages((prev) => ({ ...prev, [item.id]: 'غير متاحة' }));
+            setPdfPages((prev) => ({ ...prev, [item.id]: t('library.notAvailable') }));
           });
         }
       }
@@ -309,14 +311,14 @@ const Library: React.FC = () => {
   const dataWithRealAudioDurations = useMemo(() => (
     mockData.map((item) => (
       item.type === 'audio'
-        ? { ...item, duration: audioDurations[item.id] ?? item.duration ?? 'جارٍ التحميل...' }
+        ? { ...item, duration: audioDurations[item.id] ?? item.duration ?? t('library.loading') }
         : item.type === 'video'
-          ? { ...item, duration: videoDurations[item.id] ?? item.duration ?? 'جارٍ التحميل...' }
+          ? { ...item, duration: videoDurations[item.id] ?? item.duration ?? t('library.loading') }
           : item.type === 'book'
-            ? { ...item, pages: pdfPages[item.id] ?? item.pages ?? 'جارٍ التحميل...' }
+            ? { ...item, pages: pdfPages[item.id] ?? item.pages ?? t('library.loading') }
             : item
     ))
-  ), [audioDurations, pdfPages, videoDurations]);
+  ), [audioDurations, pdfPages, videoDurations, t]);
 
   const filteredData = dataWithRealAudioDurations.filter(item =>
     item.type === activeTab &&
@@ -324,7 +326,7 @@ const Library: React.FC = () => {
   );
 
   return (
-    <div className="library-container" dir="rtl">
+    <div className="library-container" dir={dir}>
       {/* Tabs at the very top */}
       <div className="library-tabs">
         <button 
@@ -332,28 +334,28 @@ const Library: React.FC = () => {
           onClick={() => setActiveTab('article')}
         >
           <FileText size={20} />
-          <span>المقالات</span>
+          <span>{t('library.articles') || 'المقالات'}</span>
         </button>
         <button 
           className={`tab-item ${activeTab === 'book' ? 'active' : ''}`}
           onClick={() => setActiveTab('book')}
         >
           <Book size={20} />
-          <span>الكتب</span>
+          <span>{t('library.books') || 'الكتب'}</span>
         </button>
         <button 
           className={`tab-item ${activeTab === 'video' ? 'active' : ''}`}
           onClick={() => setActiveTab('video')}
         >
           <Video size={20} />
-          <span>الفيديوهات</span>
+          <span>{t('library.videos') || 'الفيديوهات'}</span>
         </button>
         <button 
           className={`tab-item ${activeTab === 'audio' ? 'active' : ''}`}
           onClick={() => setActiveTab('audio')}
         >
           <Mic size={20} />
-          <span>الصوتيات</span>
+          <span>{t('library.audios') || 'الصوتيات'}</span>
         </button>
       </div>
 
@@ -362,7 +364,7 @@ const Library: React.FC = () => {
           <Search size={20} className="search-icon" />
           <input 
             type="text" 
-            placeholder={activeTab === 'book' ? "ابحث عن كتاب" : activeTab === 'video' ? "ابحث عن فيديو" : activeTab === 'audio' ? "ابحث عن صوتيات" : "ابحث عن مقالة"} 
+            placeholder={activeTab === 'book' ? (t('library.searchBook') || "ابحث عن كتاب") : activeTab === 'video' ? (t('library.searchVideo') || "ابحث عن فيديو") : activeTab === 'audio' ? (t('library.searchAudio') || "ابحث عن صوتيات") : (t('library.searchArticle') || "ابحث عن مقالة")} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -385,7 +387,7 @@ const Library: React.FC = () => {
               </div>
               <div className="audio-actions">
                 <div className="audio-meta">
-                  <span className="audio-duration"> {item.duration ?? 'غير متاحة'}</span>
+                  <span className="audio-duration"> {item.duration ?? t('library.notAvailable')}</span>
                 </div>
                 <button className="audio-play-btn">
                   <Play size={20} fill="currentColor" />
@@ -415,7 +417,7 @@ const Library: React.FC = () => {
                 {item.type === 'article' && (
                   <>
                     <span className="card-category">
-                      <Book size={14} /> {item.category}
+                      <Book size={14} /> {t('library.articles') || 'المقالات'}
                     </span>
                     <h3 className="card-title">{item.title}</h3>
                     <div className="card-author-row">
@@ -433,7 +435,7 @@ const Library: React.FC = () => {
                      <h3 className="card-title" style={{ textAlign: 'center' }}>{item.title}</h3>
                      <div className="card-stats-footer" style={{ justifyContent: 'center', gap: '16px' }}>
                         <div className="stat-item">
-                          <span>{item.type === 'book' ? `عدد الصفحات: ${item.pages}` : `المدة: ${item.duration}`}</span>
+                          <span>{item.type === 'book' ? `${t('library.pagesCount') || 'عدد الصفحات:'} ${item.pages}` : `${t('library.duration') || 'المدة:'} ${item.duration}`}</span>
                         </div>
                      </div>
                   </>
@@ -482,7 +484,7 @@ const Library: React.FC = () => {
                 </div>
               )}
               {(selectedItem.type !== 'video' && selectedItem.type !== 'book' && selectedItem.type !== 'article' && selectedItem.type !== 'audio') && (
-                <div className="library-viewer-empty">هذا المحتوى غير متوفر للعرض المباشر</div>
+                <div className="library-viewer-empty">{t('library.contentNotAvailable') || 'هذا المحتوى غير متوفر للعرض المباشر'}</div>
               )}
             </div>
           </div>

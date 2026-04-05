@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
+import { useLanguage } from '../../i18n';
 import './Header.css';
 
 interface Notification {
@@ -18,6 +19,8 @@ interface Notification {
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, dir } = useLanguage();
+  const isNonMuslim = localStorage.getItem('userRole') === 'non_muslim' || localStorage.getItem('userRole') === 'interested';
 
   const [userData, setUserData] = useState<any>(null);
 
@@ -44,7 +47,8 @@ const Header = () => {
 
   const roleLabels: Record<string, string> = {
     muslim_caller: 'مسلم داعي',
-    interested: 'شخص مهتم',
+    interested: isNonMuslim ? t('roles.interested') : 'شخص مهتم',
+    non_muslim: isNonMuslim ? t('roles.interested') : 'شخص مهتم',
     preacher: 'داعية',
     organization: 'جمعية',
     admin: 'مدير النظام',
@@ -53,7 +57,7 @@ const Header = () => {
 
   // Safely extract role and name depending on if the data is nested or flat
   const userRole = userData?.user?.role || userData?.role || '';
-  const fullName = userData?.profile?.full_name || userData?.profile?.name || userData?.full_name || userData?.name || 'مستخدم';
+  const fullName = userData?.profile?.full_name || userData?.profile?.name || userData?.full_name || userData?.name || (isNonMuslim ? t('header.defaultUser') : 'مستخدم');
 
   const displayName = fullName.split(' ')[0];
   const displayRole = roleLabels[userRole] || userRole || '';
@@ -137,8 +141,8 @@ const Header = () => {
   };
 
   return (
-    <header className="header">
-      <div className="header-spacer"></div>
+    <header className="header" dir={isNonMuslim ? dir : 'rtl'}>
+      {(!isNonMuslim || dir === 'rtl') && <div className="header-spacer"></div>}
       <div className="header-actions">
         <div className="notification-wrapper" ref={notifRef}>
           <button
@@ -155,16 +159,16 @@ const Header = () => {
           {showNotif && (
             <div className="notif-dropdown">
               <div className="notif-header">
-                <h4>الإشعارات</h4>
+                <h4>{isNonMuslim ? t('header.notifications') : 'الإشعارات'}</h4>
                 {unreadCount > 0 && (
                   <button onClick={markAllAsRead} className="notif-mark-all">
-                    تحديد الكل كمقروء
+                    {isNonMuslim ? t('header.markAllRead') : 'تحديد الكل كمقروء'}
                   </button>
                 )}
               </div>
               <div className="notif-body">
                 {notifications.length === 0 ? (
-                  <div className="notif-empty">لا توجد إشعارات</div>
+                  <div className="notif-empty">{isNonMuslim ? t('header.noNotifications') : 'لا توجد إشعارات'}</div>
                 ) : (
                   notifications.map(notif => (
                     <div 
@@ -206,6 +210,7 @@ const Header = () => {
           </div>
         </div>
       </div>
+      {(isNonMuslim && dir === 'ltr') && <div className="header-spacer"></div>}
     </header>
   );
 };
