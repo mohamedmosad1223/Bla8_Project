@@ -164,7 +164,7 @@ class OrganizationsController:
         return {"message": OrganizationMessages.LISTED, "data": data}
 
     @staticmethod
-    def get_organization(db: Session, org_id: int):
+    def get_organization(db: Session, org_id: int, trend_granularity: str = "month"):
         from app.models.reference import Country
         from app.controllers.organization_dashboard_controller import OrganizationDashboardController
 
@@ -173,7 +173,7 @@ class OrganizationsController:
             raise HTTPException(status_code=404, detail=OrganizationMessages.NOT_FOUND)
         
         # Get basic stats and trends from dashboard controller
-        stats_data = OrganizationDashboardController.get_dashboard_stats(db, org_id)
+        stats_data = OrganizationDashboardController.get_dashboard_stats(db, org_id, trend_granularity)
         
         # Get country name
         country = db.query(Country).filter(Country.country_id == org.country_id).first()

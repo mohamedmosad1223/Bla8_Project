@@ -48,10 +48,11 @@ def get_preacher_dashboard_for_org(
 
 @router.get("/organization", response_model=OrganizationDashboardRead)
 def get_organization_dashboard(
+    trend_granularity: str = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.organization]))
 ):
     """جلب إحصائيات لوحة التحكم والرسوم البيانية للجمعية"""
     if not current_user.organization:
         raise HTTPException(status_code=400, detail="حساب الجمعية غير مكتمل")
-    return OrganizationDashboardController.get_dashboard_stats(db, current_user.organization.org_id)
+    return OrganizationDashboardController.get_dashboard_stats(db, current_user.organization.org_id, trend_granularity)

@@ -30,25 +30,28 @@ const STAT_ICONS_MAP: Record<string, { icon: JSX.Element; bgColor: string; color
 const AwqafDashboard = () => {
   const [data, setData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<'day' | 'month'>('month');
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        const result = await ministerService.getDashboardStats();
+        const result = await ministerService.getDashboardStats(granularity);
         setData(result);
       } catch (err: unknown) {
         console.error('Minister Dashboard fetch error:', err);
         setError('تعذّر تحميل البيانات، يرجى المحاولة مرة أخرى');
       } finally {
         setLoading(false);
+        setIsInitialLoading(false);
       }
     };
     fetchDashboard();
-  }, []);
+  }, [granularity]);
 
-  if (loading) {
+  if (isInitialLoading) {
     return (
       <div className="dashboard-page dashboard-loading">
         <Loader2 size={40} className="spin-icon" />
@@ -125,13 +128,45 @@ const AwqafDashboard = () => {
             </div>
           </div>
           <div className="chart-card">
-            <div className="chart-header">
+            <div className="chart-header-row">
               <h3>من اسلموا / رفضوا</h3>
-              <select className="chart-select">
-                <option>اشهر</option>
-              </select>
+              <div className="granularity-toggle">
+                <button
+                  className={granularity === 'day' ? 'active' : ''}
+                  onClick={() => setGranularity('day')}
+                  disabled={loading}
+                >
+                  يومي
+                </button>
+                <button
+                  className={granularity === 'month' ? 'active' : ''}
+                  onClick={() => setGranularity('month')}
+                  disabled={loading}
+                >
+                  شهري
+                </button>
+              </div>
             </div>
-            <div className="chart-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '250px' }}>
+            <div className="chart-content" style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              flex: 1, 
+              minHeight: '250px',
+              position: 'relative',
+              opacity: loading ? 0.6 : 1,
+              transition: 'opacity 0.2s'
+            }}>
+              {loading && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10
+                }}>
+                  <Loader2 size={24} className="spin-icon" color="#DBA841" />
+                </div>
+              )}
               <ConversionsChart data={data.conversion_trends} />
             </div>
           </div>

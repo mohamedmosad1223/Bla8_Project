@@ -143,42 +143,49 @@ const GovernoratesSection = ({ data }: { data: ChartDataPoint[] }) => {
 };
 
 // ─── Donut Chart (Requests by Status) ────────────────────────────────────────
-const STATUS_COLORS: Record<string, string> = {
-  converted: '#51cf66',
-  pending: '#dba841',
-  rejected: '#ff6b6b',
-  assigned: '#74b9ff',
-  in_progress: '#a29bfe',
-};
-
-const STATUS_ARABIC_LABELS: Record<string, string> = {
-  converted: 'تم إسلامه',
-  pending: 'قيد الانتظار',
-  rejected: 'مرفوض',
-  assigned: 'مُسند',
-  in_progress: 'قيد الإقناع',
-  under_persuasion: 'قيد الإقناع',
-  cancelled: 'ملغي',
-  closed: 'مغلق',
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  converted:         { label: 'تم إسلامه',    color: '#10B981' },
+  rejected:          { label: 'مرفوض',        color: '#EF4444' },
+  under_persuasion:  { label: 'قيد الإقناع',  color: '#F59E0B' },
+  in_progress:       { label: 'قيد الإقناع',  color: '#F59E0B' },
+  pending:           { label: 'قيد الإقناع',  color: '#F59E0B' },
+  assigned:          { label: 'قيد الإقناع',  color: '#F59E0B' },
+  cancelled:         { label: 'ملغي',          color: '#9CA3AF' },
+  closed:            { label: 'مغلق',          color: '#9CA3AF' },
 };
 
 const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
   const [hovered, setHovered] = useState<number | null>(null);
+  
   if (!data || data.length === 0) {
     return <div style={{ textAlign: 'center', color: '#a0aec0', padding: '2rem' }}>لا توجد بيانات بعد</div>;
   }
-  const total = data.reduce((s, x) => s + x.value, 0);
+
+  // Aggregate data based on standard config
+  const aggregated = data.reduce((acc: Record<string, { label: string; value: number; color: string }>, cur) => {
+    const config = STATUS_CONFIG[cur.label] || { label: cur.label, color: '#CBD5E1' };
+    const key = config.label;
+    if (!acc[key]) {
+      acc[key] = { label: key, value: 0, color: config.color };
+    }
+    acc[key].value += Number(cur.value) || 0;
+    return acc;
+  }, {});
+
+  const mergedData = Object.values(aggregated).filter(item => item.value > 0);
+  const total = mergedData.reduce((s, x) => s + x.value, 0);
+
   const r = 58, cx = 80, cy = 80, sw = 22;
   const circ = 2 * Math.PI * r;
   let offset = circ * 0.25;
+
   return (
     <div className="pd-donut-wrap">
       <svg viewBox="0 0 160 160" className="pd-donut-svg">
-        {data.map((s, i) => {
-          const color = STATUS_COLORS[s.label] ?? COLORS[i % COLORS.length];
+        {mergedData.map((s, i) => {
           const len = (s.value / (total || 1)) * circ;
           const seg = (
-            <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={hovered === i ? sw + 4 : sw}
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth={hovered === i ? sw + 4 : sw}
               strokeDasharray={`${len} ${circ - len}`} strokeDashoffset={offset}
               strokeLinecap="butt" className="pd-donut-seg"
               onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)} />
@@ -187,24 +194,21 @@ const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
           return seg;
         })}
         <text x={cx} y={cy - 6} textAnchor="middle" fontSize="22" fontWeight="800" fill="#2d3748">
-          {hovered !== null ? data[hovered].value : total}
+          {hovered !== null ? mergedData[hovered].value : total}
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#718096">
-          {hovered !== null ? (STATUS_ARABIC_LABELS[data[hovered].label] ?? data[hovered].label) : 'طلب'}
+          {hovered !== null ? mergedData[hovered].label : 'طلب'}
         </text>
       </svg>
       <div className="pd-donut-legend">
-        {data.map((s, i) => {
-          const color = STATUS_COLORS[s.label] ?? COLORS[i % COLORS.length];
-          return (
-            <div key={i} className={`pd-legend-row ${hovered === i ? 'hovered' : ''}`}
-              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-              <span className="pd-dot" style={{ background: color }} />
-              <span className="pd-legend-text">{STATUS_ARABIC_LABELS[s.label] ?? s.label}</span>
-              <strong>{s.value}</strong>
-            </div>
-          );
-        })}
+        {mergedData.map((s, i) => (
+          <div key={i} className={`pd-legend-row ${hovered === i ? 'hovered' : ''}`}
+            onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
+            <span className="pd-dot" style={{ background: s.color }} />
+            <span className="pd-legend-text">{s.label}</span>
+            <strong>{s.value}</strong>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -438,7 +442,7 @@ const PreacherDashboard: React.FC = () => {
       {/* Row 2: Activity Chart + Donut + Follow-up */}
       <div className="pd-row-bottom">
         <div className="pd-chart-card pd-bottom-card">
-          <h2 className="pd-chart-title">نشاط الرسائل (آخر 30 يوم)</h2>
+          <h2 className="pd-chart-title">نشاط الرسائل اخر الايام</h2>
           <ActivityChart data={data.activity_chart} />
         </div>
         <div className="pd-chart-card pd-bottom-card">

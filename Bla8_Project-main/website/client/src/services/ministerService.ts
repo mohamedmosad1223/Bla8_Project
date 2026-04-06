@@ -4,8 +4,10 @@ export const ministerService = {
   /**
    * Get minister dashboard statistics
    */
-  getDashboardStats: async () => {
-    const response = await api.get('/minister/dashboard');
+  getDashboardStats: async (trendGranularity: 'day' | 'month' = 'month') => {
+    const response = await api.get('/minister/dashboard', {
+      params: { trend_granularity: trendGranularity }
+    });
     return response.data;
   },
 
@@ -50,8 +52,10 @@ export const ministerService = {
   /**
    * Get organization details by id for minister
    */
-  getOrganizationDetails: async (orgId: number) => {
-    const response = await api.get(`/minister/organizations/${orgId}`);
+  getOrganizationDetails: async (orgId: number, trendGranularity: 'day' | 'month' = 'month') => {
+    const response = await api.get(`/minister/organizations/${orgId}`, {
+      params: { trend_granularity: trendGranularity }
+    });
     return response.data;
   },
 

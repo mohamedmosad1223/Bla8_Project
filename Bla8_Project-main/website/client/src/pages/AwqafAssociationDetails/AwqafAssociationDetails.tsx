@@ -72,8 +72,10 @@ const AwqafAssociationDetails = () => {
   const [details, setDetails] = useState<OrganizationDetailsResponse | null>(null);
   const [preachers, setPreachers] = useState<OrganizationPreacher[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingPreachers, setLoadingPreachers] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<'day' | 'month'>('month');
 
   const orgId = Number(assocId);
   const isValidOrgId = Number.isInteger(orgId) && orgId >= 0;
@@ -82,6 +84,7 @@ const AwqafAssociationDetails = () => {
     if (!isValidOrgId) {
       setError('معرف الجمعية غير صالح');
       setLoadingDetails(false);
+      setIsInitialLoading(false);
       return;
     }
 
@@ -89,18 +92,19 @@ const AwqafAssociationDetails = () => {
       try {
         setLoadingDetails(true);
         setError(null);
-        const result = await ministerService.getOrganizationDetails(orgId);
+        const result = await ministerService.getOrganizationDetails(orgId, granularity);
         setDetails(result);
       } catch (err) {
         console.error('Organization details fetch error:', err);
         setError('تعذر تحميل تفاصيل الجمعية');
       } finally {
         setLoadingDetails(false);
+        setIsInitialLoading(false);
       }
     };
 
     fetchDetails();
-  }, [isValidOrgId, orgId]);
+  }, [isValidOrgId, orgId, granularity]);
 
   useEffect(() => {
     if (!isValidOrgId || activeTab !== 'preachers') return;
@@ -130,7 +134,7 @@ const AwqafAssociationDetails = () => {
     ]));
   }, [details]);
 
-  if (loadingDetails) {
+  if (isInitialLoading) {
     return (
       <div className="awqaf-assoc-details-page assoc-details-state">
         <Loader2 size={38} className="spin-icon" />
@@ -269,11 +273,43 @@ const AwqafAssociationDetails = () => {
             <div className="chart-card">
               <div className="chart-header">
                 <h3>من اسلموا / رفضوا</h3>
-                <select className="chart-select">
-                  <option>اشهر</option>
-                </select>
+                <div className="granularity-toggle">
+                  <button
+                    className={granularity === 'day' ? 'active' : ''}
+                    onClick={() => setGranularity('day')}
+                    disabled={loadingDetails}
+                  >
+                    يومي
+                  </button>
+                  <button
+                    className={granularity === 'month' ? 'active' : ''}
+                    onClick={() => setGranularity('month')}
+                    disabled={loadingDetails}
+                  >
+                    شهري
+                  </button>
+                </div>
               </div>
-              <div className="chart-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '250px' }}>
+              <div className="chart-content" style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                flex: 1, 
+                minHeight: '250px',
+                position: 'relative',
+                opacity: loadingDetails ? 0.6 : 1,
+                transition: 'opacity 0.2s'
+              }}>
+                {loadingDetails && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 10
+                  }}>
+                    <Loader2 size={24} className="spin-icon" color="#DBA841" />
+                  </div>
+                )}
                 <ConversionsChart data={conversionChartData} />
               </div>
             </div>

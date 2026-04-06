@@ -128,18 +128,28 @@ const AwqafPreacherPerformance = () => {
     name: item.period, 
     value: item.rate 
   }));
-  const pieData = (data?.charts?.status_distribution || []).map((item) => {
+  const pieData = useMemo(() => {
+    if (!data?.charts?.status_distribution) return [];
     const statusConfig: Record<string, { name: string; color: string }> = {
-      converted: { name: 'أسلم', color: '#10B981' },
-      rejected: { name: 'رفض', color: '#EF4444' },
-      under_persuasion: { name: 'قيد الإقناع', color: '#2563EB' },
-      in_progress: { name: 'قيد المتابعة', color: '#EAB308' },
-      pending: { name: 'قيد الانتظار', color: '#9CA3AF' },
-      cancelled: { name: 'تم الإلغاء', color: '#6B7280' }
+      converted:        { name: 'أسلم',        color: '#10B981' }, // Green
+      rejected:         { name: 'رفض',         color: '#EF4444' }, // Red
+      under_persuasion: { name: 'قيد الإقناع', color: '#F59E0B' }, // Orange
+      in_progress:      { name: 'قيد الإقناع', color: '#F59E0B' }, // Merged → Orange
+      pending:          { name: 'قيد الإقناع', color: '#F59E0B' }, // Merged → Orange
     };
-    const config = statusConfig[item.label] || { name: item.label, color: '#6B7280' };
-    return { name: config.name, value: item.value, color: config.color };
-  });
+    // Map and group into 3 categories
+    const grouped: Record<string, { name: string; value: number; color: string }> = {};
+    (data.charts.status_distribution || []).forEach((item) => {
+      const cfg = statusConfig[item.label] || { name: item.label, color: '#9CA3AF' };
+      if (!grouped[cfg.name]) {
+        grouped[cfg.name] = { ...cfg, value: item.value };
+      } else {
+        grouped[cfg.name].value += item.value;
+      }
+    });
+    return Object.values(grouped);
+  }, [data]);
+
   const topPreachers = data?.top_preachers || [];
 
   if (loading && !data) {

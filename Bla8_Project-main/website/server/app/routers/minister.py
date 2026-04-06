@@ -14,11 +14,12 @@ router = APIRouter(prefix="/api/minister", tags=["Minister"])
 
 @router.get("/dashboard")
 def get_minister_dashboard(
+    trend_granularity: str = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
     """جلب بيانات الداشبورد الخاصة بوزير الأوقاف"""
-    return MinisterDashboardController.get_dashboard_stats(db)
+    return MinisterDashboardController.get_dashboard_stats(db, trend_granularity)
 
 @router.get("/global-dashboard")
 def get_minister_global_dashboard(
@@ -54,11 +55,12 @@ def get_minister_organizations(
 @router.get("/organizations/{org_id}")
 def get_minister_organization_details(
     org_id: int,
+    trend_granularity: str = "month",
     db: Session = Depends(get_db),
     current_user: User = Depends(check_role([UserRole.minister, UserRole.admin]))
 ):
-    """جلب تفاصيل جمعية معينة شاملة البيانات والإحصائيات (لوزير الأوقاف)"""
-    details = MinisterDashboardController.get_organization_details(db, org_id)
+    """جلب تفاصيل جمعية معينة مع إحصائياتها (لوزير الأوقاف)"""
+    details = MinisterDashboardController.get_organization_details(db, org_id, trend_granularity)
     if not details:
         raise HTTPException(status_code=404, detail="الجمعية غير موجودة")
     return details

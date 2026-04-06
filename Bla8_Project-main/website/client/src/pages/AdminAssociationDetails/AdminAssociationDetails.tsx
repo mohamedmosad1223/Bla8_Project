@@ -59,6 +59,7 @@ const AdminAssociationDetails = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'latest'|'oldest'>('latest');
+  const [granularity, setGranularity] = useState<'day' | 'month'>('month');
 
   const filterRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLDivElement>(null);
@@ -83,7 +84,9 @@ const AdminAssociationDetails = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/organizations/${id}`);
+      const res = await api.get(`/organizations/${id}`, {
+        params: { trend_granularity: granularity }
+      });
       setOrgData(res.data.data);
       
       const preachersRes = await api.get('/preachers/', {
@@ -95,7 +98,7 @@ const AdminAssociationDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, granularity]);
 
   useEffect(() => {
     fetchData();
@@ -388,9 +391,20 @@ const AdminAssociationDetails = () => {
             <div className="adetails-chart-card">
               <div className="adetails-chart-header row-between">
                 <h3>من اسلموا / رفضوا</h3>
-                <select className="adetails-chart-select">
-                  <option>اشهر</option>
-                </select>
+                <div className="granularity-toggle">
+                  <button
+                    className={granularity === 'day' ? 'active' : ''}
+                    onClick={() => setGranularity('day')}
+                  >
+                    يومي
+                  </button>
+                  <button
+                    className={granularity === 'month' ? 'active' : ''}
+                    onClick={() => setGranularity('month')}
+                  >
+                    شهري
+                  </button>
+                </div>
               </div>
               <div className="adetails-chart-content">
                 <ConversionsChart data={orgData.conversion_trends} />

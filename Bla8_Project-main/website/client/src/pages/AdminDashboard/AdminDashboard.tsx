@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from 'recharts';
 import StatCard from '../../components/StatCard/StatCard';
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
                 </tr>
               ))}
               {data.organization_stats.length === 0 && (
-                <tr><td colSpan={3} style={{textAlign:'center', padding:'20px'}}>لا توجد بيانات متاحة</td></tr>
+                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '20px' }}>لا توجد بيانات متاحة</td></tr>
               )}
             </tbody>
           </table>
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
                 </tr>
               ))}
               {data.top_preachers.length === 0 && (
-                <tr><td colSpan={4} style={{textAlign:'center', padding:'20px'}}>لا توجد بيانات متاحة</td></tr>
+                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '20px' }}>لا توجد بيانات متاحة</td></tr>
               )}
             </tbody>
           </table>
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
         <div className="ad-card ad-map-card">
           <h3 className="ad-card-title">جنسية المدعوين</h3>
           <div className="ad-world-map-wrapper">
-             <WorldMap data={data.nationalities_distribution} colors={nationalityStyles.map(s => s.fill)} />
+            <WorldMap data={data.nationalities_distribution} colors={nationalityStyles.map(s => s.fill)} />
           </div>
           <div className="ad-gov-list">
             {governorates.map((gov, idx) => (
@@ -283,7 +283,7 @@ const AdminDashboard = () => {
               </div>
             ))}
             {governorates.length === 0 && (
-              <p style={{textAlign:'center', color:'#94a3b8', marginTop:'20px'}}>لا توجد بيانات توزيع متاحة</p>
+              <p style={{ textAlign: 'center', color: '#94a3b8', marginTop: '20px' }}>لا توجد بيانات توزيع متاحة</p>
             )}
           </div>
         </div>

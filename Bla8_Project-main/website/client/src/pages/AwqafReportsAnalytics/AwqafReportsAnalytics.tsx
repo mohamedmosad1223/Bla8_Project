@@ -47,6 +47,7 @@ const AwqafReportsAnalytics = () => {
   const [organizations, setOrganizations] = useState<OrgOption[]>([]);
   const [data, setData] = useState<ReportsAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [granularity, setGranularity] = useState<'day' | 'month'>('month');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -80,6 +81,7 @@ const AwqafReportsAnalytics = () => {
         setError('تعذر تحميل بيانات التقارير والتحليلات');
       } finally {
         setLoading(false);
+        setIsInitialLoading(false);
       }
     };
     fetchReports();
@@ -157,11 +159,11 @@ const AwqafReportsAnalytics = () => {
   const totalConversions = conversionBarData.reduce((acc, curr) => acc + curr.conversions, 0);
   const totalRefusals = conversionBarData.reduce((acc, curr) => acc + curr.refusals, 0);
 
-  if (loading && !data) {
+  if (isInitialLoading) {
     return (
-      <div className="reports-analytics-page ra-state">
+      <div className="ra-page ra-state">
         <Loader2 size={38} className="spin-icon" />
-        <p>جاري تحميل التقارير والتحليلات...</p>
+        <p>جاري تحميل البيانات والتوقعات...</p>
       </div>
     );
   }
@@ -194,9 +196,9 @@ const AwqafReportsAnalytics = () => {
             <option value="last_month">الشهر السابق</option>
           </select>
           <button className="apply-filter-btn" onClick={() => { setAppliedAssociation(association); setAppliedPeriod(period); }}>تطبيق</button>
-          <button 
-            className="refresh-btn-icon" 
-            onClick={handleRefresh} 
+          <button
+            className="refresh-btn-icon"
+            onClick={handleRefresh}
             title="تحديث البيانات"
             disabled={loading}
           >
@@ -228,7 +230,12 @@ const AwqafReportsAnalytics = () => {
           <div className="chart-header">
             <h3>من اسلموا / رفضوا</h3>
           </div>
-          <div className="chart-content" style={{ minHeight: '280px' }}>
+          <div className="chart-content" style={{ position: 'relative', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', minHeight: '280px' }}>
+            {loading && (
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
+                <Loader2 size={24} className="spin-icon" color="#166088" />
+              </div>
+            )}
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={conversionBarData} margin={{ top: 10, right: 0, left: 0, bottom: 5 }} barSize={12}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} dy={10} />
@@ -250,7 +257,12 @@ const AwqafReportsAnalytics = () => {
         {/* Vertical Bar Chart: أفضل 5 جمعيات تحقيقاً للإسلام */}
         <div className="chart-card">
           <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>أداء أفضل الجمعيات (أعلى 5)</h3>
-          <div className="chart-content" style={{ minHeight: '350px' }}>
+          <div className="chart-content" style={{ position: 'relative', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', minHeight: '350px' }}>
+            {loading && (
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
+                <Loader2 size={24} className="spin-icon" color="#D4AF37" />
+              </div>
+            )}
             {sortedOrgData.length > 0 ? (
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart
@@ -258,38 +270,38 @@ const AwqafReportsAnalytics = () => {
                   margin={{ top: 30, right: 30, left: 20, bottom: 50 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                  <XAxis 
-                    dataKey="name" 
+                  <XAxis
+                    dataKey="name"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#374151', fontSize: 10, fontFamily: 'Cairo' }}
                     interval={0}
-                    angle={-15} 
-                    textAnchor="middle" 
-                    height={120} // Increased height for the gap
-                    dy={40} // Significant vertical drop
+                    angle={-15}
+                    textAnchor="middle"
+                    height={120}
+                    dy={40}
                   />
-                  <YAxis 
+                  <YAxis
                     axisLine={false}
                     tickLine={false}
                     tickMargin={10}
                     tick={{ fill: '#6B7280', fontSize: 12, fontFamily: 'Cairo' }}
                     width={45}
                   />
-                  <Tooltip 
+                  <Tooltip
                     cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }}
                     formatter={(value: any) => [`${value} مسلم جديد`, 'الإنجاز']}
                   />
-                  <Bar 
-                    dataKey="value" 
-                    radius={[8, 8, 0, 0]} 
+                  <Bar
+                    dataKey="value"
+                    radius={[8, 8, 0, 0]}
                     barSize={50}
-                    fill="#D4AF37" // Golden color
+                    fill="#D4AF37"
                   >
-                    {sortedOrgData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                    {sortedOrgData.map((_entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
                         fill={`url(#barGradient-${index})`}
                       />
                     ))}
@@ -313,62 +325,69 @@ const AwqafReportsAnalytics = () => {
           </div>
         </div>
 
-        {/* Area Chart: نسبة القبول */}
+        {/* Area Chart: نسبة الأداء */}
         <div className="chart-card">
           <div className="chart-header-row">
-            <h3>نسبة قبول الطلبات</h3>
+            <h3>نسبة الأداء</h3>
             <div className="granularity-toggle">
-              <button 
-                className={granularity === 'day' ? 'active' : ''} 
+              <button
+                className={granularity === 'day' ? 'active' : ''}
                 onClick={() => setGranularity('day')}
+                disabled={loading}
               >
                 يومي
               </button>
-              <button 
-                className={granularity === 'month' ? 'active' : ''} 
+              <button
+                className={granularity === 'month' ? 'active' : ''}
                 onClick={() => setGranularity('month')}
+                disabled={loading}
               >
                 شهري
               </button>
             </div>
           </div>
-          <div className="chart-content" style={{ minHeight: '280px' }}>
+          <div className="chart-content" style={{ position: 'relative', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', minHeight: '280px' }}>
+            {loading && (
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
+                <Loader2 size={24} className="spin-icon" color="#DBA841" />
+              </div>
+            )}
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={lineData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorRateReports" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#DBA841" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#DBA841" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#DBA841" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#DBA841" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }} 
-                  dy={10} 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo' }}
+                  dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#6B7280', fontSize: 12 }} 
-                  domain={[0, 100]} 
-                  orientation="right" 
-                  label={{ value: 'نسبة القبول (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo', offset: 10 }} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                  domain={[0, 100]}
+                  orientation="right"
+                  label={{ value: 'نسبة الأداء (%)', angle: -90, position: 'insideRight', fill: '#6B7280', fontSize: 11, fontFamily: 'Cairo', offset: 10 }}
                 />
-                <Tooltip 
-                  formatter={(value: any) => [`${value}%`, 'نسبة القبول']}
+                <Tooltip
+                  formatter={(value: any) => [`${value}%`, 'نسبة الأداء']}
                   labelStyle={{ fontFamily: 'Cairo', textAlign: 'right' }}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }} 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: 'Cairo' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#DBA841" 
-                  strokeWidth={3} 
-                  fillOpacity={1} 
-                  fill="url(#colorRateReports)" 
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#DBA841"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorRateReports)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -403,7 +422,7 @@ const AwqafReportsAnalytics = () => {
                 <th>عدد الطلبات</th>
                 <th>عدد المسلمين الجدد</th>
                 <th>عدد الدعاة</th>
-                <th>نسبة القبول</th>
+                <th>نسبة الأداء</th>
                 <th>آخر تحديث</th>
               </tr>
             </thead>
@@ -414,7 +433,8 @@ const AwqafReportsAnalytics = () => {
                   <td>{row.requests_count}</td>
                   <td>{row.converts_count}</td>
                   <td>{row.preachers_count}</td>
-                  <td><span className="rate-badge">{row.acceptance_level}</span></td>
+                  <td><span style={{ fontWeight: 700, fontSize: '15px', color: '#DBA841' }}>{row.acceptance_level}</span></td>
+
                   <td className="updated-cell">{row.last_update}</td>
                 </tr>
               ))}

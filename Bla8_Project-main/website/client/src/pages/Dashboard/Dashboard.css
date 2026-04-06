@@ -23,7 +23,8 @@
 
 .charts-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr; /* Based on the image layout: 3 columns uneven */
+  grid-template-columns: 1fr 1fr 1.5fr;
+  /* Based on the image layout: 3 columns uneven */
   gap: 24px;
 }
 
@@ -82,6 +83,7 @@
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .charts-grid {
     grid-template-columns: 1fr;
   }
@@ -101,8 +103,13 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spin-icon {
@@ -123,7 +130,7 @@
   font-weight: 600;
   transition: background 0.2s;
 }
+
 .retry-btn:hover {
   background: #4F46E5;
 }
-

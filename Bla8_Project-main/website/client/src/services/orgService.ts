@@ -52,8 +52,10 @@ export const orgService = {
    * Get organization dashboard statistics
    * Returns 8 stat cards + 3 charts data
    */
-  getDashboardStats: async () => {
-    const response = await api.get('/dashboard/organization');
+  getDashboardStats: async (trendGranularity: 'day' | 'month' = 'month') => {
+    const response = await api.get('/dashboard/organization', {
+      params: { trend_granularity: trendGranularity }
+    });
     return response.data;
   },
 };

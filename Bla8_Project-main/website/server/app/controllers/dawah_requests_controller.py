@@ -98,7 +98,7 @@ class DawahRequestsController:
 
             item = {
                 "request_id":            req.request_id,
-                "request_type":          req.request_type.value if req.request_type else None,
+                "request_type":          "طلب ذاتي من النظام" if req.request_type == RequestType.self_interested else ("مدعو" if req.request_type == RequestType.invited else (req.request_type.value if req.request_type else None)),
                 "status":                req.status.value,
                 "communication_channel": req.communication_channel.value if req.communication_channel else None,
                 "deep_link":             req.deep_link,
@@ -249,7 +249,7 @@ class DawahRequestsController:
             rd = {
                 "request_id":            req.request_id,
                 "status":                req.status.value,
-                "request_type":          req.request_type.value if req.request_type else None,
+                "request_type":          "طلب ذاتي من النظام" if req.request_type == RequestType.self_interested else ("مدعو" if req.request_type == RequestType.invited else (req.request_type.value if req.request_type else None)),
                 "invited_name":          invited_name,
                 "invited_first_name":    req.invited_first_name,
                 "invited_last_name":     req.invited_last_name,
@@ -439,7 +439,7 @@ class DawahRequestsController:
             item = {
                 "request_id":            r.request_id,
                 "status":                r.status.value,
-                "request_type":          r.request_type.value if r.request_type else None,
+                "request_type":          "طلب ذاتي من النظام" if r.request_type == RequestType.self_interested else ("مدعو" if r.request_type == RequestType.invited else (r.request_type.value if r.request_type else None)),
                 "invited_name":          invited_name,
                 "invited_first_name":    r.invited_first_name,
                 "invited_last_name":     r.invited_last_name,
@@ -523,7 +523,7 @@ class DawahRequestsController:
             item = {
                 "request_id": r.request_id,
                 "status": r.status,
-                "request_type": r.request_type,
+                "request_type": "طلب ذاتي من النظام" if r.request_type == RequestType.self_interested else ("مدعو" if r.request_type == RequestType.invited else getattr(r.request_type, 'value', r.request_type)),
                 "invited_name": full_name or "غير محدد",
                 "preacher_name": r.preacher.full_name if (hasattr(r, 'preacher') and r.preacher) else "قيد الانتظار",
                 "submission_date": r.submission_date,
@@ -568,7 +568,7 @@ class DawahRequestsController:
         data = {
             "request_id":            req.request_id,
             "status":                req.status.value,
-            "request_type":          req.request_type.value if req.request_type else None,
+            "request_type":          "طلب ذاتي من النظام" if req.request_type == RequestType.self_interested else ("مدعو" if req.request_type == RequestType.invited else (req.request_type.value if req.request_type else None)),
             "invited_name":          invited_name,
             "invited_first_name":    req.invited_first_name,
             "invited_last_name":     req.invited_last_name,

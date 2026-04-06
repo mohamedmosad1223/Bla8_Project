@@ -12,19 +12,20 @@ interface RequestsChartProps {
 
 // Map Arabic status labels to Arabic display names + colors
 const STATUS_CONFIG: Record<string, { name: string; color: string }> = {
-  converted:         { name: 'أسلم',         color: '#10B981' },
-  rejected:          { name: 'رفض',          color: '#EF4444' },
-  under_persuasion:  { name: 'قيد الإقناع',  color: '#2563EB' }, // Blue
-  in_progress:       { name: 'قيد الإقناع',  color: '#2563EB' }, // Merged into Blue
-  pending:           { name: 'قيد الإقناع',  color: '#2563EB' }, // Merged into Blue
+  converted:         { name: 'أسلم',         color: '#10B981' }, // Green
+  rejected:          { name: 'رفض',          color: '#EF4444' }, // Red
+  under_persuasion:  { name: 'قيد الإقناع',  color: '#F59E0B' }, // Orange
+  in_progress:       { name: 'قيد الإقناع',  color: '#F59E0B' }, // Orange (merged)
+  pending:           { name: 'قيد الإقناع',  color: '#F59E0B' }, // Orange (merged)
   cancelled:         { name: 'تم الإلغاء',   color: '#9CA3AF' },
 };
 
 const FALLBACK_DATA = [
   { name: 'أسلم',         value: 0, color: '#10B981' },
-  { name: 'قيد الإقناع',  value: 0, color: '#2563EB' },
+  { name: 'قيد الإقناع',  value: 0, color: '#F59E0B' },
   { name: 'رفض',          value: 0, color: '#EF4444' },
 ];
+
 
 const RequestsChart = ({ data }: RequestsChartProps) => {
   const chartData = data && data.length > 0

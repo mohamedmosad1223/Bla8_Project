@@ -4,11 +4,11 @@ import RequestsChart from '../../components/RequestsChart/RequestsChart';
 import ConversionsChart from '../../components/ConversionsChart/ConversionsChart';
 import NationalitiesChart from '../../components/NationalitiesChart/NationalitiesChart';
 import { orgService } from '../../services/orgService';
-import { 
-  Users, 
-  FileText, 
-  MessageCircle, 
-  UserCheck, 
+import {
+  Users,
+  FileText,
+  MessageCircle,
+  UserCheck,
   UserX,
   BookOpen,
   Loader2,
@@ -29,52 +29,55 @@ interface ChartItem {
 }
 
 interface DashboardData {
-  total_preachers:       StatCardData;
-  new_requests_today:    StatCardData;
-  active_conversations:  StatCardData;
-  total_beneficiaries:   StatCardData;
-  needs_followup_count:  StatCardData;
-  total_messages:        StatCardData;
-  total_converts:        StatCardData;
-  total_rejections:      StatCardData;
-  top_nationalities:     ChartItem[];
+  total_preachers: StatCardData;
+  new_requests_today: StatCardData;
+  active_conversations: StatCardData;
+  total_beneficiaries: StatCardData;
+  needs_followup_count: StatCardData;
+  total_messages: StatCardData;
+  total_converts: StatCardData;
+  total_rejections: StatCardData;
+  top_nationalities: ChartItem[];
   requests_distribution: ChartItem[];
-  conversion_trends:     ChartItem[];
+  conversion_trends: ChartItem[];
 }
 
 const STAT_ICONS = [
-  { icon: <Users size={24} />,         bgColor: '#E0E7FF', color: '#6366F1' },
-  { icon: <FileText size={24} />,       bgColor: '#FEF3C7', color: '#D97706' },
-  { icon: <MessageCircle size={24} />,  bgColor: '#D1FAE5', color: '#10B981' },
-  { icon: <UserCheck size={24} />,      bgColor: '#FEE2E2', color: '#EF4444' },
-  { icon: <BookOpen size={24} />,       bgColor: '#E0E7FF', color: '#6366F1' },
-  { icon: <FileText size={24} />,       bgColor: '#FEF3C7', color: '#D97706' },
-  { icon: <UserCheck size={24} />,      bgColor: '#D1FAE5', color: '#10B981' },
-  { icon: <UserX size={24} />,          bgColor: '#FEE2E2', color: '#EF4444' },
+  { icon: <Users size={24} />, bgColor: '#E0E7FF', color: '#6366F1' },
+  { icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706' },
+  { icon: <MessageCircle size={24} />, bgColor: '#D1FAE5', color: '#10B981' },
+  { icon: <UserCheck size={24} />, bgColor: '#FEE2E2', color: '#EF4444' },
+  { icon: <BookOpen size={24} />, bgColor: '#E0E7FF', color: '#6366F1' },
+  { icon: <FileText size={24} />, bgColor: '#FEF3C7', color: '#D97706' },
+  { icon: <UserCheck size={24} />, bgColor: '#D1FAE5', color: '#10B981' },
+  { icon: <UserX size={24} />, bgColor: '#FEE2E2', color: '#EF4444' },
 ];
 
 const Dashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<'day' | 'month'>('month');
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        const result = await orgService.getDashboardStats();
+        const result = await orgService.getDashboardStats(granularity);
         setData(result);
       } catch (err: unknown) {
         console.error('Dashboard fetch error:', err);
         setError('تعذّر تحميل البيانات، يرجى المحاولة مرة أخرى');
       } finally {
         setLoading(false);
+        setIsInitialLoading(false);
       }
     };
     fetchDashboard();
-  }, []);
+  }, [granularity]);
 
-  if (loading) {
+  if (isInitialLoading) {
     return (
       <div className="dashboard-page dashboard-loading">
         <Loader2 size={40} className="spin-icon" />
@@ -96,25 +99,25 @@ const Dashboard = () => {
   }
 
   const statCards = [
-    { key: 'total_preachers',      ...data.total_preachers,      ...STAT_ICONS[0] },
-    { key: 'new_requests_today',   ...data.new_requests_today,   ...STAT_ICONS[1] },
+    { key: 'total_preachers', ...data.total_preachers, ...STAT_ICONS[0] },
+    { key: 'new_requests_today', ...data.new_requests_today, ...STAT_ICONS[1] },
     { key: 'active_conversations', ...data.active_conversations, ...STAT_ICONS[2] },
-    { key: 'total_beneficiaries',  ...data.total_beneficiaries,  ...STAT_ICONS[3] },
+    { key: 'total_beneficiaries', ...data.total_beneficiaries, ...STAT_ICONS[3] },
     { key: 'needs_followup_count', ...data.needs_followup_count, ...STAT_ICONS[4] },
-    { key: 'total_messages',       ...data.total_messages,        ...STAT_ICONS[5] },
-    { key: 'total_converts',       ...data.total_converts,        ...STAT_ICONS[6] },
-    { key: 'total_rejections',     ...data.total_rejections,      ...STAT_ICONS[7] },
+    { key: 'total_messages', ...data.total_messages, ...STAT_ICONS[5] },
+    { key: 'total_converts', ...data.total_converts, ...STAT_ICONS[6] },
+    { key: 'total_rejections', ...data.total_rejections, ...STAT_ICONS[7] },
   ];
 
   return (
     <div className="dashboard-page">
       <h1 className="page-title">الداشبورد</h1>
-      
+
       <div className="dashboard-grid">
         {/* Top 8 Stats Cards */}
         <div className="stats-grid">
           {statCards.map((stat) => (
-            <StatCard 
+            <StatCard
               key={stat.key}
               title={stat.title}
               value={stat.value}
@@ -142,13 +145,45 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="chart-card">
-            <div className="chart-header">
+            <div className="chart-header-row">
               <h3>من اسلموا / رفضوا</h3>
-              <select className="chart-select">
-                <option>اشهر</option>
-              </select>
+              <div className="granularity-toggle">
+                <button
+                  className={granularity === 'day' ? 'active' : ''}
+                  onClick={() => setGranularity('day')}
+                  disabled={loading}
+                >
+                  يومي
+                </button>
+                <button
+                  className={granularity === 'month' ? 'active' : ''}
+                  onClick={() => setGranularity('month')}
+                  disabled={loading}
+                >
+                  شهري
+                </button>
+              </div>
             </div>
-            <div className="chart-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '250px' }}>
+            <div className="chart-content" style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              flex: 1, 
+              minHeight: '250px',
+              position: 'relative',
+              opacity: loading ? 0.6 : 1,
+              transition: 'opacity 0.2s'
+            }}>
+              {loading && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10
+                }}>
+                  <Loader2 size={24} className="spin-icon" color="#DBA841" />
+                </div>
+              )}
               <ConversionsChart data={data.conversion_trends} />
             </div>
           </div>

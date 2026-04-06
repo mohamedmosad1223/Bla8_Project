@@ -73,12 +73,17 @@ def list_organizations(
     )
 
 @router.get("/{org_id}")
-def get_organization(org_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_organization(
+    org_id: int, 
+    trend_granularity: str = "month",
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
     """جلب جمعية بالـ ID"""
     if current_user.role != UserRole.admin:
          if not current_user.organization or current_user.organization.org_id != org_id:
              raise HTTPException(status_code=403, detail="لا يمكنك الوصول لبيانات جمعية أخرى")
-    return OrganizationsController.get_organization(db, org_id)
+    return OrganizationsController.get_organization(db, org_id, trend_granularity)
 
 @router.patch("/{org_id}")
 @router.post("/{org_id}")

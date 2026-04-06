@@ -287,3 +287,40 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.granularity-toggle {
+  display: flex;
+  background-color: #F3F4F6;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.granularity-toggle button {
+  border: none;
+  background: none;
+  padding: 5px 15px;
+  font-size: 12px;
+  font-family: 'Cairo', sans-serif;
+  color: #6B7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.granularity-toggle button.active {
+  background-color: #FFFFFF;
+  color: #DBA841; /* Gold */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+.granularity-toggle button:hover:not(.active) {
+  color: #374151;
+}
