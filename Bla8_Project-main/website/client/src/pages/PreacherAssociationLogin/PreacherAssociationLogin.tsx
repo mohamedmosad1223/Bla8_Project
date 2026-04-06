@@ -28,7 +28,7 @@ const PreacherAssociationLogin: React.FC = () => {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout showIntro>
       <div className="pa-selection-container">
         <div className="form-container">
           <div className="header-text pa-header">

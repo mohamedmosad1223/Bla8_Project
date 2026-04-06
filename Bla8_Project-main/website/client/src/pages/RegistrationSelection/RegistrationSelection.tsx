@@ -20,7 +20,7 @@ const RegistrationSelection = () => {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout showIntro>
       <div className="form-container">
         <div className="top-logo">
           <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
