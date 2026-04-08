@@ -172,15 +172,13 @@
   }
 
   .side-panel {
-    min-height: 35vh !important;
-    padding: 2rem !important;
-    order: 2 !important; /* Forces blue panel to be bottom */
+    display: none !important; /* إخفاء الجزء الأزرق مع اللوجو في الموبايل */
   }
 
   .main-panel {
-    min-height: 65vh !important;
+    min-height: 100vh !important;
     padding: 1.5rem 1rem !important;
-    order: 1 !important; /* Forces form to be top */
+    order: 1 !important;
   }
 
   /* Form inner layouts inside main-panel */
