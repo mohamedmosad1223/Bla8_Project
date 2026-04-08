@@ -7,6 +7,96 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import './AwqafAICenter.css';
 
+const generatePDF = async (elementId: string, filename: string = 'تقرير_تحليلي') => {
+  const element = document.getElementById(elementId);
+  if (!element) return false;
+
+  try {
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+    });
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgWidth = pageWidth - margin * 2;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let yPos = margin;
+    let remainingHeight = imgHeight; // in mm
+    let sourceY = 0; // in px
+
+    const ctxOriginal = canvas.getContext('2d');
+
+    while (remainingHeight > 0.5) { // 0.5 mm threshold
+      let sliceHeight = Math.min(remainingHeight, pageHeight - yPos - margin);
+      let slicePixelHeight = (sliceHeight / imgWidth) * canvas.width;
+      
+      // --- Smart Slicing (Avoid cutting text in half) ---
+      if (remainingHeight > sliceHeight && ctxOriginal) {
+        const startY = Math.floor(sourceY);
+        const searchHeight = Math.min(800, Math.floor(slicePixelHeight * 0.5));
+        const searchStartY = Math.max(0, Math.floor(slicePixelHeight - searchHeight));
+        
+        const chunkData = ctxOriginal.getImageData(0, startY + searchStartY, canvas.width, searchHeight);
+        const data = chunkData.data;
+        const rowWidth = canvas.width;
+        
+        let safeY = slicePixelHeight;
+        for (let y = searchHeight - 1; y >= 0; y--) {
+          let isRowBlank = true;
+          for (let x = 0; x < rowWidth; x++) {
+            const idx = (y * rowWidth + x) * 4;
+            const r = data[idx]; const g = data[idx+1]; const b = data[idx+2]; const a = data[idx+3];
+            
+            // Considering #fff or transparent as blank.
+            if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+              isRowBlank = false;
+              break;
+            }
+          }
+          if (isRowBlank) {
+            safeY = searchStartY + y;
+            break;
+          }
+        }
+        slicePixelHeight = safeY;
+        sliceHeight = (slicePixelHeight / canvas.width) * imgWidth;
+      }
+      // ----------------------------------------------------
+
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = slicePixelHeight;
+      
+      const ctx = sliceCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        ctx.drawImage(canvas, 0, sourceY, canvas.width, slicePixelHeight, 0, 0, canvas.width, slicePixelHeight);
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, yPos, imgWidth, sliceHeight);
+      }
+
+      remainingHeight -= sliceHeight;
+      sourceY += slicePixelHeight;
+
+      if (remainingHeight > 0.5) {
+        pdf.addPage();
+        yPos = margin;
+      }
+    }
+
+    pdf.save(`${filename}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    return true;
+  } catch (error) {
+    console.error('PDF Generation failed:', error);
+    return false;
+  }
+};
+
 interface OrgOption {
   org_id: number;
   organization_name: string;
@@ -27,6 +117,7 @@ const AwqafAICenter = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportContent, setExportContent] = useState<string | null>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -138,86 +229,48 @@ const AwqafAICenter = () => {
   };
 
   const handleExportAIReport = async () => {
-    if (!chatAreaRef.current) return;
-    setExporting(true);
-    
-    // Remember original styles to restore later
-    const originalOverflow = chatAreaRef.current.style.overflow;
-    const originalHeight = chatAreaRef.current.style.height;
-    const originalMaxHeight = chatAreaRef.current.style.maxHeight;
-
-    try {
-      // Temporarily expand container to capture full scrollable content
-      chatAreaRef.current.style.overflow = 'visible';
-      chatAreaRef.current.style.height = 'auto';
-      chatAreaRef.current.style.maxHeight = 'none';
-
-      const canvas = await html2canvas(chatAreaRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const imgWidth = pageWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Header bar (Indigo color to match AI theme)
-      pdf.setFillColor(67, 56, 202); 
-      pdf.rect(0, 0, pageWidth, 18, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(13);
-      pdf.text(`تقرير المساعد الذكي - منصة بلاغ`, pageWidth - margin, 12, { align: 'right' });
-
-      // Date
-      pdf.setFontSize(8);
-      pdf.setTextColor(255, 255, 255);
-      const now = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-      pdf.text(now, margin, 12);
-
-      // Page content (screenshot)
-      let yPos = 22;
-      let remainingHeight = imgHeight;
-      let sourceY = 0;
-
-      while (remainingHeight > 0) {
-        const sliceHeight = Math.min(remainingHeight, pageHeight - yPos - margin);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = (sliceHeight / imgWidth) * canvas.width;
-        const ctx = sliceCanvas.getContext('2d')!;
-        ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, yPos, imgWidth, sliceHeight);
-        remainingHeight -= sliceHeight;
-        sourceY += sliceCanvas.height;
-        if (remainingHeight > 0) {
-          pdf.addPage();
-          yPos = margin;
-        }
-      }
-
-      // Footer
-      const totalPages = (pdf as any).internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(8);
-        pdf.setTextColor(150, 150, 150);
-        pdf.text(`صفحة ${i} من ${totalPages}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
-      }
-
-      pdf.save(`تقرير-المساعد-الذكي.pdf`);
-    } finally {
-      // Restore styles to enable scrolling again
-      chatAreaRef.current.style.overflow = originalOverflow;
-      chatAreaRef.current.style.height = originalHeight;
-      chatAreaRef.current.style.maxHeight = originalMaxHeight;
-      setExporting(false);
+    // Find the last AI message
+    const lastAiMessage = [...chatMessages].reverse().find(m => m.role === 'ai');
+    if (!lastAiMessage) {
+        alert('لا يوجد تقرير لتحميله');
+        return;
     }
+    
+    setExporting(true);
+
+    // Break lines before lists to ensure they render as separate paragraphs
+    const lines = lastAiMessage.content.split('\n');
+    let formattedLines = [];
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (line.match(/^\s*(\d+\.|[\*\-])\s/)) {
+             if (formattedLines.length > 0 && formattedLines[formattedLines.length - 1].trim() !== '') {
+                 formattedLines.push(''); // Force paragraph break
+             }
+             line = line.replace(/^\s*[\*\-]\s/, '• '); // Replace unordered lists with bullets
+        }
+        formattedLines.push(line);
+    }
+    let fixedContent = formattedLines.join('\n');
+
+    // Fix html2canvas Arabic-Number shaping bug 
+    fixedContent = fixedContent.replace(/([أ-ية])(\d+)/g, '$1 $2').replace(/(\d+)([أ-ية])/g, '$1 $2');
+    // Convert to Eastern Arabic numerals
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    fixedContent = fixedContent.replace(/[0-9]/g, (w) => arabicNumbers[parseInt(w, 10)]);
+
+    setExportContent(fixedContent);
+    
+    // Wait for the hidden container to render
+    setTimeout(async () => {
+      const filename = reportType.replace(/\s+/g, '_');
+      const success = await generatePDF('awqaf-pdf-template', filename);
+      if (!success) {
+        alert('حدث خطأ أثناء تحميل التقرير');
+      }
+      setExportContent(null);
+      setExporting(false);
+    }, 150);
   };
 
   return (
@@ -379,6 +432,18 @@ const AwqafAICenter = () => {
           </button>
         </div>
       </div>
+
+      {/* ─── Standardized PDF Export Template (Hidden) ─── */}
+      {exportContent && (
+        <div id="awqaf-pdf-template" className="pdf-export-wrapper" dir="rtl">
+          <div className="pdf-export-header">
+            <h1 className="pdf-export-title">{reportType}</h1>
+            <div className="pdf-export-date">{new Date().toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          </div>
+          <div className="pdf-export-divider"></div>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{exportContent}</ReactMarkdown>
+        </div>
+      )}
     </div>
   );
 };

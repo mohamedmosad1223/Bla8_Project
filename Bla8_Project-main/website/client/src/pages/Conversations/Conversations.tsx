@@ -49,33 +49,86 @@ const isDownloadableReport = (text: string): boolean => {
 
 const generatePDF = async (elementId: string, filename: string = 'تقرير_تحليلي') => {
   const element = document.getElementById(elementId);
-  if (!element) return;
+  if (!element) return false;
 
   try {
     const canvas = await html2canvas(element, {
-      scale: 2, // High resolution
+      scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
     });
 
-    const imgData = canvas.toDataURL('image/png');
-    
-    // A4 dimensions in mm: 210 x 297
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 10;
-    const contentWidth = pdfWidth - (2 * margin);
-    
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = contentWidth / imgWidth;
-    const finalImgHeight = imgHeight * ratio;
+    const imgWidth = pageWidth - margin * 2;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // Header Logic has been moved to the HTML template for perfect Arabic rendering
-    
-    // 3. Add the captured content
-    pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, finalImgHeight);
-    
+    let yPos = margin;
+    let remainingHeight = imgHeight; // in mm
+    let sourceY = 0; // in px
+
+    const ctxOriginal = canvas.getContext('2d');
+
+    while (remainingHeight > 0.5) { // 0.5 mm threshold
+      let sliceHeight = Math.min(remainingHeight, pageHeight - yPos - margin);
+      let slicePixelHeight = (sliceHeight / imgWidth) * canvas.width;
+      
+      // --- Smart Slicing (Avoid cutting text in half) ---
+      if (remainingHeight > sliceHeight && ctxOriginal) {
+        const startY = Math.floor(sourceY);
+        const searchHeight = Math.min(800, Math.floor(slicePixelHeight * 0.5));
+        const searchStartY = Math.max(0, Math.floor(slicePixelHeight - searchHeight));
+        
+        const chunkData = ctxOriginal.getImageData(0, startY + searchStartY, canvas.width, searchHeight);
+        const data = chunkData.data;
+        const rowWidth = canvas.width;
+        
+        let safeY = slicePixelHeight;
+        for (let y = searchHeight - 1; y >= 0; y--) {
+          let isRowBlank = true;
+          for (let x = 0; x < rowWidth; x++) {
+            const idx = (y * rowWidth + x) * 4;
+            const r = data[idx]; const g = data[idx+1]; const b = data[idx+2]; const a = data[idx+3];
+            
+            // Considering #fff or transparent as blank.
+            if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+              isRowBlank = false;
+              break;
+            }
+          }
+          if (isRowBlank) {
+            safeY = searchStartY + y;
+            break;
+          }
+        }
+        slicePixelHeight = safeY;
+        sliceHeight = (slicePixelHeight / canvas.width) * imgWidth;
+      }
+      // ----------------------------------------------------
+
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = slicePixelHeight;
+      
+      const ctx = sliceCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        ctx.drawImage(canvas, 0, sourceY, canvas.width, slicePixelHeight, 0, 0, canvas.width, slicePixelHeight);
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, yPos, imgWidth, sliceHeight);
+      }
+
+      remainingHeight -= sliceHeight;
+      sourceY += slicePixelHeight;
+
+      if (remainingHeight > 0.5) {
+        pdf.addPage();
+        yPos = margin;
+      }
+    }
+
     pdf.save(`${filename}_${new Date().toISOString().slice(0, 10)}.pdf`);
     return true;
   } catch (error) {
@@ -154,7 +207,29 @@ const Conversations = () => {
   // ─── PDF Export Handler ───
   const handleDownloadReport = async (content: string) => {
     setIsExporting(true);
-    setExportContent(content);
+
+    // Break lines before lists to ensure they render as separate paragraphs
+    const lines = content.split('\n');
+    let formattedLines = [];
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (line.match(/^\s*(\d+\.|[\*\-])\s/)) {
+             if (formattedLines.length > 0 && formattedLines[formattedLines.length - 1].trim() !== '') {
+                 formattedLines.push(''); // Force paragraph break
+             }
+             line = line.replace(/^\s*[\*\-]\s/, '• '); // Replace unordered lists with bullets
+        }
+        formattedLines.push(line);
+    }
+    let fixedContent = formattedLines.join('\n');
+
+    // Fix html2canvas Arabic-Number shaping bug 
+    fixedContent = fixedContent.replace(/([أ-ية])(\d+)/g, '$1 $2').replace(/(\d+)([أ-ية])/g, '$1 $2');
+    // Convert to Eastern Arabic numerals
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    fixedContent = fixedContent.replace(/[0-9]/g, (w) => arabicNumbers[parseInt(w, 10)]);
+
+    setExportContent(fixedContent);
     
     // Wait for the hidden container to render properly
     setTimeout(async () => {

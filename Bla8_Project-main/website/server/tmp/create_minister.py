@@ -1,9 +1,12 @@
-from app.db.session import SessionLocal
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app.database import SessionLocal
 from app.models.user import User
 from app.models.admin import Admin
 from app.models.enums import UserRole, AccountStatus
 from app.auth import get_password_hash
-import sys
 
 def create_minister(email, password, full_name):
     db = SessionLocal()
