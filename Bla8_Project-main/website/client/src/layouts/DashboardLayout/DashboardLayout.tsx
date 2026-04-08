@@ -11,7 +11,7 @@ const DashboardLayout = () => {
   const isNonMuslim = NON_MUSLIM_ROLES.includes(userRole);
 
   const content = (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout nm-layout`}>
       <Sidebar />
       <div className="dashboard-main-content">
         <Header />

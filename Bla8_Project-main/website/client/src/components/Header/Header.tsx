@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, CheckCircle, Clock } from 'lucide-react';
+import { Bell, CheckCircle, Clock, Menu } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useLanguage } from '../../i18n';
@@ -211,6 +211,9 @@ const Header = () => {
         </div>
       </div>
       {(isNonMuslim && dir === 'ltr') && <div className="header-spacer"></div>}
+      <button className="nm-hamburger-btn" onClick={() => window.dispatchEvent(new CustomEvent('nm-toggle-menu'))} aria-label="Open menu">
+        <Menu size={24} />
+      </button>
     </header>
   );
 };

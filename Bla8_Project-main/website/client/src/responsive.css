@@ -3,6 +3,13 @@
    Does not override layout semantics for desktop, strictly for mobile scaling
 ========================================================================= */
 
+/* ── Base rules (applied before any media query) ── */
+/* Hamburger button + settings trigger are hidden on desktop by default */
+.nm-hamburger-btn,
+.nm-settings-trigger {
+  display: none !important;
+}
+
 @media (max-width: 820px) {
   /* ── 1. Global Grids (Dashboard stats, cards, tables, charts) ── */
   .stats-grid,
@@ -17,7 +24,7 @@
     grid-template-columns: 1fr !important;
   }
 
-  /* ── 2. Dashboard Layout: Convert Sidebar to Bottom Navigation ── */
+  /* ── 2. Dashboard Layout: Convert Sidebar to Bottom Navigation (non-Muslim EXCLUDED) ── */
   .dashboard-layout {
     flex-direction: column !important;
     padding-bottom: 60px !important; /* Space for the bottom nav */
@@ -29,104 +36,105 @@
     overflow-y: visible !important;
   }
 
-  .sidebar {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: 65px !important;
-    flex-direction: row !important;
-    border-top: 1px solid var(--border-gray) !important;
-    border-left: none !important;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.05) !important;
-    z-index: 10000 !important;
-    padding: 0 !important;
-  }
-
-  .sidebar-logo {
-    display: none !important;
-  }
-
-  .sidebar-nav {
-    flex: 1 !important;
-    padding: 0 !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    display: flex !important;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .sidebar-nav::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for bottom swiping nav */
-  }
-
-  .nav-list {
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 0 !important;
-    min-width: max-content !important; 
-    padding: 0 !important;
-  }
-
-  .nav-item {
-    padding: 0 !important;
-  }
-
-  .nav-link {
-    flex-direction: column !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    padding: 8px 16px !important;
-    font-size: 0.70rem !important;
-    height: 65px !important;
-    border-radius: 0 !important;
-    white-space: nowrap !important;
-  }
-
-  .nav-link svg {
-    margin: 0 !important;
-    width: 20px !important;
-    height: 20px !important;
-  }
-
-  .sidebar-footer {
-    display: flex !important;
-    padding: 0 !important;
-    border-top: none !important;
-    border-right: 1px solid var(--border-gray) !important;
-    background: #fff;
-  }
-
-  .sidebar-footer .nav-list {
-    flex-direction: row !important;
-  }
-
-  .logout-btn {
-    text-align: center !important;
-    justify-content: center !important;
-  }
 
   /* ── 3. Header Fixes ── */
   .header {
-    padding: 12px 16px !important;
-    flex-wrap: wrap !important;
-    gap: 12px !important;
+    padding: 10px 16px !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
     height: auto !important;
+    min-height: 60px !important;
+  }
+
+  /* For non-Muslim: add right padding for the hamburger button */
+  /* Header: single row — hamburger RIGHT, user info LEFT (RTL) */
+  .nm-layout .header {
+    padding: 0 12px !important;
+    gap: 10px !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* In RTL flex: lower order = physically RIGHTMOST */
+  .nm-layout .header .nm-hamburger-btn {
+    order: -1;  /* first = physical RIGHT in RTL ✓ */
+    flex-shrink: 0;
   }
 
   .header-actions {
-    width: 100% !important;
-    justify-content: space-between !important;
+    order: 0;   /* after hamburger = physical LEFT = شمال ✓ */
+    flex: 1 !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
   }
 
+  /* Profile section: avatar + name in one row */
   .profile-section {
-    max-width: 70%;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    min-width: 0 !important;
+  }
+
+  /* Name/role text */
+  .profile-info {
+    align-items: flex-start !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .profile-name {
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .profile-role {
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Notification button */
+  .notification-btn {
+    width: 36px !important;
+    height: 36px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Hide spacer on mobile — it's for desktop sidebar offset only */
+  .nm-layout .header .header-spacer {
+    display: none !important;
+  }
+
+  /* Bell stays in natural order (no order override) */
+  .notification-wrapper {
+    flex-shrink: 0 !important;
+  }
+
+  /* Avatar */
+  .profile-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    flex-shrink: 0 !important;
+    font-size: 0.8rem !important;
   }
 
   .header-spacer {
     display: none !important;
   }
+
+  /* Notification dropdown */
+  .notif-dropdown {
+    width: 90vw !important;
+    left: 0 !important;
+    right: auto !important;
+  }
+
 
   /* ── 4. Admin Toolbars & Controls ── */
   .admin-toolbar {
@@ -209,7 +217,7 @@
     padding: 1.5rem !important;
   }
 
-  /* ── 8. Chat / Conversations Page ── */
+  /* ── 8. Chat / Conversations Page (for other roles, e.g. org/preacher) ── */
   .conv-page {
     flex-direction: column !important;
     height: auto !important;
@@ -241,7 +249,601 @@
   .dashboard-page-container {
     padding: 16px !important;
   }
+
+  /* ── 9. Non-Muslim: Hamburger menu (no bottom nav) ── */
+  .nm-layout {
+    padding-bottom: 0 !important;
+  }
+
+  .nm-layout .dashboard-main-content {
+    min-height: 100vh !important;
+    height: 100vh !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide the desktop sidebar for non-Muslim on mobile */
+  .nm-sidebar-desktop {
+    display: none !important;
+  }
+
+  /* ── Hamburger button: fixed top-right, blue ── */
+  .nm-hamburger-btn {
+    display: flex !important;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #17648B;
+    color: white;
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(23,100,139,0.35);
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .nm-hamburger-btn:hover {
+    background: #104461;
+    transform: scale(1.07);
+  }
+
+  /* ── Mobile overlay backdrop ── */
+  .nm-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 14999;
+    animation: nm-fade-in 0.2s ease;
+  }
+
+  @keyframes nm-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Slide-in drawer from the right ── */
+  .nm-mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 100%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    animation: nm-slide-in 0.25s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    z-index: 15000;
+  }
+
+  [dir="ltr"] .nm-mobile-drawer {
+    right: auto;
+    left: 0;
+    animation: nm-slide-in-ltr 0.25s ease;
+  }
+
+  @keyframes nm-slide-in {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes nm-slide-in-ltr {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  /* Drawer header */
+  .nm-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 16px;
+    border-bottom: 1px solid var(--border-gray);
+    background: linear-gradient(135deg, #17648B 0%, #104461 100%);
+  }
+
+  .nm-drawer-logo {
+    font-size: 1.3rem;
+    color: white !important;
+  }
+
+  .nm-drawer-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    cursor: pointer;
+    color: white;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .nm-drawer-close:hover {
+    background: rgba(255,255,255,0.25);
+  }
+
+  /* Drawer nav links */
+  .nm-mobile-drawer .sidebar-nav {
+    flex: 1;
+    padding: 12px 0;
+    overflow-y: auto;
+  }
+
+  .nm-mobile-drawer .nav-list {
+    flex-direction: column !important;
+    gap: 4px !important;
+    padding: 0 8px !important;
+  }
+
+  .nm-mobile-drawer .nav-item {
+    padding: 0 !important;
+  }
+
+  .nm-mobile-drawer .nav-link {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 12px 16px !important;
+    font-size: 1rem !important;
+    height: auto !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+    color: var(--text-dark) !important;
+  }
+
+  /* Reset hover to prevent stuck blue color on mobile tap */
+  .nm-mobile-drawer .nav-link:hover {
+    background-color: var(--bg-color) !important;
+    color: var(--text-dark) !important;
+  }
+
+  /* Explicit active styles */
+  .nm-mobile-drawer .nav-link.active {
+    background-color: var(--primary-gold) !important;
+    color: white !important;
+  }
+
+  .nm-mobile-drawer .nav-link.active .nav-icon {
+    color: white !important;
+  }
+
+
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── 10. Non-Muslim DASHBOARD Page (NonMuslimDashboard.css) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  /* page becomes a column */
+  .nm-page {
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    position: relative;
+  }
+
+  /* ── Sidebar becomes a collapsible top panel ── */
+  .nm-sidebar {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    flex-shrink: 0;
+    border-left: none !important;
+    border-bottom: 1px solid rgba(226,232,240,0.8) !important;
+    /* Only show header and button; sessions list scrollable */
+    max-height: 220px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .nm-sidebar.mobile-expanded {
+    max-height: 60vh;
+  }
+
+  .nm-sessions-list {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  /* ── Chat panel fills remaining space ── */
+  .nm-chat-panel {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Messages area - make scrollable */
+  .nm-chat-messages {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+
+  /* Bubbles - don't let them overflow */
+  .nm-message {
+    max-width: 85% !important;
+    font-size: 0.92rem !important;
+  }
+
+  /* Input bar */
+  .nm-chat-input-area {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+  }
+
+  .nm-chat-input {
+    font-size: 0.92rem !important;
+    padding: 0.6rem 0.8rem !important;
+  }
+
+  /* New chat button - full width on mobile */
+  .nm-new-chat-btn {
+    margin: 8px !important;
+    padding: 8px 14px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Empty state */
+  .nm-empty-state {
+    padding: 20px !important;
+    gap: 10px !important;
+  }
+
+  .nm-empty-avatar {
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  .nm-empty-title {
+    font-size: 1.2rem !important;
+  }
+
+  .nm-empty-text {
+    font-size: 0.9rem !important;
+  }
+
+  /* Toggle sessions button — clickable header on mobile */
+  .nm-sidebar-header {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── 11. Non-Muslim CONVERSATION Page (NonMuslimConversation.css) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  /* Full page becomes column layout */
+  .nm-conversation-page {
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100svh !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* ── Contacts sidebar: compact strip at top ── */
+  .nm-contacts-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    flex-shrink: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+  }
+
+  .nm-contacts-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .nm-contacts-title {
+    font-size: 1.1rem !important;
+    margin: 0 0 0.5rem 0 !important;
+  }
+
+  .nm-search-box {
+    padding: 6px 12px !important;
+  }
+
+  /* Contacts list: horizontal scroll */
+  .nm-contacts-list {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    max-height: 80px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nm-contacts-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Each contact item: compact card in the horizontal list */
+  .nm-contact-item {
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 8px 14px !important;
+    gap: 4px !important;
+    border-bottom: none !important;
+    border-right: 1px solid #f1f5f9 !important;
+    flex-shrink: 0 !important;
+    min-width: 80px !important;
+    max-width: 100px !important;
+  }
+
+  .nm-contact-info {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .nm-contact-top {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .nm-contact-name {
+    font-size: 0.75rem !important;
+    text-align: center !important;
+    max-width: 80px !important;
+  }
+
+  .nm-contact-time {
+    display: none !important;
+  }
+
+  .nm-contact-msg {
+    display: none !important;
+  }
+
+  .nm-contact-avatar {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  /* ── Chat window: fills remaining space ── */
+  .nm-chat-window {
+    flex: 1 !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  .nm-chat-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Message bubbles */
+  .nm-msg-row {
+    max-width: 90% !important;
+    margin-bottom: 4px !important;
+  }
+
+  .nm-msg-bubble {
+    padding: 10px 14px !important;
+  }
+
+  .nm-msg-text {
+    font-size: 0.9rem !important;
+  }
+
+  /* Input area */
+  .nm-chat-input-area {
+    padding: 0.6rem 0.75rem !important;
+  }
+
+  .nm-input-wrapper {
+    padding: 6px 12px !important;
+    gap: 8px !important;
+  }
+
+  .nm-input {
+    font-size: 0.9rem !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── 12. Profile Page ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .profile-page {
+    padding: 0.75rem 0.75rem 1.5rem 0.75rem !important;
+    background: #f4f6fa !important;
+    min-height: 100vh !important;
+  }
+
+  .profile-title {
+    font-size: 1.35rem !important;
+    margin-bottom: 0.75rem !important;
+    text-align: center;
+  }
+
+  /* Column layout: settings tabs ABOVE form */
+  .profile-layout {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* ─── Settings panel: trigger bar + dropdown ─── */
+  .profile-settings-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    order: -1 !important;
+    position: relative !important;
+    gap: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Hide section titles and sections by default in mobile */
+  .settings-section-title {
+    display: none !important;
+  }
+
+  .settings-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    padding: 4px !important;
+  }
+
+  /* ── Trigger row (always visible): first section = account edit ── */
+  /* Show only the first settings-section as a pill trigger bar */
+  .profile-settings-panel > .settings-section:first-child {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.08) !important;
+    padding: 4px !important;
+    gap: 0 !important;
+  }
+
+  /* When closed: ALL items except the mobile trigger are hidden */
+  .profile-settings-panel:not(.mobile-open) > .settings-section:first-child .settings-item:not(.nm-settings-trigger) {
+    display: none !important;
+  }
+
+  /* Second section (Support) hidden when closed */
+  .profile-settings-panel:not(.mobile-open) > .settings-section:not(:first-child) {
+    display: none !important;
+  }
+
+  /* When panel is open: show all sections */
+  .profile-settings-panel.mobile-open > .settings-section {
+    display: flex !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.08) !important;
+    margin-top: 4px !important;
+    animation: dropdown-slide 0.2s ease !important;
+  }
+
+  @keyframes dropdown-slide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Trigger button (بيانات الحساب) ── */
+  .nm-settings-trigger {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0.65rem 1rem !important;
+    border-radius: 10px !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    background: #fff8e6 !important;
+    color: #92650a !important;
+    border: 1.5px solid #dba841 !important;
+    cursor: pointer !important;
+    gap: 0.5rem !important;
+    justify-content: space-between !important;
+  }
+
+  /* Dropdown arrow — rotates when open */
+  .settings-mobile-arrow {
+    margin-left: auto !important;
+    transition: transform 0.25s ease !important;
+    flex-shrink: 0 !important;
+    color: #dba841 !important;
+  }
+
+  .mobile-open .settings-mobile-arrow {
+    transform: rotate(180deg) !important;
+  }
+
+  /* Icon in trigger */
+  .nm-settings-trigger .settings-item-icon {
+    color: #dba841 !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    order: -1 !important; /* icon on the far right in RTL */
+  }
+
+  /* All normal settings items */
+  .settings-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    padding: 0.65rem 1rem !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    white-space: nowrap !important;
+    border: none !important;
+    background: transparent !important;
+    color: #374151 !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    text-align: right !important;
+    transition: background 0.12s !important;
+    justify-content: flex-end !important;
+  }
+
+  .settings-item:hover {
+    background: #f8f9fb !important;
+  }
+
+  .settings-item.active:not(.nm-settings-trigger) {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    font-weight: 600 !important;
+  }
+
+  .settings-item.danger {
+    color: #dc2626 !important;
+  }
+
+  .settings-item-icon {
+    margin-right: 0 !important;
+    flex-shrink: 0 !important;
+    opacity: 0.7 !important;
+  }
+
+  /* Hide the original chevron (desktop-only) */
+  .settings-chevron {
+    display: none !important;
+  }
+
+  /* ─── Form card ─── */
+  .profile-main-panel {
+    padding: 1.25rem 1rem !important;
+    min-height: auto !important;
+    width: 100% !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
+    background: #fff !important;
+  }
+
+  /* Avatar */
+  .avatar-wrapper,
+  .avatar-circle {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  /* Save button */
+  .pf-save-btn {
+    padding: 0.85rem !important;
+    font-size: 0.95rem !important;
+  }
 }
+
+
+
+
 
 /* Very Small Screens */
 @media (max-width: 480px) {
@@ -259,5 +861,39 @@
   
   .stat-value, .ad-stat-value {
     font-size: 1.5rem !important;
+  }
+
+  /* ── Non-Muslim Dashboard (480px) ── */
+  .nm-page {
+    height: 100svh !important; /* safe viewport height for mobile browsers */
+  }
+
+  .nm-message {
+    max-width: 92% !important;
+    font-size: 0.88rem !important;
+  }
+
+  .nm-send-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* ── Non-Muslim Conversation (480px) ── */
+  .nm-conversation-page {
+    height: 100svh !important;
+  }
+
+  .nm-contact-item {
+    min-width: 65px !important;
+    max-width: 80px !important;
+    padding: 6px 10px !important;
+  }
+
+  .nm-contact-name {
+    font-size: 0.68rem !important;
+  }
+
+  .nm-msg-row {
+    max-width: 95% !important;
   }
 }

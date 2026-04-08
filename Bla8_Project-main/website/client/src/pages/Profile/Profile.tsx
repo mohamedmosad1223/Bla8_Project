@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, ChevronLeft, ChevronRight, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText } from 'lucide-react';
+import { User, Mail, Phone, ChevronLeft, ChevronRight, ChevronDown, Lock, Eye, EyeOff, Globe, HelpCircle, Shield, Trash2, Camera, PhoneCall, HelpCircle as HelpIcon, Search, Plus, Minus, FileText } from 'lucide-react';
 import { profileService } from '../../services/profileService';
 import { authService } from '../../services/authService';
 import ForgotPasswordModal from '../../components/common/Modal/ForgotPasswordModal';
@@ -174,6 +174,7 @@ const Profile: React.FC = () => {
   const isNonMuslim = userRole === 'non_muslim' || userRole === 'interested';
   const [activeSection, setActiveSection] = useState<ActiveSection>('account-info');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // --- Form State ---
@@ -400,6 +401,18 @@ const Profile: React.FC = () => {
 
   const showAvatar = !['help-center', 'help-center-faq', 'privacy-policy'].includes(activeSection);
 
+  // Map each section to its display label + icon for the mobile trigger button
+  const sectionMeta: Record<string, { label: string; icon: React.ReactNode }> = {
+    'account-info':     { label: isNonMuslim ? t('profile.accountInfo')    : 'بيانات الحساب',     icon: <User size={18} className="settings-item-icon" /> },
+    'change-password':  { label: isNonMuslim ? t('profile.changePassword') : 'تغيير الرقم السري', icon: <Lock size={18} className="settings-item-icon" /> },
+    'language':         { label: isNonMuslim ? t('profile.language')        : 'اللغة',             icon: <Globe size={18} className="settings-item-icon" /> },
+    'help-center':      { label: isNonMuslim ? t('profile.helpCenter')      : 'مركز المساعدة',     icon: <HelpCircle size={18} className="settings-item-icon" /> },
+    'help-center-faq':  { label: isNonMuslim ? t('profile.helpCenter')      : 'مركز المساعدة',     icon: <HelpCircle size={18} className="settings-item-icon" /> },
+    'customer-service': { label: isNonMuslim ? t('profile.helpCenter')      : 'خدمة العملاء',      icon: <HelpCircle size={18} className="settings-item-icon" /> },
+    'privacy-policy':   { label: isNonMuslim ? t('profile.privacyPolicy')   : 'سياسة الخصوصية',   icon: <Shield size={18} className="settings-item-icon" /> },
+  };
+  const activeMeta = sectionMeta[activeSection] ?? sectionMeta['account-info'];
+
   return (
     <div className="profile-page" dir={isNonMuslim ? dir : 'rtl'}>
       <h1 className="profile-title">{isNonMuslim ? t('profile.title') : 'الملف الشخصي'}</h1>
@@ -578,14 +591,25 @@ const Profile: React.FC = () => {
         </div>
 
         {/* ─── Right panel: Settings menu ─── */}
-        <div className="profile-settings-panel">
+        <div className={`profile-settings-panel${mobileSettingsOpen ? ' mobile-open' : ''}`}>
 
           <div className="settings-section">
             <h3 className="settings-section-title">{isNonMuslim ? t('profile.editAccount') : 'تعديل الحساب'}</h3>
 
+            {/* ── Mobile-Only Dropdown Trigger ── */}
             <button
-              className={`settings-item ${activeSection === 'account-info' ? 'active' : ''}`}
-              onClick={() => setActiveSection('account-info')}
+              className="settings-item nm-settings-trigger active"
+              onClick={() => setMobileSettingsOpen(o => !o)}
+            >
+              <ChevronDown size={16} className="settings-mobile-arrow" />
+              <span>{activeMeta.label}</span>
+              {activeMeta.icon}
+            </button>
+
+            {/* ── Standard 'Account Info' Button (Desktop + Mobile List) ── */}
+            <button
+              className={`settings-item nm-settings-account-btn ${activeSection === 'account-info' ? 'active' : ''}`}
+              onClick={() => { setActiveSection('account-info'); setMobileSettingsOpen(false); }}
             >
               <ChevronLeft size={16} className="settings-chevron" />
               <span>{isNonMuslim ? t('profile.accountInfo') : 'بيانات الحساب'}</span>
@@ -594,7 +618,7 @@ const Profile: React.FC = () => {
 
             <button
               className={`settings-item ${activeSection === 'change-password' ? 'active' : ''}`}
-              onClick={() => setActiveSection('change-password')}
+              onClick={() => { setActiveSection('change-password'); setMobileSettingsOpen(false); }}
             >
               <ChevronLeft size={16} className="settings-chevron" />
               <span>{isNonMuslim ? t('profile.changePassword') : 'تغيير الرقم السري'}</span>
@@ -604,7 +628,7 @@ const Profile: React.FC = () => {
             {isNonMuslim && (
               <button
                 className={`settings-item ${activeSection === 'language' ? 'active' : ''}`}
-                onClick={() => setActiveSection('language')}
+                onClick={() => { setActiveSection('language'); setMobileSettingsOpen(false); }}
               >
                 <ChevronLeft size={16} className="settings-chevron" />
                 <span>{isNonMuslim ? t('profile.language') : 'اللغة'}</span>
@@ -618,7 +642,7 @@ const Profile: React.FC = () => {
 
             <button
               className={`settings-item ${['help-center', 'help-center-faq', 'customer-service'].includes(activeSection) ? 'active' : ''}`}
-              onClick={() => setActiveSection('help-center')}
+              onClick={() => { setActiveSection('help-center'); setMobileSettingsOpen(false); }}
             >
               <ChevronLeft size={16} className="settings-chevron" />
               <span>{isNonMuslim ? t('profile.helpCenter') : 'مركز المساعدة'}</span>
@@ -627,14 +651,14 @@ const Profile: React.FC = () => {
 
             <button
               className={`settings-item ${activeSection === 'privacy-policy' ? 'active' : ''}`}
-              onClick={() => setActiveSection('privacy-policy')}
+              onClick={() => { setActiveSection('privacy-policy'); setMobileSettingsOpen(false); }}
             >
               <ChevronLeft size={16} className="settings-chevron" />
               <span>{isNonMuslim ? t('profile.privacyPolicy') : 'سياسة الخصوصية'}</span>
               <Shield size={18} className="settings-item-icon" />
             </button>
 
-            <button className="settings-item danger" onClick={() => setShowDeleteModal(true)}>
+            <button className="settings-item danger" onClick={() => { setShowDeleteModal(true); setMobileSettingsOpen(false); }}>
               <ChevronLeft size={16} className="settings-chevron" />
               <span>{isNonMuslim ? t('profile.deleteAccount') : 'حذف الحساب'}</span>
               <Trash2 size={18} className="settings-item-icon" />
