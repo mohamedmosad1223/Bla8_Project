@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Settings, Clock, Send, ChevronDown, Loader2, Trash2, Plus } from 'lucide-react';
+import { Bot, Settings, Clock, Send, ChevronDown, Loader2, Trash2, Plus, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ministerService } from '../../services/ministerService';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import './AwqafAICenter.css';
 
 interface OrgOption {
@@ -24,6 +26,7 @@ const AwqafAICenter = () => {
 
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -134,6 +137,89 @@ const AwqafAICenter = () => {
     }
   };
 
+  const handleExportAIReport = async () => {
+    if (!chatAreaRef.current) return;
+    setExporting(true);
+    
+    // Remember original styles to restore later
+    const originalOverflow = chatAreaRef.current.style.overflow;
+    const originalHeight = chatAreaRef.current.style.height;
+    const originalMaxHeight = chatAreaRef.current.style.maxHeight;
+
+    try {
+      // Temporarily expand container to capture full scrollable content
+      chatAreaRef.current.style.overflow = 'visible';
+      chatAreaRef.current.style.height = 'auto';
+      chatAreaRef.current.style.maxHeight = 'none';
+
+      const canvas = await html2canvas(chatAreaRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Header bar (Indigo color to match AI theme)
+      pdf.setFillColor(67, 56, 202); 
+      pdf.rect(0, 0, pageWidth, 18, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(13);
+      pdf.text(`تقرير المساعد الذكي - منصة بلاغ`, pageWidth - margin, 12, { align: 'right' });
+
+      // Date
+      pdf.setFontSize(8);
+      pdf.setTextColor(255, 255, 255);
+      const now = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+      pdf.text(now, margin, 12);
+
+      // Page content (screenshot)
+      let yPos = 22;
+      let remainingHeight = imgHeight;
+      let sourceY = 0;
+
+      while (remainingHeight > 0) {
+        const sliceHeight = Math.min(remainingHeight, pageHeight - yPos - margin);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = (sliceHeight / imgWidth) * canvas.width;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, yPos, imgWidth, sliceHeight);
+        remainingHeight -= sliceHeight;
+        sourceY += sliceCanvas.height;
+        if (remainingHeight > 0) {
+          pdf.addPage();
+          yPos = margin;
+        }
+      }
+
+      // Footer
+      const totalPages = (pdf as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`صفحة ${i} من ${totalPages}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+      }
+
+      pdf.save(`تقرير-المساعد-الذكي.pdf`);
+    } finally {
+      // Restore styles to enable scrolling again
+      chatAreaRef.current.style.overflow = originalOverflow;
+      chatAreaRef.current.style.height = originalHeight;
+      chatAreaRef.current.style.maxHeight = originalMaxHeight;
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="ai-center-page">
       <div className="ai-breadcrumb-right">الذكاء الاصطناعي</div>
@@ -197,11 +283,22 @@ const AwqafAICenter = () => {
 
         {/* Left side in RTL */}
         <div className="ai-card ai-smart-assistant">
-          <div className="ai-card-header text-blue">
-            <Bot size={20} className="ai-header-icon" />
-            <h2>المساعد الذكي - أسال عن بيانات منصة بلاغ</h2>
+          <div className="ai-card-header text-blue" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bot size={20} className="ai-header-icon" />
+              <h2 style={{ margin: 0 }}>المساعد الذكي - التقرير</h2>
+            </div>
+            <button 
+              className="ai-btn-primary" 
+              onClick={handleExportAIReport} 
+              disabled={exporting || chatMessages.length === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+            >
+              {exporting ? <Loader2 size={14} className="spin-icon" /> : <Download size={14} />}
+              {exporting ? 'جاري التحميل...' : 'تحميل التقرير'}
+            </button>
           </div>
-          <div className="ai-chat-area" ref={chatAreaRef}>
+          <div className="ai-chat-area" ref={chatAreaRef} style={{ backgroundColor: '#fff' }}>
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`ai-chat-bubble ${msg.role === 'user' ? 'user' : ''}`}>
                 <ReactMarkdown

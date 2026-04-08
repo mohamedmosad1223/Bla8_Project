@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Send, X } from 'lucide-react';
+import { Search, Send, X, Download } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Conversations.css';
 import api from '../../services/api';
 import ErrorModal from '../../components/common/Modal/ErrorModal';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ChatPreview {
@@ -33,6 +35,54 @@ interface AIMessage {
   content: string;
   created_at?: string;
 }
+
+// ─── Report Download Utilities ────────────────────────────────────────────────
+const isDownloadableReport = (text: string): boolean => {
+  // Contains a table
+  if (/\|.+\|/.test(text) && /\|[-: ]+\|/.test(text)) return true;
+  // Contains lists (bullets or numbers)
+  if (/\n\s*[-*•]\s+/.test(text) || /\n\s*\d+\.\s+/.test(text)) return true;
+  // Contains analytics keywords
+  const keywords = ['ملخص', 'توصيات', 'إحصائيات', 'تحليل'];
+  return keywords.some(k => text.includes(k));
+};
+
+const generatePDF = async (elementId: string, filename: string = 'تقرير_تحليلي') => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  try {
+    const canvas = await html2canvas(element, {
+      scale: 2, // High resolution
+      useCORS: true,
+      backgroundColor: '#ffffff',
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    
+    // A4 dimensions in mm: 210 x 297
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const margin = 10;
+    const contentWidth = pdfWidth - (2 * margin);
+    
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = contentWidth / imgWidth;
+    const finalImgHeight = imgHeight * ratio;
+
+    // Header Logic has been moved to the HTML template for perfect Arabic rendering
+    
+    // 3. Add the captured content
+    pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, finalImgHeight);
+    
+    pdf.save(`${filename}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    return true;
+  } catch (error) {
+    console.error('PDF Generation failed:', error);
+    return false;
+  }
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatTime = (iso: string | null) => {
@@ -97,6 +147,25 @@ const Conversations = () => {
   // Error Modal State
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const [exportContent, setExportContent] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // ─── PDF Export Handler ───
+  const handleDownloadReport = async (content: string) => {
+    setIsExporting(true);
+    setExportContent(content);
+    
+    // Wait for the hidden container to render properly
+    setTimeout(async () => {
+      const success = await generatePDF('pdf-export-template');
+      if (!success) {
+        alert('حدث خطأ أثناء تحميل التقرير');
+      }
+      setExportContent(null);
+      setIsExporting(false);
+    }, 150);
+  };
 
   // ─── Fetch Chats List ────────────────────────────────────────────────────
   const fetchChats = useCallback(async () => {
@@ -459,11 +528,23 @@ const Conversations = () => {
 
               <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
                 {msg.role === 'assistant' ? (
-                  <div className="conv-msg-text markdown-content">
+                  <div className="conv-msg-text markdown-content" id={`ai-msg-${i}`}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
                   <p className="conv-msg-text">{msg.content}</p>
+                )}
+                {/* Download button — for any analytical message or report */}
+                {msg.role === 'assistant' && isDownloadableReport(msg.content) && (
+                  <button
+                    className="ai-download-btn"
+                    onClick={() => handleDownloadReport(msg.content)}
+                    disabled={isExporting}
+                    title="تحميل التقرير PDF"
+                  >
+                    <Download size={14} />
+                    <span>{isExporting ? 'جاري التحميل...' : 'تحميل التقرير PDF'}</span>
+                  </button>
                 )}
                 {msg.created_at && <span className="conv-msg-time">{formatTime(msg.created_at)}</span>}
               </div>
@@ -499,6 +580,19 @@ const Conversations = () => {
         onClose={() => setIsErrorModalOpen(false)}
         message={errorMessage}
       />
+
+      {/* ─── Standardized PDF Export Template (Hidden) ─── */}
+      {/* ─── Standardized PDF Export Template (Hidden) ─── */}
+      {exportContent && (
+        <div id="pdf-export-template" className="pdf-export-wrapper">
+          <div className="pdf-export-header">
+            <h1 className="pdf-export-title">تقرير إحصائي تحليلي</h1>
+            <div className="pdf-export-date">{new Date().toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          </div>
+          <div className="pdf-export-divider"></div>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{exportContent}</ReactMarkdown>
+        </div>
+      )}
 
     </div>
   );

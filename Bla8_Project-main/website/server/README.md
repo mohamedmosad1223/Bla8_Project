@@ -24,9 +24,9 @@ alembic upgrade head
 
 ### 4. Start FastAPI
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 5000
 ```
-API Docs: http://localhost:8000/api/docs
+API Docs: http://localhost:5000/api/docs
 
 ---
 

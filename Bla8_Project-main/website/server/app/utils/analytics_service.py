@@ -64,7 +64,7 @@ class SafeSQLExecutor:
         return True, ""
 
     @staticmethod
-    def execute(sql: str, db: Session, role: str = "minister", org_id: Optional[int] = None) -> str:
+    def execute(sql: str, db: Session, role: str = "minister", org_id: Optional[int] = None, preacher_id: Optional[int] = None) -> str:
         """
         ينفّذ الـ SQL بعد التحقق من سلامته.
         - لو الـ role هو organization، يُضيف WHERE org_id تلقائياً.
@@ -124,14 +124,22 @@ class AnalyticsAIOrchestrator:
         messages: List[Dict[str, str]],
         role: str,
         db: Session,
-        org_id: Optional[int] = None
+        org_id: Optional[int] = None,
+        preacher_id: Optional[int] = None
     ) -> str:
         """
         دورة المحادثة التحليلية.
-        role: 'minister' أو 'organization'
+        role: 'minister', 'organization', أو 'preacher'
         org_id: مطلوب فقط لو role == 'organization'
+        preacher_id: مطلوب فقط لو role == 'preacher'
         """
         request_messages = messages.copy()
+        
+        # Inject role correctly (preacher uses preacher_analytics prompt in LLMService if routed)
+        active_role = role
+        if role == "preacher":
+            active_role = "preacher_analytics"
+
         if role == "organization" and org_id is not None:
             org_filter_msg = {
                 "role": "system",
@@ -145,9 +153,23 @@ class AnalyticsAIOrchestrator:
                 )
             }
             request_messages.append(org_filter_msg)
+        
+        elif role == "preacher" and preacher_id is not None:
+            preacher_filter_msg = {
+                "role": "system",
+                "content": (
+                    f"تنبيه أمني صارم: أنت تعمل حالياً لحساب داعية معرفه هو (preacher_id = {preacher_id}). "
+                    f"يجب أن تتأكد بنسبة 100% أن أي استعلام SQL تقوم بإنشائه مقيد ببيانات هذا الداعية فقط: "
+                    f"استخدم `WHERE preacher_id = {preacher_id}` في جدول preacher_statistics، "
+                    f"أو `WHERE assigned_preacher_id = {preacher_id}` في جدول dawah_requests. "
+                    f"يُمنع تماماً محاولة الوصول لبيانات دعاة آخرين أو جمعيات أخرى أو أي بيانات لا تخصك مباشرة. "
+                    f"تحذير أمني شديد: إياك أن تفصح للمستخدم عن قيمة preacher_id أو org_id الخاصة به!"
+                )
+            }
+            request_messages.append(preacher_filter_msg)
 
         # الجولة الأولى: رسالة المستخدم → LLM
-        ai_response = LLMService.generate_analytics_response(request_messages, role=role)
+        ai_response = LLMService.generate_analytics_response(request_messages, role=active_role)
         logger.info(f"Analytics [{role}]: first LLM turn done.")
 
         # تحقق هل الـ AI طلب SQL؟
@@ -164,7 +186,7 @@ class AnalyticsAIOrchestrator:
             f.write(f"\n--- SQL GENERATED ---\nRole: {role}, OrgID: {org_id}\nQuery:\n{sql_query}\n")
 
         # نفّذ الـ SQL بأمان
-        db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id)
+        db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id, preacher_id=preacher_id)
         logger.info(f"Analytics: DB result preview: {db_result[:200]}")
         with open("analytics_debug.log", "a", encoding="utf-8") as f:
             f.write(f"DB Result:\n{db_result[:500]}\n")

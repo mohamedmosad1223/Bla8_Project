@@ -157,7 +157,7 @@ const Sidebar = () => {
                 <li className="nav-item">
                   <NavLink to="/admin/add-supervisor" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                     <User size={20} className="nav-icon" />
-                    إضافة مشرف
+                    إضافة أدمن
                   </NavLink>
                 </li>
               )}

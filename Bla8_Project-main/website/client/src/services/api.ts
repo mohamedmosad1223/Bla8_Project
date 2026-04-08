@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api', // Vite proxy forwards this to http://127.0.0.1:8000/api
+  baseURL: '/api', // Vite proxy forwards this to http://127.0.0.1:5000/api
   withCredentials: true, // IMPORTANT: Backend uses HttpOnly cookies (access_token)
 });
 

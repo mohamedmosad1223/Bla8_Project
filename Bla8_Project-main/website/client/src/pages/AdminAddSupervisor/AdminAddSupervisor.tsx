@@ -68,7 +68,7 @@ const AdminAddSupervisor = () => {
         phone: formData.phone || undefined,
         password: formData.password,
         password_confirm: formData.password_confirm,
-        level: 'admin',
+        role: 'admin',
       });
       setSavedName(formData.full_name);
       setShowModal('success');

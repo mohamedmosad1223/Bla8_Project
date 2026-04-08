@@ -108,10 +108,12 @@ const Login: React.FC = () => {
             </button>
           </form>
 
-          <p className="bottom-link">
-            {isNonMuslim ? t('login.noAccount') : 'لا تمتلك حساب؟'}{' '}
-            <a href={registerLink}>{isNonMuslim ? t('login.createAccount') : 'ارسل طلب انشاء حساب'}</a>
-          </p>
+          {role !== 'minister' && (
+            <p className="bottom-link">
+              {isNonMuslim ? t('login.noAccount') : 'لا تمتلك حساب؟'}{' '}
+              <a href={registerLink}>{isNonMuslim ? t('login.createAccount') : 'ارسل طلب انشاء حساب'}</a>
+            </p>
+          )}
         </div>
       </div>
     </AuthLayout>

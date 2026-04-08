@@ -1,6 +1,6 @@
 # 🚀 Balagh API — Quick Info for Frontend
 
-> **Base URL:** `http://localhost:8000`
+> **Base URL:** `http://localhost:5000`
 > **Total Endpoints:** 33
 
 هذا الملف ملخص سريع لكل الـ APIs الجاهزة حالياً في السيستم وطريقة مناداتها.

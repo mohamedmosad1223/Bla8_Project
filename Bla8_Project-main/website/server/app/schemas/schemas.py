@@ -473,6 +473,7 @@ class AdminRegister(BaseModel):
     full_name: str        = Field(..., min_length=2, max_length=255)
     phone:     Optional[str] = None
     level:     AdminLevel = AdminLevel.admin
+    role:      UserRole   = UserRole.admin
 
     @field_validator("password")
     @classmethod

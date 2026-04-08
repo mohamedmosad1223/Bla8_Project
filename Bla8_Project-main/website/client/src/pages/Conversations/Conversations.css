@@ -592,3 +592,133 @@
   height: 100%;
   padding: 20%;
 }
+/* ─── AI Download Button ─── */
+.ai-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background-color: #fef3c7;
+  color: #dba841;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.ai-download-btn:hover {
+  background-color: #dba841;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(219, 168, 65, 0.2);
+  transform: translateY(-1px);
+}
+
+.ai-download-btn svg {
+  flex-shrink: 0;
+}
+
+/* Ensure the bubble can contain the button well */
+.conv-msg-bubble {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── PDF Export Template Styling ─── */
+.pdf-export-wrapper {
+  position: absolute;
+  left: -9999px; /* Hide from viewport but allow rendering */
+  top: 0;
+  width: 800px; /* Maps well to A4 content width */
+  background: white;
+  padding: 50px;
+  color: #1a202c;
+  font-family: system-ui, -apple-system, sans-serif;
+  direction: rtl;
+}
+
+.pdf-export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pdf-export-title {
+  color: #0A304E !important;
+  font-size: 2.2rem !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+
+.pdf-export-date {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.pdf-export-divider {
+  width: 100%;
+  height: 4px;
+  background: #dba829;
+  margin-bottom: 30px;
+  border-radius: 2px;
+}
+
+.pdf-export-wrapper h1, 
+.pdf-export-wrapper h2, 
+.pdf-export-wrapper h3 {
+  color: #0A304E;
+  margin-bottom: 1rem;
+}
+
+.pdf-export-wrapper p {
+  line-height: 1.8;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.pdf-export-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  border: 2px solid #e2e8f0;
+}
+
+.pdf-export-wrapper th {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 14px;
+  text-align: right;
+  font-weight: bold;
+  color: #0A304E;
+  font-size: 1rem;
+}
+
+.pdf-export-wrapper td {
+  border: 1px solid #cbd5e1;
+  padding: 12px;
+  text-align: right;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.pdf-export-wrapper ul, 
+.pdf-export-wrapper ol {
+  margin: 1rem 0;
+  padding-right: 30px;
+}
+
+.pdf-export-wrapper li {
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.pdf-export-wrapper strong {
+  color: #0A304E;
+  font-weight: 700;
+}

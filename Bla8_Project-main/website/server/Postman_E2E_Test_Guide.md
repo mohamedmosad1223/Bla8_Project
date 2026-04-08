@@ -7,8 +7,8 @@ This guide walks you through the complete lifecycle of a Dawah request, testing 
    ```cmd
    C:/Python313/python.exe -m uvicorn app.main:app --reload
    ```
-2. **Access Docs**: [http://127.0.0.1:8000/api/docs](http://127.0.0.1:8000/api/docs)
-3. **Postman Base URL**: `http://127.0.0.1:8000`
+2. **Access Docs**: [http://127.0.0.1:5000/api/docs](http://127.0.0.1:5000/api/docs)
+3. **Postman Base URL**: `http://127.0.0.1:5000`
 
 ---
 

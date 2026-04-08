@@ -71,19 +71,27 @@ class ChatsController:
         # 4. استدعاء الـ LLM واصطناع رد
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
 
-        # وزير الأوقاف ومشرف الجمعية → Orchestrator التحليلي
-        if user_role in ("minister", "organization"):
+        # وزير الأوقاف ومشرف الجمعية والداعية → Orchestrator التحليلي
+        if user_role in ("minister", "organization", "preacher"):
             org_id = None
+            preacher_id = None
             if user_role == "organization":
                 from app.models.organization import Organization
                 org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
                 if org:
                     org_id = org.org_id
+            elif user_role == "preacher":
+                from app.models.preacher import Preacher
+                pre = db.query(Preacher).filter(Preacher.user_id == user.user_id).first()
+                if pre:
+                    preacher_id = pre.preacher_id
+
             ai_response_text = AnalyticsAIOrchestrator.chat(
                 messages=messages,
                 role=user_role,
                 db=db,
                 org_id=org_id,
+                preacher_id=preacher_id
             )
         else:
             ai_response_text = LLMService.generate_chat_response(messages, role=user_role)
@@ -180,14 +188,20 @@ class ChatsController:
         # 4. الـ Generator اللي هيعمل الـ Stream ويسيف في الآخر
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
 
-        # وزير الأوقاف ومشرف الجمعية → Orchestrator التحليلي (لا يدعم streaming — نجمع الرد ثم نبثه)
-        if user_role in ("minister", "organization"):
+        # وزير الأوقاف ومشرف الجمعية والداعية → Orchestrator التحليلي (لا يدعم streaming — نجمع الرد ثم نبثه)
+        if user_role in ("minister", "organization", "preacher"):
             org_id = None
+            preacher_id = None
             if user_role == "organization":
                 from app.models.organization import Organization
                 org = db.query(Organization).filter(Organization.user_id == user.user_id).first()
                 if org:
                     org_id = org.org_id
+            elif user_role == "preacher":
+                from app.models.preacher import Preacher
+                pre = db.query(Preacher).filter(Preacher.user_id == user.user_id).first()
+                if pre:
+                    preacher_id = pre.preacher_id
 
             def stream_generator():
                 ai_response_text = AnalyticsAIOrchestrator.chat(

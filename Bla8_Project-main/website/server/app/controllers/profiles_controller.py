@@ -30,7 +30,22 @@ class ProfilesController:
         profile_record = None
         extra_data = {}
         
-        if user.role in [UserRole.admin, UserRole.minister]:
+        # ─── Minister: profile stored directly on user table ───
+        if user.role == UserRole.minister:
+            return {
+                "user_id": user.user_id,
+                "email": user.email,
+                "role": user.role,
+                "status": user.status,
+                "app_language": user.app_language,
+                "full_name": "",
+                "phone": None,
+                "profile_picture": None,
+                "created_at": user.created_at,
+                "extra_data": {}
+            }
+
+        if user.role == UserRole.admin:
             profile_record = user.admin
             if profile_record:
                 extra_data = {
@@ -91,8 +106,16 @@ class ProfilesController:
             user.app_language = payload.app_language
 
         # 2. Get target profile record
+        # Minister has no separate profile table — update only user fields
+        if user.role == UserRole.minister:
+            db.commit()
+            return {
+                "profile": ProfilesController.get_user_profile(db, user),
+                "email_changed": email_changed
+            }
+
         profile_record = None
-        if user.role in [UserRole.admin, UserRole.minister]: profile_record = user.admin
+        if user.role == UserRole.admin: profile_record = user.admin
         elif user.role == UserRole.preacher: profile_record = user.preacher
         elif user.role == UserRole.muslim_caller: profile_record = user.muslim_caller
         elif user.role == UserRole.organization: profile_record = user.organization

@@ -23,7 +23,7 @@ class AdminsController:
         user = User(
             email=payload.email,
             password_hash=get_password_hash(payload.password),
-            role=UserRole.admin,
+            role=payload.role,
             status=AccountStatus.active,
         )
         db.add(user)

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Building2, Building, Users, UserCheck, FileText, Download, Loader2, AlertCircle } from 'lucide-react';
+import { Building2, Building, Users, UserCheck, FileText, Loader2, AlertCircle } from 'lucide-react';
 import RequestsChart from '../../components/RequestsChart/RequestsChart';
 import ConversionsChart from '../../components/ConversionsChart/ConversionsChart';
 import AcceptanceRateChart from '../../components/AcceptanceRateChart/AcceptanceRateChart';
@@ -90,56 +90,7 @@ const AwqafAssociationReports = () => {
     });
   }, [data]);
 
-  const escapeCsv = (value: string | number) => {
-    const stringValue = String(value ?? '');
-    return `"${stringValue.replace(/"/g, '""')}"`;
-  };
 
-  const handleExportReport = () => {
-    if (!data) return;
-
-    const rows: string[][] = [
-      ['القسم', 'المؤشر', 'القيمة'],
-      ['بيانات الجمعية', 'اسم الجمعية', data.organization_info.name || '-'],
-      ['بيانات الجمعية', 'المنطقة', data.organization_info.governorate || '-'],
-      ['بيانات الجمعية', 'رقم الهاتف', data.organization_info.phone || '-'],
-      ['بيانات الجمعية', 'البريد الإلكتروني', data.organization_info.email || '-'],
-      ['ملخص الطلبات', 'إجمالي الحالات المسجلة', data.requests_summary.total],
-      ['ملخص الطلبات', 'قيد المتابعة', data.requests_summary.in_progress],
-      ['ملخص الطلبات', 'عدد من رفضوا', data.requests_summary.rejected],
-      ['ملخص الطلبات', 'عدد الداخلين في الإسلام', data.requests_summary.converted]
-    ];
-
-    data.charts.requests_distribution.forEach((item) => {
-      rows.push(['حالة الطلبات', item.label, item.value]);
-    });
-
-    data.charts.conversion_trends.forEach((item) => {
-      rows.push(['من أسلموا/رفضوا', `${item.month} - Converts`, item.converts]);
-      rows.push(['من أسلموا/رفضوا', `${item.month} - Rejects`, item.rejects]);
-    });
-
-    acceptanceRateData.forEach((item) => {
-      rows.push(['نسبة القبول', item.name, `${item.value1}%`]);
-    });
-
-    data.charts.nationalities.forEach((item) => {
-      rows.push(['الجنسيات', item.label, item.value]);
-    });
-
-    const csvContent = rows.map((row) => row.map(escapeCsv).join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const fileName = `awqaf-association-report-${id || 'org'}.csv`;
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   if (loading) {
     return (
@@ -229,7 +180,7 @@ const AwqafAssociationReports = () => {
         <button className="btn-outline" onClick={() => navigate('/awqaf/associations')}>
           رجوع إلى صفحة الجمعيات
         </button>
-        <button className="btn-primary" onClick={handleExportReport}><Download size={16} /> تصدير التقرير</button>
+
       </div>
     </div>
   );
