@@ -14,11 +14,11 @@ const ResponseTimeChart = ({ data }: ResponseTimeChartProps) => {
   const chartData = data && data.length > 0 ? data : [];
 
   return (
-    <div className="response-time-chart-wrapper">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="response-time-chart-wrapper" style={{ direction: 'ltr', flex: 1, display: 'flex', width: '100%', minHeight: '250px' }}>
+      <ResponsiveContainer width="99%" height={250} minWidth={1}>
         <AreaChart
           data={chartData}
-          margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
+          margin={{ top: 20, right: 0, left: 0, bottom: 5 }}
         >
           <defs>
             <linearGradient id="colorTimeDetail" x1="0" y1="0" x2="0" y2="1">

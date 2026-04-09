@@ -1259,4 +1259,238 @@
   .umodal-btn-cancel {
     width: 100% !important;
   }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Callers Table (دعاة الجمعية): Hide table, show mobile cards ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .callers-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .callers-actions .btn-primary {
+    justify-content: center !important;
+  }
+
+  .search-filter-group {
+    display: flex !important;
+    width: 100% !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  .search-input-wrapper-outlined {
+    flex: 1 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .callers-table-container {
+    display: none !important;
+  }
+
+  .callers-mobile-card-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .callers-mobile-card {
+    background: #ffffff !important;
+    border: 1px solid #edf2f7 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .callers-mobile-card-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    border-bottom: 1px solid #edf2f7 !important;
+    padding-bottom: 12px !important;
+  }
+
+  .callers-mobile-card-id {
+    font-size: 0.8rem !important;
+    color: #a0aec0 !important;
+    font-weight: 700 !important;
+    background: #f7fafc !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  .callers-mobile-card-name {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #1a202c !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .callers-mobile-card-type {
+    font-size: 0.75rem !important;
+    color: #718096 !important;
+    font-weight: 500 !important;
+  }
+
+  .callers-mobile-card-fields {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .callers-mobile-field {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .callers-mobile-field-label {
+    font-size: 0.75rem !important;
+    color: #718096 !important;
+  }
+
+  .callers-mobile-field-value {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #2d3748 !important;
+  }
+
+  .callers-mobile-card-status {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-top: 12px !important;
+    border-top: 1px dashed #edf2f7 !important;
+  }
+
+  .callers-mobile-card-footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-top: 12px !important;
+    border-top: 1px dashed #edf2f7 !important;
+  }
+
+  .callers-mobile-card-meta-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .callers-mobile-card-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Preacher Details Page (عرض تفاصيل الداعية) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .preacher-info-card {
+    padding: 20px !important;
+  }
+
+  .preacher-info-card .info-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+
+  .preacher-stats-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+
+  .preacher-charts-grid {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 20px !important;
+  }
+
+  /* Make sure the map image inside doesn't stretch weirdly */
+  .awqaf-kuwait-map {
+    max-width: 200px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Admin Preacher Details Page (صفحة تفاصيل الداعية للجمعية / الأدمن) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .apreach-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+
+  .apreach-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+
+  .apreach-charts-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Association Dashboard (داشبورد الجمعية) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .dashboard-page .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-page {
+    overflow-x: hidden !important;
+  }
+
+  /* ── Fix horizontal width overflow for all stat cards globally on mobile ── */
+  .stat-card {
+    padding: 12px !important;
+    gap: 8px !important;
+    min-width: 0 !important; /* allow flex items to shrink */
+  }
+
+  .stat-title {
+    font-size: 0.8rem !important;
+    margin-bottom: 4px !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+  }
+
+  .stat-value {
+    font-size: 1.4rem !important;
+  }
+
+  .stat-icon-wrapper {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .stat-icon-wrapper svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .stat-card-header {
+    gap: 12px !important;
+  }
+
+  .stat-trend {
+    font-size: 0.75rem !important;
+  }
 }
+
+

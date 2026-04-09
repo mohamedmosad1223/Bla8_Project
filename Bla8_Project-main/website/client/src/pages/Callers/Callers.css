@@ -113,6 +113,10 @@
 }
 
 /* ── Data Table ── */
+.callers-mobile-card-list {
+  display: none;
+}
+
 .callers-table {
   width: 100%;
   border-collapse: collapse;

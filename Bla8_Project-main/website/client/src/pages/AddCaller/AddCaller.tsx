@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Upload, X, Eye, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Upload, X, Check, AlertCircle, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import { preacherService } from '../../services/preacherService';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
@@ -14,6 +14,10 @@ const AddCaller = () => {
   const [selectedLangs, setSelectedLangs] = useState<number[]>([]); 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
+  const genderDropdownRef = useRef<HTMLDivElement>(null);
+  const [isNationalityDropdownOpen, setIsNationalityDropdownOpen] = useState(false);
+  const nationalityDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if organization is suspended
   const userData = JSON.parse(localStorage.getItem('userData') || '{}');
@@ -54,12 +58,16 @@ const AddCaller = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsLanguageDropdownOpen(false);
       }
+      if (genderDropdownRef.current && !genderDropdownRef.current.contains(event.target as Node)) {
+        setIsGenderDropdownOpen(false);
+      }
+      if (nationalityDropdownRef.current && !nationalityDropdownRef.current.contains(event.target as Node)) {
+        setIsNationalityDropdownOpen(false);
+      }
     }
-    if (isLanguageDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isLanguageDropdownOpen]);
+  }, []);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -196,38 +204,82 @@ const AddCaller = () => {
             </div>
 
             {/* النوع - Gender */}
-            <div className="form-group">
+            <div className="form-group relative" ref={genderDropdownRef}>
               <label>النوع</label>
-              <select 
-                name="gender" 
-                className="form-input" 
-                value={formData.gender} 
-                onChange={(e) => setFormData(prev => ({...prev, gender: e.target.value}))}
-                required
-                disabled={isSuspended}
-                style={{ appearance: 'auto', paddingRight: '10px' }}
+              <div 
+                className={`tags-input-container form-input ${isSuspended ? 'disabled' : ''}`} 
+                onClick={() => !isSuspended && setIsGenderDropdownOpen(!isGenderDropdownOpen)}
+                style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '48px', height: 'auto' }}
               >
-                <option value="male">ذكر</option>
-                <option value="female">أنثى</option>
-              </select>
+                <div className="tags-wrapper">
+                  <span className="tag" style={{ border: 'none', background: 'transparent', padding: 0 }}>
+                    {formData.gender === 'male' ? 'ذكر' : 'أنثى'}
+                  </span>
+                </div>
+                {!isSuspended && (
+                  <button type="button" className="tag-dropdown-btn" style={{ marginLeft: '4px' }}>
+                    <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: isGenderDropdownOpen ? 'rotate(180deg)' : 'none' }} />
+                  </button>
+                )}
+              </div>
+
+              {isGenderDropdownOpen && !isSuspended && (
+                <div className="language-dropdown-menu">
+                  <div className="language-dropdown-item" onClick={() => { setFormData(prev => ({...prev, gender: 'male'})); setIsGenderDropdownOpen(false); }}>
+                    <div className={`checkbox-custom check-align-left ${formData.gender === 'male' ? 'checked' : ''}`}>
+                      {formData.gender === 'male' && <Check size={12} strokeWidth={4} color="white" />}
+                    </div>
+                    <span>ذكر</span>
+                  </div>
+                  <div className="language-dropdown-item" onClick={() => { setFormData(prev => ({...prev, gender: 'female'})); setIsGenderDropdownOpen(false); }}>
+                    <div className={`checkbox-custom check-align-left ${formData.gender === 'female' ? 'checked' : ''}`}>
+                      {formData.gender === 'female' && <Check size={12} strokeWidth={4} color="white" />}
+                    </div>
+                    <span>أنثى</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* الجنسية */}
-            <div className="form-group">
+            <div className="form-group relative" ref={nationalityDropdownRef}>
               <label>الجنسية</label>
-              <select 
-                name="nationalityCountryId"
-                className="form-input" 
-                value={formData.nationalityCountryId} 
-                onChange={(e) => setFormData(prev => ({...prev, nationalityCountryId: parseInt(e.target.value)}))}
-                required 
-                disabled={isSuspended}
-                style={{ appearance: 'auto', paddingRight: '10px' }}
+              <div 
+                className={`tags-input-container form-input ${isSuspended ? 'disabled' : ''}`} 
+                onClick={() => !isSuspended && setIsNationalityDropdownOpen(!isNationalityDropdownOpen)}
+                style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '48px', height: 'auto' }}
               >
-                {availableCountries.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                <div className="tags-wrapper">
+                  {formData.nationalityCountryId ? (
+                    <span className="tag" style={{ border: 'none', background: 'transparent', padding: 0 }}>
+                      {availableCountries.find(c => c.id === formData.nationalityCountryId)?.name || 'اختر الجنسية'}
+                    </span>
+                  ) : (
+                    <span className="placeholder-text">اختر الجنسية</span>
+                  )}
+                </div>
+                {!isSuspended && (
+                  <button type="button" className="tag-dropdown-btn" style={{ marginLeft: '4px' }}>
+                    <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: isNationalityDropdownOpen ? 'rotate(180deg)' : 'none' }} />
+                  </button>
+                )}
+              </div>
+
+              {isNationalityDropdownOpen && !isSuspended && (
+                <div className="language-dropdown-menu">
+                  {availableCountries.map((c) => {
+                    const isSelected = formData.nationalityCountryId === c.id;
+                    return (
+                      <div key={c.id} className="language-dropdown-item" onClick={() => { setFormData(prev => ({...prev, nationalityCountryId: c.id})); setIsNationalityDropdownOpen(false); }}>
+                        <div className={`checkbox-custom check-align-left ${isSelected ? 'checked' : ''}`}>
+                          {isSelected && <Check size={12} strokeWidth={4} color="white" />}
+                        </div>
+                        <span>{c.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* المؤهل العلمي والملف */}
@@ -256,7 +308,7 @@ const AddCaller = () => {
               <div 
                 className={`tags-input-container form-input ${isSuspended ? 'disabled' : ''}`} 
                 onClick={() => !isSuspended && setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '42px', height: 'auto' }}
+                style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '48px', height: 'auto' }}
               >
                 <div className="tags-wrapper">
                   {selectedLangs.length === 0 && <span className="placeholder-text">اختر اللغات...</span>}
@@ -278,8 +330,8 @@ const AddCaller = () => {
                   })}
                 </div>
                 {!isSuspended && (
-                  <button type="button" className="tag-dropdown-btn">
-                    <ChevronRight size={16} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90deg'}`} />
+                  <button type="button" className="tag-dropdown-btn" style={{ marginLeft: '4px' }}>
+                    <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: isLanguageDropdownOpen ? 'rotate(180deg)' : 'none' }} />
                   </button>
                 )}
               </div>

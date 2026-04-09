@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronRight, Upload, X, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronRight, Upload, X, Check, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import { preacherService } from '../../services/preacherService';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
 import '../AddCaller/AddCaller.css'; // تم تصحيح المسار
@@ -12,7 +12,9 @@ const EditPreacher = () => {
   const navigate = useNavigate();
   const [selectedLangs, setSelectedLangs] = useState<number[]>([]);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const genderDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if organization is suspended
   const userData = JSON.parse(localStorage.getItem('userData') || '{}');
@@ -86,6 +88,18 @@ const EditPreacher = () => {
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isLanguageDropdownOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (genderDropdownRef.current && !genderDropdownRef.current.contains(event.target as Node)) {
+        setIsGenderDropdownOpen(false);
+      }
+    }
+    if (isGenderDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isGenderDropdownOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -186,12 +200,41 @@ const EditPreacher = () => {
               <input type="text" name="phone" className="form-input" value={formData.phone} onChange={handleInputChange} required disabled={isSuspended} />
             </div>
 
-            <div className="form-group">
+            <div className="form-group relative" ref={genderDropdownRef}>
               <label>النوع</label>
-              <select name="gender" className="form-input" value={formData.gender} onChange={handleInputChange} required disabled={isSuspended} style={{ appearance: 'auto' }}>
-                <option value="male">ذكر</option>
-                <option value="female">أنثى</option>
-              </select>
+              <div 
+                className={`tags-input-container form-input ${isSuspended ? 'disabled' : ''}`} 
+                onClick={() => !isSuspended && setIsGenderDropdownOpen(!isGenderDropdownOpen)}
+                style={{ cursor: isSuspended ? 'not-allowed' : 'pointer', minHeight: '48px', height: 'auto' }}
+              >
+                <div className="tags-wrapper">
+                  <span className="tag" style={{ border: 'none', background: 'transparent', padding: 0 }}>
+                    {formData.gender === 'male' ? 'ذكر' : 'أنثى'}
+                  </span>
+                </div>
+                {!isSuspended && (
+                  <button type="button" className="tag-dropdown-btn" style={{ marginLeft: '4px' }}>
+                    <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: isGenderDropdownOpen ? 'rotate(180deg)' : 'none' }} />
+                  </button>
+                )}
+              </div>
+
+              {isGenderDropdownOpen && !isSuspended && (
+                <div className="language-dropdown-menu">
+                  <div className="language-dropdown-item" onClick={() => { setFormData(prev => ({...prev, gender: 'male'})); setIsGenderDropdownOpen(false); }}>
+                    <div className={`checkbox-custom check-align-left ${formData.gender === 'male' ? 'checked' : ''}`}>
+                      {formData.gender === 'male' && <Check size={12} strokeWidth={4} color="white" />}
+                    </div>
+                    <span>ذكر</span>
+                  </div>
+                  <div className="language-dropdown-item" onClick={() => { setFormData(prev => ({...prev, gender: 'female'})); setIsGenderDropdownOpen(false); }}>
+                    <div className={`checkbox-custom check-align-left ${formData.gender === 'female' ? 'checked' : ''}`}>
+                      {formData.gender === 'female' && <Check size={12} strokeWidth={4} color="white" />}
+                    </div>
+                    <span>أنثى</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-group">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   User, 
@@ -12,7 +12,9 @@ import {
   UserCheck,
   ClipboardList,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import api from '../../services/api';
 import ErrorModal from '../../components/common/Modal/ErrorModal';
@@ -53,6 +55,9 @@ const AdminPreacherDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [interval, setInterval] = useState<'day' | 'month'>('month');
 
+  const [isIntervalDropdownOpen, setIsIntervalDropdownOpen] = useState(false);
+  const intervalDropdownRef = useRef<HTMLDivElement>(null);
+
   // Error Modal State
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -78,6 +83,18 @@ const AdminPreacherDetails = () => {
   useEffect(() => {
     fetchStats();
   }, [id, preacherId, interval]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (intervalDropdownRef.current && !intervalDropdownRef.current.contains(event.target as Node)) {
+        setIsIntervalDropdownOpen(false);
+      }
+    }
+    if (isIntervalDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isIntervalDropdownOpen]);
 
   const toggleStatus = async () => {
     if (!data) return;
@@ -302,14 +319,33 @@ const AdminPreacherDetails = () => {
         <div className="apreach-chart-card main-chart">
           <div className="apreach-chart-header row-between">
             <h3>سرعة الاستجابة الاولي</h3>
-            <select 
-              className="apreach-chart-select"
-              value={interval}
-              onChange={(e) => setInterval(e.target.value as 'day' | 'month')}
-            >
-              <option value="month">شهري</option>
-              <option value="day">يومي</option>
-            </select>
+            
+            <div className="relative" ref={intervalDropdownRef}>
+              <div 
+                className="custom-dropdown-trigger" 
+                onClick={() => setIsIntervalDropdownOpen(!isIntervalDropdownOpen)}
+              >
+                <span>{interval === 'month' ? 'شهري' : 'يومي'}</span>
+                <ChevronDown size={14} style={{ transition: 'transform 0.2s', transform: isIntervalDropdownOpen ? 'rotate(180deg)' : 'none' }} />
+              </div>
+
+              {isIntervalDropdownOpen && (
+                <div className="apreach-dropdown-menu">
+                  <div className="apreach-dropdown-item" onClick={() => { setInterval('month'); setIsIntervalDropdownOpen(false); }}>
+                    <div className={`checkbox-custom check-align-left ${interval === 'month' ? 'checked' : ''}`}>
+                      {interval === 'month' && <Check size={10} strokeWidth={4} color="white" />}
+                    </div>
+                    <span>شهري</span>
+                  </div>
+                  <div className="apreach-dropdown-item" onClick={() => { setInterval('day'); setIsIntervalDropdownOpen(false); }}>
+                    <div className={`checkbox-custom check-align-left ${interval === 'day' ? 'checked' : ''}`}>
+                      {interval === 'day' && <Check size={10} strokeWidth={4} color="white" />}
+                    </div>
+                    <span>يومي</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="apreach-chart-content">
             <ResponseTimeChart data={data.response_speed_chart} />

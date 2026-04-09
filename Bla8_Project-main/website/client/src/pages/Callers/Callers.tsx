@@ -488,6 +488,7 @@ const Callers = () => {
                 </p>
               )}
 
+              <div className="callers-table-container">
               <table className="callers-table">
                 <thead>
                   <tr>
@@ -572,6 +573,90 @@ const Callers = () => {
                   )}
                 </tbody>
               </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="callers-mobile-card-list">
+                {displayedPreachers.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>
+                    {searchText ? `لا يوجد دعاة بهذا الاسم` : 'لا يوجد دعاة مسجلون في الجمعية حالياً'}
+                  </div>
+                ) : (
+                  displayedPreachers.map((preacher) => (
+                    <div key={preacher.preacher_id} className="callers-mobile-card">
+                      <div className="callers-mobile-card-top">
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <span className="callers-mobile-card-id">#{preacher.preacher_id}</span>
+                          <div className="callers-mobile-card-name">
+                            {preacher.full_name}
+                            <span className="callers-mobile-card-type">{TYPE_MAP[preacher.type] ?? preacher.type}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="callers-mobile-card-top-left">
+                          <label
+                            className={`toggle-switch ${isSuspended ? 'disabled-toggle' : ''}`}
+                            style={{ cursor: (togglingId === preacher.preacher_id || isSuspended) ? 'not-allowed' : 'pointer', transform: 'scale(0.85)', margin: '0', display: 'flex' }}
+                            title={isSuspended ? 'الحساب موقوف' : (preacher.status === 'active' ? 'إيقاف الداعية' : 'تفعيل الداعية')}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={preacher.status === 'active'}
+                              disabled={togglingId === preacher.preacher_id || isSuspended}
+                              onChange={() => !isSuspended && toggleActive(preacher)}
+                            />
+                            <span className="toggle-slider"></span>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="callers-mobile-card-fields">
+                        <div className="callers-mobile-field">
+                          <span className="callers-mobile-field-label">الجنسية</span>
+                          <span className="callers-mobile-field-value">{preacher.nationality_name || '—'}</span>
+                        </div>
+                        <div className="callers-mobile-field">
+                          <span className="callers-mobile-field-label">اللغة</span>
+                          <span className="callers-mobile-field-value">
+                            {preacher.language_names?.length > 0 ? preacher.language_names.join('، ') : '—'}
+                          </span>
+                        </div>
+                        <div className="callers-mobile-field">
+                          <span className="callers-mobile-field-label">تاريخ الانضمام</span>
+                          <span className="callers-mobile-field-value" style={{ fontSize: '0.8rem' }}>{formatDate(preacher.created_at)}</span>
+                        </div>
+                      </div>
+
+                      <div className="callers-mobile-card-footer">
+                        <div className="callers-mobile-card-actions" style={{ width: '100%', justifyContent: 'flex-end' }}>
+                          <button className="action-icon-btn chat-icon" title="محادثة" onClick={() => navigate(`/conversations?user_id=${preacher.user_id}&name=${preacher.full_name}`)}>
+                            <MessageCircle size={16} />
+                          </button>
+                          <button className="action-icon-btn view-icon" title="عرض" onClick={() => navigate(`/callers/view/${preacher.preacher_id}`)}>
+                            <Eye size={16} />
+                          </button>
+                          <button 
+                            className={`action-icon-btn edit-icon ${isSuspended ? 'disabled' : ''}`} 
+                            title={isSuspended ? 'الحساب موقوف' : 'تعديل'} 
+                            onClick={() => !isSuspended && navigate(`/callers/edit/${preacher.preacher_id}`)}
+                            disabled={isSuspended}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className={`action-icon-btn delete-icon ${isSuspended ? 'disabled' : ''}`} 
+                            title={isSuspended ? 'الحساب موقوف' : "حذف"} 
+                            onClick={() => !isSuspended && handleDelete(preacher)}
+                            disabled={isSuspended}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </>
           )}
 
