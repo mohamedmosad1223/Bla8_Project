@@ -149,6 +149,7 @@ class AnalyticsAIOrchestrator:
                     f"`WHERE org_id = {org_id}` في جداول مثل preachers، "
                     f"و `WHERE assigned_preacher_id IN (SELECT preacher_id FROM preachers WHERE org_id = {org_id})` "
                     f"في الجداول المرتبطة مثل dawah_requests و preacher_statistics. "
+                    f"(استثناء: عند البحث عن الطلبات الجدد/المتاحة، استخدم `WHERE status = 'pending'` بدون تقييد الداعية لأنها متاحة للجميع للتبني). "
                     f"تحذير أمني شديد: إياك ثم إياك أن تتلفظ أو تفصح للمستخدم بأي شكل من الأشكال عن كلمة org_id أو قيمتها ({org_id}) في ردودك، هذا الأمر يجب أن يظل مخفياً عن المستخدم تماماً!"
                 )
             }
@@ -172,30 +173,35 @@ class AnalyticsAIOrchestrator:
         ai_response = LLMService.generate_analytics_response(request_messages, role=active_role)
         logger.info(f"Analytics [{role}]: first LLM turn done.")
 
-        # تحقق هل الـ AI طلب SQL؟
-        sql_match = SQL_TAG_PATTERN.search(ai_response)
-        if not sql_match:
+        # تحقق هل الـ AI طلب SQL؟ (يدعم استعلامات متعددة)
+        sql_matches = list(SQL_TAG_PATTERN.finditer(ai_response))
+        if not sql_matches:
             with open("analytics_debug.log", "a", encoding="utf-8") as f:
                 f.write(f"\n--- NO SQL GENERATED ---\nRole: {role}, OrgID: {org_id}\nAI Response:\n{ai_response}\n")
             # لا SQL → أعد الرد مباشرة (مثلاً سؤال توضيحي أو رسالة خطأ)
             return ai_response
 
-        sql_query = sql_match.group(1).strip()
-        logger.info(f"Analytics: executing SQL: {sql_query[:200]}")
-        with open("analytics_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"\n--- SQL GENERATED ---\nRole: {role}, OrgID: {org_id}\nQuery:\n{sql_query}\n")
+        db_results = []
+        for idx, match in enumerate(sql_matches, 1):
+            sql_query = match.group(1).strip()
+            logger.info(f"Analytics: executing SQL {idx}/{len(sql_matches)}: {sql_query[:200]}")
+            with open("analytics_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"\n--- SQL GENERATED ({idx}) ---\nRole: {role}, OrgID: {org_id}\nQuery:\n{sql_query}\n")
 
-        # نفّذ الـ SQL بأمان
-        db_result = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id, preacher_id=preacher_id)
-        logger.info(f"Analytics: DB result preview: {db_result[:200]}")
-        with open("analytics_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"DB Result:\n{db_result[:500]}\n")
+            # نفّذ الـ SQL بأمان
+            res = SafeSQLExecutor.execute(sql_query, db, role=role, org_id=org_id, preacher_id=preacher_id)
+            db_results.append(f"[نتيجة الاستعلام {idx}]:\n{res}")
+            
+            with open("analytics_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"DB Result ({idx}):\n{res[:500]}\n")
+
+        combined_result = "\n".join(db_results)
 
         # الجولة النهائية: منسّق صارم — يعرض الداتا فقط بدون اختراع
         user_question = messages[-1]["content"] if messages else ""
         final_response = LLMService.format_db_result(
             user_question=user_question,
-            db_result=db_result,
+            db_result=combined_result,
         )
         return final_response
 

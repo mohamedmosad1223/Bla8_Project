@@ -173,9 +173,13 @@ DB_SCHEMA_PROMPT = """
 - users (user_id, email, role, status, created_at)
 - organizations (org_id, user_id, organization_name, governorate, approval_status)
 - preachers (preacher_id, user_id, org_id, type [volunteer/official], full_name, phone, email, gender, status, approval_status)
-- dawah_requests (request_id, request_type, status, invited_gender, assigned_preacher_id, conversion_date, governorate)
+- dawah_requests (request_id, request_type, status, invited_gender, assigned_preacher_id, conversion_date, governorate, invited_language_id)
 - preacher_statistics (stat_id, preacher_id, total_accepted, converted_count, in_progress_count, rejected_count, no_response_count)
 - muslim_callers (caller_id, user_id, full_name, phone, gender)
+- languages (language_id, language_name, language_code)
+- preacher_languages (preacher_id, language_id, proficiency)
+
+- **الاستعلامات المتعددة (Multi-Queries):** إذا طلب المستخدم استخراج بيانات ومقارنتها بغيرها (مثال: طلب مقارنة الطلبات الجديدة بالدعاة المتاحين)، يجب عليك تلقائياً توليد أكثر من بلوك `<SQL>...</SQL>` متتالي في نفس الرسالة (مثلاً استخدام النمط 4 لطباعة الطلبات مع النمط 5 لمقارنة اللغات بالدعاة)، حتى لو لم يذكر المستخدم كلمة "لغات" صراحةً. هدفك هو تقديم تقرير أوتوماتيكي شامل وكبير بدلاً من الاقتصار على جزء واحد.
 
 - **الترجمة العربية الإجبارية (SQL Level):** يُمنع تماماً ترك كلمات مثل `active` أو `suspended` تخرج من الداتابيز. استخدم دائماً `CASE WHEN p.status::TEXT = 'active' THEN 'نشط' WHEN p.status::TEXT = 'suspended' THEN 'موقوف' ELSE 'غير معروف' END AS "الحالة"` داخل استعلام الـ SQL نفسه.
 - **منع تكرار الأسماء (Unique Names):** لضمان ظهور كل اسم مرة واحدة فقط (وحل مشكلة "محمد" المتكرر)، الزم دائماً استخدام `GROUP BY p.full_name, o.organization_name` في تقارير الدعاة، مع تجميع الإحصائيات (`SUM`, `COUNT DISTINCT`). للحالة، استخدم `MAX(CASE...)` لضمان اختيار حالة واحدة للاسم الموحد.
@@ -222,24 +226,37 @@ DB_SCHEMA_PROMPT = """
   ORDER BY r.request_id DESC;
   ```
 
-- **النمط 4: الطلبات الجديدة (pending / بدون داعية) — أعمدة عربية:**
+- **النمط 4: الطلبات الجديدة المتاحة في النظام لجميع الجمعيات (pending / بدون داعية):**
   ```sql
   SELECT
     r.request_id AS "رقم الطلب",
     CASE WHEN r.request_type::TEXT = 'self_interested' THEN 'مهتم من تلقاء نفسه' WHEN r.request_type::TEXT = 'invited' THEN 'مدعو' ELSE r.request_type::TEXT END AS "نوع الطلب",
-    CASE WHEN r.status::TEXT = 'converted' THEN 'أسلم' WHEN r.status::TEXT IN ('in_progress','under_persuasion') THEN 'قيد الإقناع' WHEN r.status::TEXT = 'rejected' THEN 'مرفوض' WHEN r.status::TEXT = 'no_response' THEN 'لا استجابة' WHEN r.status::TEXT = 'pending' THEN 'جديد' ELSE r.status::TEXT END AS "الحالة",
+    'جديد' AS "الحالة",   
     CASE WHEN r.invited_gender::TEXT = 'male' THEN 'ذكر' WHEN r.invited_gender::TEXT = 'female' THEN 'أنثى' ELSE r.invited_gender::TEXT END AS "جنس المدعو",
-    COALESCE(p.full_name, 'لم يُسند بعد') AS "الداعية",
+    l.language_name AS "لغة التواصل",
     r.governorate AS "المحافظة"
   FROM dawah_requests r
-  LEFT JOIN preachers p ON r.assigned_preacher_id = p.preacher_id
-  LEFT JOIN organizations o ON p.org_id = o.org_id
-  WHERE o.org_id = [ORG_ID]
-    AND (r.status::TEXT = 'pending' OR r.assigned_preacher_id IS NULL)
+  LEFT JOIN languages l ON r.invited_language_id = l.language_id
+  WHERE r.status::TEXT = 'pending' AND r.assigned_preacher_id IS NULL
   ORDER BY r.request_id DESC;
   ```
 
+- **النمط 5: مقارنة اللغات (Languages Comparison):**
+  ```sql
+  SELECT
+    l.language_name AS "اللغة",
+    COUNT(DISTINCT r.request_id) AS "عدد الطلبات (مدعوين)",
+    COUNT(DISTINCT pl.preacher_id) AS "عدد الدعاة المتاحين"
+  FROM languages l
+  LEFT JOIN dawah_requests r ON l.language_id = r.invited_language_id AND r.assigned_preacher_id IN (SELECT preacher_id FROM preachers p WHERE p.org_id = [ORG_ID])
+  LEFT JOIN preacher_languages pl ON l.language_id = pl.language_id AND pl.preacher_id IN (SELECT preacher_id FROM preachers p WHERE p.org_id = [ORG_ID])
+  WHERE (r.request_id IS NOT NULL OR pl.preacher_id IS NOT NULL)
+  GROUP BY l.language_name
+  ORDER BY 2 DESC;
+  ```
+
 - **عزل السياق:** تجاهل الحالات السابقة واستخدم المطلوب في آخر سؤال فقط.
+
 """
 
 
@@ -521,26 +538,37 @@ def _try_get_ayah_context(query: str) -> str:
 
 
 
+def _get_forbidden_pattern(user_question: str) -> str:
+    """Dynamically determine forbidden scripts (Chinese, Russian, etc.) to prevent hallucinations,
+    unless the user explicitly typed in those scripts."""
+    if not user_question: return ""
+    forbidden = []
+    # CJK characters (Chinese, Japanese, Korean)
+    if not re.search(r"[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]", user_question):
+        forbidden.append(r"\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF")
+    # Cyrillic characters (Russian etc)
+    if not re.search(r"[\u0400-\u04FF]", user_question):
+        forbidden.append(r"\u0400-\u04FF")
+        
+    return f"[{''.join(forbidden)}]" if forbidden else ""
+
+def _sanitize_output(text: str, forbidden_pattern: str) -> str:
+    """Remove forbidden scripts dynamically to prevent hallucination without blocking requested languages."""
+    if not text or not forbidden_pattern: return text
+    return re.sub(forbidden_pattern, "", text)
+
 def _sanitize_text(text: str) -> str:
-    """Whitelist-based sanitization: Keep ONLY Arabic, Latin, Numbers, and common symbols."""
+    """Legacy static format - Keep only for backward compatibility if needed."""
     if not text: return ""
-    # Whitelist:
-    # \u0600-\u06FF: Arabic
-    # \u0020-\u007E: Basic Latin (Eng, Punct, Numbers)
-    # \u00A0-\u00FF: Latin-1 Supplement (European)
-    # \u2000-\u206F: General Punctuation
     pattern = r"[^\u0600-\u06FF\u0020-\u007E\u00A0-\u00FF\u2000-\u206F\n\r\t]"
     return re.sub(pattern, " ", text)
 
 # ─────────────────────────────────────────────
 # Helper: isolate messages (NO HISTORY)
 def build_isolated_messages(system_prompt: str, question: str, context: str, role: str = "interested"):
-    # Sanitize for PREACHER and ISLAMIC CHAT roles to block foreign script hallucinations
-    sanitize_roles = {"preacher", "interested", "guest"}
-    if role in sanitize_roles:
-        question = _sanitize_text(question)
-        context = _sanitize_text(context)
-    
+    # We no longer strictly sanitize the incoming question/context text to allow all languages
+    # Only detect Arabic presence for logic below
+
     # Detect if we should use Arabic headers
     has_arabic = bool(re.search(r"[\u0600-\u06FF]", question))
     
@@ -548,12 +576,14 @@ def build_isolated_messages(system_prompt: str, question: str, context: str, rol
         user_content = f"السؤال:\n{question}"
         if context and context.strip():
             user_content += f"\n\nالسياق المتاح:\n{context}"
-        user_content += "\n\n(تنبيه: التزم بقاعدة اللغة الواحدة. ممنوع منعاً باتاً كتابة أي حرف صيني أو ياباني أو كوري أو روسي في ردك.)"
+        user_content += "\n\n(تنبيه: التزم بقاعدة اللغة الواحدة. أجب باللغة العربية حصراً. ممنوع منعاً باتاً كتابة أي حرف صيني أو ياباني أو كوري أو روسي في ردك.)"
     else:
         user_content = f"Question:\n{question}"
         if context and context.strip():
             user_content += f"\n\nContext:\n{context}"
-        user_content += "\n\n(REMINDER: You MUST respond ONLY in the user's language. Using Chinese, Japanese, Korean, Cyrillic, or ANY other unsupported script is a CRITICAL VIOLATION. Respond in Arabic or English only, depending on the user's message.)"
+        user_content += "\n\n(CRITICAL INSTRUCTION: Analyze the language of the user's question and respond ONLY in that exact same language. For example, if the question is in English, you MUST respond 100% in English. The provided context may be in Arabic, but you must IGNORE the context's language and translate its meaning into the user's language.)"
+        
+        system_prompt += "\n\n[CRITICAL SYSTEM OVERRIDE]: The user message is NOT in Arabic. You are strictly FORBIDDEN from responding in Arabic. Your entire actual explanation, response, and conversational text MUST be in the exact SAME language as the user's question (e.g., English). The ONLY Arabic allowed is direct Quranic verses. If you write your explanation in Arabic, you will fail your core mission."
             
     return [
         {"role": "system", "content": system_prompt},
@@ -621,6 +651,7 @@ Example: {{"category": "introducing_islam"}}
 
         system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        forbidden_pattern = _get_forbidden_pattern(question)
         yield " " # Immediate visible token to clear "..." in UI
         context = retrieve_context(question, role)
         
@@ -659,7 +690,7 @@ Example: {{"category": "introducing_islam"}}
                     content = chunk.choices[0].delta.content
                     if content:
                         if role in {"preacher", "interested", "guest"}:
-                            yield _sanitize_text(content)
+                            yield _sanitize_output(content, forbidden_pattern)
                         else:
                             yield content
                 print("--- DeepSeek Stream Success! ---")
@@ -678,7 +709,7 @@ Example: {{"category": "introducing_islam"}}
                     content = chunk.choices[0].delta.content
                     if content:
                         if role in {"preacher", "interested", "guest"}:
-                            yield _sanitize_text(content)
+                            yield _sanitize_output(content, forbidden_pattern)
                         else:
                             yield content
                 print("--- Groq Stream Success! ---")
@@ -738,8 +769,9 @@ Example: {{"category": "introducing_islam"}}
                 frequency_penalty=0.0,
                 max_tokens=2048,
             )
+            forbidden_pattern = _get_forbidden_pattern(question)
             content = response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد."
-            return _sanitize_text(content) if role == "preacher" else content
+            return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
         except Exception as e:
             logger.error(f"DeepSeek Chat Error: {e}")
             if client:
@@ -751,8 +783,9 @@ Example: {{"category": "introducing_islam"}}
                         frequency_penalty=0.0,
                         max_tokens=2048,
                     )
+                    forbidden_pattern = _get_forbidden_pattern(question)
                     content = response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد."
-                    return _sanitize_text(content) if role == "preacher" else content
+                    return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
                 except Exception as e2:
                     logger.error(f"Groq Chat Error: {e2}")
             return "عذراً، حدث خطأ أثناء الاتصال بالخادم."
