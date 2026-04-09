@@ -114,6 +114,61 @@ const TableView = ({
   </div>
 );
 
+// ─── Card View (Mobile Only) ─────────────────────────────────────────────────
+const CardView = ({
+  requests, onView,
+}: {
+  requests: PoolRequest[];
+  onView: (r: PoolRequest) => void;
+}) => (
+  <div className="creq-card-list">
+    {(requests || []).map((req) => (
+      <div key={req.request_id} className="creq-mobile-card" onClick={() => onView(req)}>
+        {/* Top row: Name (right) + ID (left) */}
+        <div className="creq-mobile-card-top">
+          <h3 className="creq-mobile-card-name">{invitedName(req)}</h3>
+          <span className="creq-mobile-card-id">#{req.request_id}</span>
+        </div>
+
+        {/* 2×2 Field Grid */}
+        <div className="creq-mobile-card-fields">
+          <div className="creq-mobile-field">
+            <span className="creq-mobile-field-label">اسم الداعي</span>
+            <span className="creq-mobile-field-value">{req.submitted_by_name || 'لا يوجد'}</span>
+          </div>
+          <div className="creq-mobile-field">
+            <span className="creq-mobile-field-label">اسم الداعية</span>
+            <span className="creq-mobile-field-value">{req.preacher_name || 'غير محدد'}</span>
+          </div>
+          <div className="creq-mobile-field">
+            <span className="creq-mobile-field-label">حالة الطلب</span>
+            <span className="creq-mobile-field-value">
+              <StatusBadge status={req.status} />
+            </span>
+          </div>
+        </div>
+
+        {/* Footer: note & date (right) + icon buttons (left) */}
+        <div className="creq-mobile-card-footer">
+          <div className="creq-mobile-card-meta-right">
+            {req.notes && <span className="creq-mobile-card-note">{req.notes}</span>}
+            <span className="creq-mobile-card-date">{formatDate(req.submission_date).replace('\n', ' — ')}</span>
+          </div>
+          <div className="creq-mobile-card-actions">
+            <button
+              className="creq-icon-btn"
+              onClick={(e) => { e.stopPropagation(); onView(req); }}
+              title="عرض"
+            >
+              <Eye size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 // ─── Field Component ──────────────────────────────────────────────────────────
 const DetailField = ({
   label, icon, children,
@@ -857,7 +912,10 @@ const CurrentRequests = () => {
               )}
               {!loading && !error && displayed.length === 0 && <EmptyState />}
               {!loading && !error && displayed.length > 0 && (
-                <TableView requests={displayed} onView={handleView} />
+                <>
+                  <TableView requests={displayed} onView={handleView} />
+                  <CardView requests={displayed} onView={handleView} />
+                </>
               )}
             </div>
           </div>

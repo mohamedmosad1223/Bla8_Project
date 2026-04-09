@@ -1,7 +1,66 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Globe, Monitor, CheckCircle, AlertCircle } from 'lucide-react';
+import { ClipboardList, Globe, Monitor, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import './PreacherReports.css';
 import { dawahRequestService, PoolRequest } from '../../services/dawahRequestService';
+import React from 'react';
+
+/* ── Custom Select Component for cleaner UI and fixed list height ── */
+const SelectField: React.FC<{
+  name: string;
+  placeholder: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  disabled?: boolean;
+}> = ({ name, placeholder, options, value, onChange, error, disabled }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value);
+
+  return (
+    <div className="preport-select-wrapper" ref={wrapperRef}>
+      <div 
+        className={`preport-custom-select ${error ? 'preport-input-error' : ''} ${isOpen ? 'focused' : ''} ${disabled ? 'disabled' : ''}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+      >
+        <div className={`preport-select-display ${!value ? 'placeholder' : ''}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </div>
+        <span className={`preport-sel-chevron ${isOpen ? 'open' : ''}`}><ChevronDown size={18} /></span>
+        
+        {isOpen && (
+          <div className="preport-options-dropdown">
+            {options.map(o => (
+              <div 
+                key={o.value} 
+                className={`preport-option ${value === o.value ? 'selected' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(o.value);
+                  setIsOpen(false);
+                }}
+              >
+                {o.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const PreacherReports = () => {
   const [requests, setRequests] = useState<PoolRequest[]>([]);
@@ -103,21 +162,18 @@ const PreacherReports = () => {
             <span className="preport-label-num">١</span>
             اختر الطلب
           </label>
-          <select
-            className={`preport-select ${errors.request ? 'preport-input-error' : ''}`}
+          <SelectField
+            name="request"
+            placeholder={loadingRequests ? 'جارٍ التحميل...' : requests.filter(r => r.needs_report).length === 0 ? 'لا توجد طلبات تحتاج لتقرير' : '— اختر طلباً من طلباتك الحالية —'}
             value={selectedRequest}
-            onChange={e => { setSelectedRequest(e.target.value); setErrors(p => ({ ...p, request: undefined })); }}
+            onChange={val => { setSelectedRequest(val); setErrors(p => ({ ...p, request: undefined })); }}
             disabled={loadingRequests || requests.length === 0}
-          >
-            <option value="">
-              {loadingRequests ? 'جارٍ التحميل...' : requests.filter(r => r.needs_report).length === 0 ? 'لا توجد طلبات تحتاج لتقرير' : '— اختر طلباً من طلباتك الحالية —'}
-            </option>
-            {requests.filter(r => r.needs_report).map(r => (
-              <option key={r.request_id} value={String(r.request_id)}>
-                #{r.request_id} — {[r.invited_first_name, r.invited_last_name].filter(Boolean).join(' ')} ({r.invited_country_name || 'غير محدد'})
-              </option>
-            ))}
-          </select>
+            error={errors.request}
+            options={requests.filter(r => r.needs_report).map(r => ({
+              value: String(r.request_id),
+              label: `#${r.request_id} — ${[r.invited_first_name, r.invited_last_name].filter(Boolean).join(' ')} (${r.invited_country_name || 'غير محدد'})`
+            }))}
+          />
           {errors.request && <span className="preport-error-msg">{errors.request}</span>}
         </div>
 

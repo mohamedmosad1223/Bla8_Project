@@ -162,6 +162,72 @@ const TableView = ({
   </div>
 );
 
+// ─── Card View (Mobile Only) ─────────────────────────────────────────────────
+const CardView = ({
+  requests, onView, onAccept, onSkip, userRole,
+}: {
+  requests: PoolRequest[];
+  onView: (r: PoolRequest) => void;
+  onAccept: (r: PoolRequest) => void;
+  onSkip: (r: PoolRequest) => void;
+  userRole: string | null;
+}) => (
+  <div className="nreq-card-list">
+    {requests.map((req) => (
+      <div key={req.request_id} className="nreq-mobile-card" onClick={() => onView(req)}>
+        {/* Top row: Name (right) + ID (left) */}
+        <div className="nreq-mobile-card-top">
+          <h3 className="nreq-mobile-card-name">{invitedName(req)}</h3>
+          <span className="nreq-mobile-card-id">#{req.request_id}</span>
+        </div>
+
+        {/* 2×2 Field Grid */}
+        <div className="nreq-mobile-card-fields">
+          <div className="nreq-mobile-field">
+            <span className="nreq-mobile-field-label">الجنسية</span>
+            <span className="nreq-mobile-field-value">{req.invited_country_name || '—'}</span>
+          </div>
+          <div className="nreq-mobile-field">
+            <span className="nreq-mobile-field-label">الديانة</span>
+            <span className="nreq-mobile-field-value">{req.invited_religion || '—'}</span>
+          </div>
+          <div className="nreq-mobile-field">
+            <span className="nreq-mobile-field-label">لغة التواصل</span>
+            <span className="nreq-mobile-field-value">{req.invited_language_name || '—'}</span>
+          </div>
+          <div className="nreq-mobile-field">
+            <span className="nreq-mobile-field-label">اسم الداعي</span>
+            <span className="nreq-mobile-field-value">{req.submitted_by_name || 'لا يوجد'}</span>
+          </div>
+        </div>
+
+        {/* Footer: icon buttons (left) + note & date (right) */}
+        <div className="nreq-mobile-card-footer">
+          <div className="creq-mobile-card-meta-right nreq-mobile-card-meta-right">
+            {req.notes && <span className="creq-mobile-card-note nreq-mobile-card-note">{req.notes}</span>}
+            <span className="creq-mobile-card-date nreq-mobile-card-date">{formatDate(req.submission_date).replace('\n', ' — ')}</span>
+          </div>
+          <div className="nreq-mobile-card-actions" onClick={(e) => e.stopPropagation()}>
+            <button className="nreq-icon-btn nreq-icon-view" onClick={() => onView(req)} title="عرض">
+              <Eye size={16} />
+            </button>
+            {userRole === 'preacher' && (
+              <>
+                <button className="nreq-icon-btn nreq-icon-accept" onClick={() => onAccept(req)} title="قبول">
+                  <Check size={16} />
+                </button>
+                <button className="nreq-icon-btn nreq-icon-skip" onClick={() => onSkip(req)} title="تخطي">
+                  <X size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 // ─── Field Component ──────────────────────────────────────────────────────────
 const NField = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
   <div className="nreq-dfield">
@@ -709,13 +775,22 @@ const NewRequests = () => {
               )}
               {!loading && !error && displayed.length === 0 && <EmptyState />}
               {!loading && !error && displayed.length > 0 && (
-                <TableView
-                  requests={displayed}
-                  onView={handleView}
-                  onAccept={openAccept}
-                  onSkip={openSkip}
-                  userRole={userRole}
-                />
+                <>
+                  <TableView
+                    requests={displayed}
+                    onView={handleView}
+                    onAccept={openAccept}
+                    onSkip={openSkip}
+                    userRole={userRole}
+                  />
+                  <CardView
+                    requests={displayed}
+                    onView={handleView}
+                    onAccept={openAccept}
+                    onSkip={openSkip}
+                    userRole={userRole}
+                  />
+                </>
               )}
             </div>
           </div>

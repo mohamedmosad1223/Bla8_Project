@@ -51,14 +51,21 @@
   appearance: none;
   text-align: right;
   direction: rtl;
-  min-height: 3.5rem;
+  height: 56px;
+  box-sizing: border-box;
+}
+
+/* Ensure native placeholders are soft gray like the Nationality field */
+.preg-input-icon input::placeholder,
+.preg-input-icon select:invalid {
+  color: #a0aec0;
 }
 
 .tags-input-container {
   display: flex !important;
   flex-direction: column;
   justify-content: center;
-  padding: 0.5rem 1rem 0.5rem 3.5rem !important;
+  padding: 0 1rem 0 3.5rem !important;
 }
 
 .tags-input-container.active {
@@ -140,7 +147,7 @@
 }
 
 .placeholder-text {
-  color: #9ca3af;
+  color: #a0aec0;
 }
 
 /* Language Dropdown Menu */
@@ -172,10 +179,41 @@
   color: #374151;
   font-size: 0.95rem;
   text-align: right;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.language-dropdown-item:hover {
-  background-color: #f9fafb;
+.language-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.language-dropdown-item:hover,
+.language-dropdown-item.active {
+  background-color: #f8fafc;
+}
+
+.nationality-item .nat-text {
+  color: inherit;
+  font-weight: normal;
+  transition: color 0.15s ease;
+}
+
+.nationality-item:hover .nat-text,
+.nationality-item.active .nat-text {
+  color: var(--primary-gold, #DBA829);
+  font-weight: bold;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 /* Custom Checkbox */
@@ -226,8 +264,9 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  min-height: 3.5rem;
-  color: #9CA3AF;
+  height: 56px;
+  box-sizing: border-box;
+  color: #a0aec0;
   font-family: inherit;
   font-size: 0.95rem;
   text-align: right;

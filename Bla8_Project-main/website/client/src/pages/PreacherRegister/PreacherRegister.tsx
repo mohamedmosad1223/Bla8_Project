@@ -19,7 +19,9 @@ const PreacherRegister: React.FC = () => {
   const [availableCountries, setAvailableCountries] = useState<{id: number, name: string}[]>([]);
   const [selectedLangs, setSelectedLangs] = useState<number[]>([]); 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [isNationalityOpen, setIsNationalityOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const natDropdownRef = useRef<HTMLDivElement>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -59,18 +61,19 @@ const PreacherRegister: React.FC = () => {
     fetchData();
   }, []);
 
-  // Handle click outside for dropdown
+  // Handle click outside for dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsLanguageDropdownOpen(false);
       }
+      if (natDropdownRef.current && !natDropdownRef.current.contains(event.target as Node)) {
+        setIsNationalityOpen(false);
+      }
     }
-    if (isLanguageDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isLanguageDropdownOpen]);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -126,8 +129,8 @@ const PreacherRegister: React.FC = () => {
 
       await preacherService.register(payload);
       setShowModal(true);
-    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      const errDetail = err.response?.data?.detail;
+    } catch (err: unknown) {
+      const errDetail = (err as any).response?.data?.detail;
       if (Array.isArray(errDetail)) {
         // FastAPI validation errors
         setError(errDetail.map((e: any) => e.msg).join(' - '));
@@ -170,17 +173,40 @@ const PreacherRegister: React.FC = () => {
               </div>
             </div>
 
-            {/* Nationality */}
-            <div className="preg-group full-width">
-              <div className="preg-input-icon preg-select-wrap">
-                <select name="nationalityId" value={formData.nationalityId} onChange={handleInputChange} required>
-                  <option value="" disabled>الجنسية</option>
-                  {availableCountries.map(country => (
-                    <option key={country.id} value={country.id}>{country.name}</option>
-                  ))}
-                </select>
-                <span className="preg-icon"><ChevronDown size={18} /></span>
+            {/* Nationality (Custom Dropdown) */}
+            <div className="preg-group full-width relative" ref={natDropdownRef}>
+              <div 
+                className={`preg-input-icon tags-input-container ${formData.nationalityId ? 'has-value' : ''}`}
+                onClick={() => setIsNationalityOpen(!isNationalityOpen)}
+                style={{ cursor: 'pointer', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0 1rem 0 3.5rem' }}
+              >
+                <div style={{ color: formData.nationalityId ? 'var(--text-dark)' : '#a0aec0' }}>
+                  {formData.nationalityId ? availableCountries.find(c => String(c.id) === String(formData.nationalityId))?.name : 'الجنسية'}
+                </div>
+                <span className="preg-icon" style={{ left: '1.25rem' }}>
+                  <ChevronDown size={18} className={`transition-transform ${isNationalityOpen ? 'rotate-180' : ''}`} />
+                </span>
               </div>
+
+              {isNationalityOpen && (
+                <div className="language-dropdown-menu custom-scrollbar">
+                  {availableCountries.map((country) => (
+                    <div 
+                      key={country.id} 
+                      className={`language-dropdown-item nationality-item ${String(formData.nationalityId) === String(country.id) ? 'active' : ''}`}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, nationalityId: String(country.id) }));
+                        setIsNationalityOpen(false);
+                      }}
+                      style={{ flexDirection: 'row', justifyContent: 'flex-start' }}
+                    >
+                      <span className="nat-text">
+                        {country.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Languages (Multi-select style like AddCaller) */}
@@ -188,9 +214,9 @@ const PreacherRegister: React.FC = () => {
               <div 
                 className={`preg-input-icon tags-input-container ${isLanguageDropdownOpen ? 'active' : ''}`}
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0 1rem 0 3.5rem' }}
               >
-                <div className="tags-wrapper">
+                <div className="tags-wrapper" style={{ flex: 1 }}>
                   {selectedLangs.length === 0 && <span className="placeholder-text">اختر اللغات...</span>}
                   {selectedLangs.map((langId) => {
                     const lang = availableLangs.find(l => l.id === langId);
@@ -207,7 +233,7 @@ const PreacherRegister: React.FC = () => {
                     );
                   })}
                 </div>
-                <span className="preg-icon"><ChevronDown size={18} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} /></span>
+                <span className="preg-icon" style={{ left: '1.25rem' }}><ChevronDown size={18} className={`transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} /></span>
               </div>
 
               {isLanguageDropdownOpen && (

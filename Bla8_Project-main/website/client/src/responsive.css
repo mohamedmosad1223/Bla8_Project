@@ -24,6 +24,11 @@
     grid-template-columns: 1fr !important;
   }
 
+  /* ── 1b. Preacher Dashboard Stats: 2 per row on mobile ── */
+  .pd-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
   /* ── 2. Dashboard Layout: Convert Sidebar to Bottom Navigation (non-Muslim EXCLUDED) ── */
   .dashboard-layout {
     flex-direction: column !important;
@@ -130,9 +135,14 @@
 
   /* Notification dropdown */
   .notif-dropdown {
-    width: 90vw !important;
-    left: 0 !important;
+    position: fixed !important;
+    top: 65px !important;
+    left: 16px !important;
     right: auto !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 380px !important;
+    transform: none !important;
+    z-index: 10000 !important;
   }
 
 
@@ -895,5 +905,358 @@
 
   .nm-msg-row {
     max-width: 95% !important;
+  }
+}
+
+/* ── Mobile-Only Card Lists (hidden by default on desktop) ── */
+.creq-card-list,
+.nreq-card-list {
+  display: none;
+}
+
+/* ── Muslim Caller Adjustments (600px max) ── */
+@media (max-width: 600px) {
+  /* Dashboard Form Adjustments */
+  .mc-card {
+    padding: 1.5rem 1rem !important;
+  }
+  
+  .mc-title {
+    font-size: 1.1rem !important;
+  }
+  
+  .mc-row {
+    flex-direction: column !important;
+    gap: 0.9rem !important;
+  }
+
+  .mc-custom-select {
+    padding: 0.75rem 2.2rem 0.75rem 1rem !important;
+    font-size: 0.85rem !important;
+    min-height: 44px !important;
+  }
+
+  .mc-textarea {
+    min-height: 90px !important;
+    padding: 0.75rem 2.2rem 0.75rem 1rem !important;
+  }
+
+  /* Submissions Grid Adjustments (2 columns) */
+  .mcd-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .mcd-card {
+    padding: 1rem !important;
+    border-radius: 16px !important;
+  }
+  
+  .mcd-badge {
+    padding: 4px 10px !important;
+    font-size: 0.65rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .mcd-card-name {
+    font-size: 1rem !important;
+    margin: 0.25rem 0 !important;
+  }
+  
+  /* ── Requests Pages: Hide table, show cards on mobile ── */
+
+  .creq-table-wrapper,
+  .nreq-table-wrapper {
+    display: none !important;
+  }
+
+  /* Card list container */
+  .creq-card-list,
+  .nreq-card-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  /* Individual card — light theme */
+  .creq-mobile-card,
+  .nreq-mobile-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #edf2f7 !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important;
+    padding: 1rem 1.1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    cursor: pointer !important;
+    transition: transform 0.15s, box-shadow 0.15s !important;
+    direction: rtl !important;
+    animation: creq-fadeIn 0.3s ease !important;
+  }
+
+  .creq-mobile-card:active,
+  .nreq-mobile-card:active {
+    transform: scale(0.98) !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08) !important;
+  }
+
+  /* Top row: Name (right) + ID (left) */
+  .creq-mobile-card-top,
+  .nreq-mobile-card-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .creq-mobile-card-id,
+  .nreq-mobile-card-id {
+    font-size: 0.75rem !important;
+    color: #a0aec0 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Name — dark, bold */
+  .creq-mobile-card-name,
+  .nreq-mobile-card-name {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #2d3748 !important;
+    margin: 0 !important;
+  }
+
+  /* 2×2 field grid */
+  .creq-mobile-card-fields,
+  .nreq-mobile-card-fields {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px 10px !important;
+  }
+
+  .creq-mobile-field,
+  .nreq-mobile-field {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: right !important;
+  }
+
+  .creq-mobile-field-label,
+  .nreq-mobile-field-label {
+    font-size: 0.72rem !important;
+    color: #718096 !important;
+    font-weight: 500 !important;
+  }
+
+  .creq-mobile-field-value,
+  .nreq-mobile-field-value {
+    font-size: 0.9rem !important;
+    color: #1a202c !important;
+    font-weight: 600 !important;
+  }
+
+  /* Footer: Meta-Right (right) + actions (left) */
+  .creq-mobile-card-footer,
+  .nreq-mobile-card-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #edf2f7 !important;
+    gap: 8px !important;
+  }
+
+  /* Icon button group */
+  .creq-mobile-card-actions,
+  .nreq-mobile-card-actions {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  /* Icon buttons */
+  .creq-icon-btn,
+  .nreq-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    border: 1px solid #edf2f7 !important;
+    background: #f7fafc !important;
+    color: #4a5568 !important;
+    cursor: pointer !important;
+    transition: all 0.15s !important;
+    flex-shrink: 0 !important;
+  }
+
+  .creq-icon-btn:hover,
+  .nreq-icon-btn:hover {
+    background: #edf2f7 !important;
+    color: #2d3748 !important;
+  }
+
+  /* Accept — green tint */
+  .nreq-icon-accept {
+    border-color: rgba(12,188,139,0.2) !important;
+    color: #0CBC8B !important;
+    background: rgba(12,188,139,0.05) !important;
+  }
+  .nreq-icon-accept:hover {
+    background: rgba(12,188,139,0.1) !important;
+  }
+
+  /* Skip — red tint */
+  .nreq-icon-skip {
+    border-color: rgba(252,129,129,0.2) !important;
+    color: #FC8181 !important;
+    background: rgba(252,129,129,0.05) !important;
+  }
+  .nreq-icon-skip:hover {
+    background: rgba(252,129,129,0.1) !important;
+  }
+
+  /* View — gold tint */
+  .nreq-icon-view,
+  .creq-icon-btn {
+    border-color: rgba(219,168,65,0.2) !important;
+    color: #DBA841 !important;
+    background: rgba(219,168,65,0.05) !important;
+  }
+  .nreq-icon-view:hover,
+  .creq-icon-btn:hover {
+    background: rgba(219,168,65,0.1) !important;
+  }
+
+  /* Note + date block (right side of footer) */
+  .creq-mobile-card-meta-right,
+  .nreq-mobile-card-meta-right {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .creq-mobile-card-note,
+  .nreq-mobile-card-note {
+    font-size: 0.75rem !important;
+    color: #4a5568 !important;
+    font-weight: 500 !important;
+  }
+
+  .creq-mobile-card-date,
+  .nreq-mobile-card-date {
+    font-size: 0.68rem !important;
+    color: #a0aec0 !important;
+    direction: ltr !important;
+  }
+  /* Header & page */
+  .creq-page .page-title,
+  .nreq-page .page-title {
+    font-size: 1.3rem !important;
+  }
+
+  .creq-header-area,
+  .nreq-header-area {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .creq-actions,
+  .nreq-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important; /* Force side-by-side */
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .search-input-wrapper-outlined {
+    flex: 1 !important;
+    min-width: 0 !important; /* Allow it to shrink to fit side-by-side */
+  }
+
+  /* Ensure buttons don't shrink too much */
+  .creq-filter-container,
+  .filter-popup-container,
+  .sort-container {
+    flex-shrink: 0 !important;
+  }
+
+  /* Filter panel — centered modal */
+  .creq-filter-panel,
+  .filter-panel {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90vw !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    z-index: 9999 !important;
+  }
+
+  /* Detail view */
+  .creq-detail-card,
+  .nreq-detail-card {
+    padding: 1rem !important;
+    border-radius: 14px !important;
+  }
+
+  .creq-drow,
+  .nreq-drow {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px 10px !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .creq-dfield-span2,
+  .nreq-dfield-span2 {
+    grid-column: span 2 !important;
+  }
+
+  .creq-detail-header-row,
+  .nreq-detail-header-wrapper {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .creq-detail-actions,
+  .nreq-detail-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .creq-dtl-btn,
+  .nreq-detail-btn {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    padding: 10px 12px !important;
+    min-width: 130px !important;
+  }
+
+  /* Update status modal */
+  .umodal-box {
+    padding: 1.5rem 1.25rem 1.25rem !important;
+    border-radius: 20px !important;
+  }
+
+  .umodal-actions {
+    flex-direction: column !important;
+  }
+
+  .umodal-btn-save,
+  .umodal-btn-cancel {
+    width: 100% !important;
   }
 }

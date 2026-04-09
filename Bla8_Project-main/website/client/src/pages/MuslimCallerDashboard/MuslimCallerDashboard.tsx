@@ -10,28 +10,65 @@ import { dawahRequestService } from '../../services/dawahRequestService';
 import { preacherService } from '../../services/preacherService';
 import './MuslimCallerDashboard.css';
 
-/* ── Reusable Select Field ──────────────────────────────────────── */
+/* ── Reusable Select Field (Custom UI to prevent mobile native list styling issues) ── */
 const SelectField: React.FC<{
   name: string;
   placeholder: string;
   icon: React.ReactNode;
   options: { value: string; label: string }[];
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange: (e: { target: { name: string; value: string } }) => void;
   error?: string;
-}> = ({ name, placeholder, icon, options, value, onChange, error }) => (
-  <div className="mc-field-wrap">
-    <div className={`mc-select-wrapper ${error ? 'mc-error-border' : ''}`}>
-      <span className="mc-sel-icon">{icon}</span>
-      <select name={name} className="mc-select" value={value} onChange={onChange}>
-        <option value="" disabled hidden>{placeholder}</option>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      <span className="mc-sel-chevron"><ChevronDown size={15} /></span>
+}> = ({ name, placeholder, icon, options, value, onChange, error }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value);
+
+  return (
+    <div className="mc-field-wrap" ref={wrapperRef}>
+      <div 
+        className={`mc-select-wrapper mc-custom-select ${error ? 'mc-error-border' : ''} ${isOpen ? 'focused' : ''}`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="mc-sel-icon">{icon}</span>
+        <div className={`mc-select-display ${!value ? 'placeholder' : ''}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </div>
+        <span className={`mc-sel-chevron ${isOpen ? 'open' : ''}`}><ChevronDown size={15} /></span>
+        
+        {isOpen && (
+          <div className="mc-options-dropdown">
+            {options.map(o => (
+              <div 
+                key={o.value} 
+                className={`mc-option ${value === o.value ? 'selected' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange({ target: { name, value: o.value } });
+                  setIsOpen(false);
+                }}
+              >
+                {o.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {error && <span className="mc-error-msg">{error}</span>}
     </div>
-    {error && <span className="mc-error-msg">{error}</span>}
-  </div>
-);
+  );
+};
 
 /* ── Field labels for validation ── */
 const fieldLabels: Record<string, string> = {
@@ -97,7 +134,7 @@ const MuslimCallerDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
     setForm(p => ({ ...p, [name]: value }));
     if (submitted && errors[name]) {
@@ -188,10 +225,11 @@ const MuslimCallerDashboard: React.FC = () => {
       setForm({ fullName: '', religion: '', nationality: '', language: '', phone: '', gender: '', age: '', communicationMethod: '', deepLink: '', comment: '', acceptedTerms: false });
       setSubmitted(false);
       setErrors({});
-    } catch (err: any) {
-      console.error('Dawah request error:', err.response?.data || err);
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
+    } catch (err: unknown) {
+      const errorResponse = (err as { response?: { data?: { detail?: unknown } } }).response;
+      console.error('Dawah request error:', errorResponse?.data || err);
+      if (errorResponse?.data?.detail) {
+        const detail = errorResponse.data.detail;
         setApiError(typeof detail === 'string' ? detail : JSON.stringify(detail));
       } else {
         setApiError('حدث خطأ أثناء إرسال الطلب');
