@@ -324,3 +324,7 @@
 .granularity-toggle button:hover:not(.active) {
   color: #374151;
 }
+
+.preachers-mobile-list {
+  display: none;
+}

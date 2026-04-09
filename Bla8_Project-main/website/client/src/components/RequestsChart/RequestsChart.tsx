@@ -64,7 +64,7 @@ const RequestsChart = ({ data }: RequestsChartProps) => {
 
   return (
     <div className="requests-chart-container">
-      <div className="doughnut-wrapper">
+      <div className="doughnut-wrapper" style={{ direction: 'ltr', minHeight: '260px' }}>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie

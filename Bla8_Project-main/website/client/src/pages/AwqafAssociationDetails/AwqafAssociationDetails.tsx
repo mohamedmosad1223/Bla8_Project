@@ -372,6 +372,67 @@ const AwqafAssociationDetails = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards View */}
+          <div className="preachers-mobile-list">
+            {preachers.map((preacher, index) => (
+              <div key={preacher.preacher_id} className="preacher-card">
+                <div className="card-header">
+                  <div className="header-right">
+                    <div className="preacher-info-main">
+                      <div className="preacher-name-row">
+                        <h4 className="preacher-name">{preacher.full_name}</h4>
+                        <span className="preacher-id">#{index + 1}</span>
+                      </div>
+                      <span className="preacher-role">داعية - {preacher.preacher_id}</span>
+                    </div>
+                  </div>
+                  <div className="header-left">
+                    <div className="status-text-box">
+                      <span className="info-label">الحالة</span>
+                      <span className={`status-value ${preacher.status === 'active' ? 'status-active' : 'status-inactive'}`}>
+                        {mapPreacherStatus(preacher.status)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-content-grid">
+                  <div className="info-box">
+                    <span className="info-label">الجنسية</span>
+                    <span className="info-value">{preacher.nationality}</span>
+                  </div>
+                  <div className="info-box">
+                    <span className="info-label">اللغة</span>
+                    <span className="info-value">{preacher.languages.join('، ') || 'غير محدد'}</span>
+                  </div>
+                  <div className="info-box full-width">
+                    <div className="joining-date-horizontal">
+                      <span className="info-label">تاريخ الانضمام:</span>
+                      <span className="info-value">{preacher.joining_date}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-actions">
+                   <div className="action-icons">
+                      <button className="icon-btn-circle" onClick={() => navigate(`/awqaf/associations/${assocId}/preachers/${preacher.preacher_id}`)} title="عرض">
+                        <Eye size={18}/>
+                        <span style={{ fontSize: '13px', fontWeight: 600, marginRight: '8px' }}>عرض التفاصيل</span>
+                      </button>
+                   </div>
+                </div>
+              </div>
+            ))}
+
+            {!loadingPreachers && preachers.length === 0 && (
+              <div className="empty-cards-state">لا يوجد دعاة مطابقين للبحث</div>
+            )}
+            
+            {loadingPreachers && (
+              <div className="empty-cards-state">جاري تحميل الدعاة...</div>
+            )}
+          </div>
         </div>
       )}
     </div>

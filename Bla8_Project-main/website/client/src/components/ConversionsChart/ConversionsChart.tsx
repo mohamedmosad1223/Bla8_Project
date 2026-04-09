@@ -50,11 +50,11 @@ const ConversionsChart = ({ data }: ConversionsChartProps) => {
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: '250px' }}>
-      <ResponsiveContainer width="100%" height="100%">
+    <div style={{ width: '100%', minHeight: '300px', direction: 'ltr' }}>
+      <ResponsiveContainer width="100%" height={280}>
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 0, left: 0, bottom: 5 }}
+          margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
           barSize={12}
         >
           <XAxis 

@@ -1455,12 +1455,91 @@
     overflow-x: hidden !important;
   }
 
-  /* ── Fix horizontal width overflow for all stat cards globally on mobile ── */
   .stat-card {
     padding: 12px !important;
     gap: 8px !important;
     min-width: 0 !important; /* allow flex items to shrink */
   }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Awqaf Preacher Performance Page (أداء الدعاة - الأوقاف) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  /* 1. Filters inline */
+  .perf-filters {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    overflow-x: auto !important; /* In case screen is extremely tiny, allow horizontal scroll instead of breaking layout */
+  }
+
+  .perf-filters .filter-group {
+    flex: 1;
+    min-width: 0 !important;
+  }
+
+  .perf-filters label {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .perf-filters select {
+    padding: 8px !important;
+    font-size: 11px !important;
+    height: 38px !important;
+  }
+
+  .perf-filters .apply-btn {
+    padding: 0 16px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 2. Stat cards: 2 per row */
+  .perf-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Shrink stat cards to fit 2 per row nicely */
+  .perf-stat-card {
+    padding: 12px !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  .perf-stat-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+  
+  .perf-stat-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .perf-stat-title {
+    font-size: 0.75rem !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+  }
+
+  .perf-stat-value {
+    font-size: 1.3rem !important;
+  }
+
+  /* 3. Charts: 1 per row */
+  .perf-charts-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
 
   .stat-title {
     font-size: 0.8rem !important;
@@ -1490,6 +1569,486 @@
 
   .stat-trend {
     font-size: 0.75rem !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Awqaf Reports & Analytics Page (التقارير والتحليلات - الأوقاف) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  /* 1. Header & Filters */
+  .reports-top {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  /* Container for selects + apply button */
+  .reports-top > div:last-child {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
+  }
+
+  .assoc-filter-select {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    height: 38px !important;
+    min-width: 120px !important;
+    flex: 1 !important;
+  }
+
+  .apply-filter-btn {
+    padding: 0 12px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .refresh-btn-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+  }
+
+  /* 2. Stat Cards: 2 per row */
+  .ra-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* 3. Charts: Stacked */
+  .ra-charts-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  /* 4. Geographic Distribution */
+  .geo-row {
+    flex-direction: row-reverse !important; /* Move label to the beginning and name to the end */
+    gap: 12px !important;
+    padding: 4px 0 !important;
+  }
+
+  .geo-name {
+    width: auto !important;
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    text-align: left !important;
+    font-size: 12px !important;
+  }
+
+  .geo-progress-bar-bg {
+    height: 16px !important; /* Larger bar as requested */
+    border-radius: 8px !important;
+  }
+
+  .geo-rate-label {
+    width: auto !important;
+    min-width: 0 !important;
+    text-align: right !important;
+    font-size: 12px !important;
+  }
+
+  /* Table responsiveness */
+  .ra-table-container {
+    overflow-x: auto !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Awqaf AI Center Page (مركز الذكاء الاصطناعي - الأوقاف) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .ai-top-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .ai-main-title {
+    font-size: 1.25rem !important;
+  }
+
+  .ai-breadcrumb-right {
+    font-size: 0.9rem !important;
+  }
+
+  .ai-card {
+    padding: 16px !important;
+  }
+
+  .ai-card-header h2 {
+    font-size: 1rem !important;
+  }
+
+  /* Chat adjustments */
+  .ai-chat-area {
+    min-height: 350px !important;
+    max-height: 500px !important;
+    padding: 10px !important;
+  }
+
+  .ai-chat-bubble {
+    max-width: 95% !important;
+    font-size: 0.85rem !important;
+    padding: 10px 14px !important;
+  }
+
+  /* Smart Slicing/Download button */
+  .ai-smart-assistant .ai-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .ai-smart-assistant .ai-card-header .ai-btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Scheduler adjustments */
+  .ai-schedule-add {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .ai-schedule-add .ai-btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 46px !important;
+  }
+
+  .ai-schedule-item {
+    padding: 12px !important;
+  }
+
+  .ai-schedule-text {
+    font-size: 0.85rem !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Awqaf Association Details Page (تفاصيل الجمعية - الأوقاف) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .awqaf-assoc-details-page {
+    gap: 16px !important;
+  }
+
+  .details-tabs {
+    gap: 8px !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 4px !important;
+  }
+
+  .tab-btn {
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 1. Info Box (بيانات الجمعية) */
+  .data-grid-layout {
+    grid-template-columns: 1fr 1fr !important; /* 2 per row */
+    gap: 16px !important;
+  }
+
+  .data-item {
+    gap: 4px !important;
+  }
+
+  .data-label {
+    font-size: 11px !important;
+  }
+
+  .data-value {
+    font-size: 13px !important;
+    word-break: break-word !important;
+  }
+
+  /* 2. Stat Cards: 2 per row */
+  .awqaf-assoc-details-page .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    margin-top: 16px !important;
+  }
+
+  /* 3. Charts: Stacked */
+  .awqaf-assoc-details-page .charts-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    margin-top: 16px !important;
+  }
+
+  /* Preachers tab refinement */
+  .search-box {
+    width: 100% !important;
+  }
+
+  .preachers-table-container {
+    overflow-x: auto !important;
+  }
+
+  .preachers-table th, .preachers-table td {
+    white-space: nowrap !important;
+    padding: 12px 8px !important;
+  }
+
+  /* Mobile Cards for Association Preachers */
+  .preachers-table-container {
+    display: none !important;
+  }
+
+  .preachers-mobile-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .preacher-card {
+    background: white !important;
+    border: 1px solid #F3F4F6 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    direction: rtl !important;
+  }
+
+  .card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+  }
+
+  .preacher-info-main {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: right !important;
+    flex: 1 !important;
+  }
+
+  .preacher-name-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-direction: row-reverse !important; /* Put ID to the left of name in RTL */
+    justify-content: flex-end !important;
+  }
+
+  .preacher-id {
+    font-size: 11px !important;
+    color: #CA8A04 !important;
+    font-weight: 700 !important;
+    background: #FEF9C3 !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+  }
+
+  .preacher-name {
+    margin: 0 !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+  }
+
+  .preacher-role {
+    font-size: 11px !important;
+    color: #6B7280 !important;
+    margin-top: 2px !important;
+  }
+
+  /* Status Text Box (replacing toggle) */
+  .status-text-box {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+
+  .status-value {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 2px 10px !important;
+    border-radius: 999px !important;
+  }
+
+  .status-value.status-active {
+    background: #D1FAE5 !important;
+    color: #059669 !important;
+  }
+
+  .status-value.status-inactive {
+    background: #FEE2E2 !important;
+    color: #DC2626 !important;
+  }
+
+  /* Info Grid Refinements */
+  .card-content-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    padding: 12px 0 !important;
+    border-top: 1px dashed #F3F4F6 !important;
+    border-bottom: 1px dashed #F3F4F6 !important;
+  }
+
+  .joining-date-horizontal {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    justify-content: flex-start !important; /* Align to the far right in RTL */
+  }
+
+  .joining-date-horizontal .info-label {
+    margin-bottom: 0 !important;
+  }
+
+  .info-box {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: right !important;
+  }
+
+  .info-box.full-width {
+    grid-column: span 2 !important;
+    align-items: center !important;
+  }
+
+  .info-label {
+    font-size: 11px !important;
+    color: #9CA3AF !important;
+    font-weight: 600 !important;
+  }
+
+  .info-value {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+  }
+
+  /* Actions */
+  .card-actions {
+    display: flex !important;
+    justify-content: flex-start !important;
+  }
+
+  .action-icons {
+    display: flex !important;
+    gap: 16px !important;
+  }
+
+  .icon-btn-circle {
+    width: auto !important;
+    height: 40px !important;
+    padding: 0 20px !important;
+    border-radius: 8px !important;
+    background: #F9FAFB !important;
+    border: 1px solid #E5E7EB !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #4B5563 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    width: 100% !important; /* Full width for mobile button */
+  }
+
+  .icon-btn-circle:hover {
+    background: #EFF6FF !important;
+    border-color: #3B82F6 !important;
+    color: #3B82F6 !important;
+  }
+
+  .icon-btn-circle.delete:hover {
+    border-color: #EF4444 !important;
+    color: #EF4444 !important;
+  }
+
+  .empty-bubble {
+    width: 16px !important;
+    height: 16px !important;
+    border: 1.2px solid currentColor !important;
+    border-radius: 50% !important;
+    position: relative !important;
+  }
+
+  .empty-bubble::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: -2.5px !important;
+    left: 2px !important;
+    width: 5px !important;
+    height: 5px !important;
+    border-left: 1.2px solid currentColor !important;
+    border-bottom: 1.2px solid currentColor !important;
+    background: white !important;
+    transform: rotate(45deg) !important;
+  }
+
+  .empty-cards-state {
+    text-align: center !important;
+    padding: 30px !important;
+    color: #9CA3AF !important;
+    font-size: 14px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Awqaf Association Reports Page (قائمة إحصائيات الجمعية) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .awqaf-assoc-reports-page {
+    gap: 20px !important;
+  }
+
+  .reports-top-stats {
+    grid-template-columns: 1fr 1fr !important; /* 2 per row */
+    gap: 12px !important;
+  }
+
+  .report-stat-card {
+    padding: 16px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 12px !important;
+  }
+
+  .report-stat-card .stat-content {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .report-stat-card .stat-value {
+    font-size: 16px !important;
+  }
+
+  /* Charts: Stacked */
+  .charts-grid-reports {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .reports-section h3 {
+    font-size: 16px !important;
+  }
+
+  .geo-row {
+    gap: 8px !important;
+  }
+
+  .geo-name {
+    width: 100px !important;
+    font-size: 12px !important;
   }
 }
 
