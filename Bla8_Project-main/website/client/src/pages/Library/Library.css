@@ -468,10 +468,74 @@
 
 @media (max-width: 640px) {
   .library-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .card-image-wrap {
+    height: 120px;
+  }
+  
+  .card-content {
+    padding: 0.75rem;
+  }
+  
+  .card-title {
+    font-size: 0.85rem;
+  }
+  
+  .card-category {
+    font-size: 0.7rem;
+  }
+  
+  .card-author-name {
+    font-size: 0.75rem;
+  }
+
+  .card-stats-footer {
+    font-size: 0.7rem;
+    margin-top: 8px;
+    padding-top: 8px;
   }
   
   .tab-item span {
     display: none; /* Hide text on very small screens, keep icons */
+  }
+
+  /* Audio Items Shrink */
+  .audio-list {
+    gap: 8px;
+  }
+  
+  .audio-list-item {
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+  }
+  
+  .audio-title {
+    font-size: 0.85rem;
+  }
+  
+  .audio-author {
+    font-size: 0.7rem;
+  }
+  
+  .audio-play-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .audio-play-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .audio-meta {
+    font-size: 0.75rem;
+    min-width: auto;
+  }
+  
+  .audio-actions {
+    gap: 10px;
   }
 }

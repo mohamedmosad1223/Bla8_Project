@@ -299,7 +299,18 @@ const AdminPreacherRequestDetails = () => {
             <button className="library-viewer-close" onClick={() => setIsPdfOpen(false)}>
                <X size={24} color="#374151" />
             </button>
-            <h2 className="library-viewer-title">ملف المؤهلات: {requestDetails.full_name}</h2>
+            <h2 className="library-viewer-title" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <span>ملف المؤهلات: {requestDetails.full_name}</span>
+              <a 
+                href={`/uploads/${requestDetails.qualification_file}`} 
+                target="_blank" 
+                rel="noreferrer"
+                download 
+                style={{ backgroundColor: '#DBA841', color: 'white', padding: '6px 16px', borderRadius: '6px', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600, width: 'fit-content' }}
+              >
+                 تحميل / فتح الملف الخارجي
+              </a>
+            </h2>
             <div className="library-viewer-body">
               <iframe 
                 src={`/uploads/${requestDetails.qualification_file}`} 

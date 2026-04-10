@@ -434,17 +434,158 @@
 @media (max-width: 768px) {
   .admin-chat-page {
     flex-direction: column;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 60px);
+    border-radius: 0;
+    border: none;
   }
   
   .chat-sidebar {
     width: 100%;
-    height: 300px;
+    height: auto !important;
     border-left: none;
-    border-bottom: 1px solid #edf2f7;
+    border-bottom: 2px solid #edf2f7;
+    flex-shrink: 0;
+    background-color: #fff;
+  }
+  
+  .chat-sidebar-header {
+    display: none;
+  }
+  
+  .chat-search-wrapper {
+    padding: 8px 12px 0 12px;
+  }
+  
+  .chat-search-input {
+    padding: 6px 32px 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .chat-search-icon {
+    right: 20px;
+    width: 14px;
+    height: 14px;
+  }
+  
+  .chat-contact-list {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 12px;
+    gap: 8px;
+    scrollbar-width: none; /* Hide scrollbar for cleaner look on mobile */
+  }
+
+  .chat-contact-list::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .chat-contact-item {
+    width: 160px; /* even more compact */
+    flex-shrink: 0;
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .chat-contact-item.active {
+    background-color: #f0fff4;
+    border-color: #0bd16f;
+    border-left-width: 1px;
+  }
+
+  .contact-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+    margin-left: 0;
+  }
+  
+  .contact-name {
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+  }
+
+  .contact-preview {
+    font-size: 0.65rem;
+  }
+
+  .contact-meta {
+    display: none; /* Hide time/unread in the horizontal bar to save space */
   }
   
   .chat-window {
-    height: calc(100% - 300px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Fix: Prevent the window from growing and hiding the sidebar */
+    height: 0; /* Important: Allow flex: 1 to define height correctly in some browsers */
+    min-height: 0;
+  }
+
+  .chat-header {
+    height: 50px;
+    padding: 0 15px;
+  }
+
+  .chat-header-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+
+  .chat-header-name {
+    font-size: 0.9rem;
+  }
+
+  .chat-header-status {
+    font-size: 0.7rem;
+  }
+
+  .chat-messages {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .message-wrapper {
+    max-width: 90%;
+    margin-bottom: 8px;
+  }
+
+  .message-bubble {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .markdown-content h2 { font-size: 0.95rem; margin: 8px 0 4px; }
+  .markdown-content h3 { font-size: 0.85rem; margin: 6px 0 4px; }
+  .markdown-content p { font-size: 0.85rem; line-height: 1.4; margin-bottom: 6px; }
+
+  .chat-input-area {
+    padding: 10px 15px;
+    gap: 10px;
+  }
+
+  .chat-input-wrapper {
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  .chat-input {
+    padding: 6px 0;
+    font-size: 0.85rem;
+  }
+
+  .chat-send-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .chat-send-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }

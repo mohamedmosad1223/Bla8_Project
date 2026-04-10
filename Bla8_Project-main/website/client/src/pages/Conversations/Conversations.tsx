@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Send, X, Download } from 'lucide-react';
+import { Search, Send, X, Download, ChevronRight } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/dateUtils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -427,7 +427,7 @@ const Conversations = () => {
   );
 
   return (
-    <div className="conv-page" dir="rtl">
+    <div className={`conv-page ${activeChat ? 'mobile-chat-active' : ''}`} dir="rtl">
 
       {/* ─── Right: Chats List ─── */}
       <div className="conv-contacts-col">
@@ -497,13 +497,22 @@ const Conversations = () => {
         ) : (
           <>
             <div className="conv-chat-header">
-              <div className="conv-chat-header-info">
-                <h3 className="conv-chat-title">{activeChat.other_party_name}</h3>
-                <div className="conv-chat-status">
-                  <span className={`conv-status-dot ${(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) ? 'online' : 'offline'}`}></span>
-                  {(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000)))
-                    ? 'متصل الآن'
-                    : (activeChat.last_seen ? `آخر ظهور ${formatTimeAgo(activeChat.last_seen)}` : 'غير متصل')}
+              <div className="conv-chat-header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  className="conv-mobile-back-btn" 
+                  onClick={() => setActiveChat(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'none' }}
+                >
+                  <ChevronRight size={24} />
+                </button>
+                <div>
+                  <h3 className="conv-chat-title">{activeChat.other_party_name}</h3>
+                  <div className="conv-chat-status">
+                    <span className={`conv-status-dot ${(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000))) ? 'online' : 'offline'}`}></span>
+                    {(activeChat.is_online || (activeChat.last_seen && (new Date().getTime() - new Date(activeChat.last_seen).getTime() < 60000)))
+                      ? 'متصل الآن'
+                      : (activeChat.last_seen ? `آخر ظهور ${formatTimeAgo(activeChat.last_seen)}` : 'غير متصل')}
+                  </div>
                 </div>
               </div>
               <div className="conv-chat-header-icons">
@@ -609,8 +618,8 @@ const Conversations = () => {
                 ) : (
                   <p className="conv-msg-text">{msg.content}</p>
                 )}
-                {/* Download button — for any analytical message or report */}
-                {msg.role === 'assistant' && isDownloadableReport(msg.content) && (
+                {/* Download button — for any analytical message or report. Hidden for preachers */}
+                {msg.role === 'assistant' && isDownloadableReport(msg.content) && localStorage.getItem('userRole') !== 'preacher' && (
                   <button
                     className="ai-download-btn"
                     onClick={() => handleDownloadReport(msg.content)}

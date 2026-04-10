@@ -110,6 +110,10 @@
   min-width: 0;
 }
 
+.areq-mobile-cards {
+  display: none;
+}
+
 .areq-table-wrapper {
   background: white;
   border-radius: 12px;

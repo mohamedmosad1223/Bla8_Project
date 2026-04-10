@@ -16,7 +16,7 @@ const PreacherAssociationLogin: React.FC = () => {
   const handleRoleSelect = (role: string) => {
     setSelectedRole(role);
     if (role === 'admin') {
-      navigate('/login');
+      navigate('/login?role=admin');
     } else if (role === 'preacher') {
       navigate('/login?role=preacher');
     } else if (role === 'minister') {
