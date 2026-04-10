@@ -320,6 +320,17 @@ const Library: React.FC = () => {
     ))
   ), [audioDurations, pdfPages, videoDurations, t]);
 
+  const handleItemClick = (item: LibraryItem) => {
+    // Basic mobile detection
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && item.type === 'book' && item.url) {
+      window.open(item.url, '_blank');
+    } else {
+      setSelectedItem(item);
+    }
+  };
+
   const filteredData = dataWithRealAudioDurations.filter(item =>
     item.type === activeTab &&
     (item.title.includes(searchQuery) || item.author.includes(searchQuery))
@@ -378,7 +389,7 @@ const Library: React.FC = () => {
             <div 
               key={item.id} 
               className="audio-list-item" 
-              onClick={() => setSelectedItem(item)}
+              onClick={() => handleItemClick(item)}
               style={{ cursor: 'pointer' }}
             >
               <div className="audio-info">
@@ -402,7 +413,7 @@ const Library: React.FC = () => {
             <div 
               key={item.id} 
               className="library-card" 
-              onClick={() => setSelectedItem(item)}
+              onClick={() => handleItemClick(item)}
               style={{ cursor: 'pointer' }}
             >
               <div className="card-image-wrap">

@@ -382,11 +382,13 @@
   flex: 1;
   width: 100%;
   display: flex;
+  flex-direction: column; /* Better for multiple content types */
   justify-content: center;
   align-items: center;
   background: #F9FAFB;
   min-height: 400px;
-  overflow: hidden; 
+  overflow-y: auto; /* Allow internal scrolling if content overflows */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
 }
 
 .library-viewer-video {
@@ -537,5 +539,26 @@
   
   .audio-actions {
     gap: 10px;
+  }
+
+  /* Audio Viewer Modal Fixes */
+  .library-viewer-audio-wrapper {
+    padding: 20px 12px !important;
+  }
+
+  .library-viewer-audio-cover-wrap {
+    width: 180px !important;
+    height: 180px !important;
+    margin-bottom: 20px !important;
+    border-radius: 12px !important;
+  }
+
+  .library-viewer-audio-author {
+    font-size: 1rem !important;
+    margin-bottom: 24px !important;
+  }
+
+  .library-viewer-audio-player {
+    width: 100% !important;
   }
 }
