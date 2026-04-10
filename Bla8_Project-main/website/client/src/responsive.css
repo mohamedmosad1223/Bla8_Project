@@ -1487,47 +1487,97 @@
   }
 
   .creq-header-area,
-  .nreq-header-area {
+  .nreq-header-area,
+  .callers-header-area {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 10px !important;
+    gap: 16px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .nreq-body-wrapper,
+  .callers-content-wrapper {
+    flex-direction: column !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+
+  .nreq-content,
+  .callers-content {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
 
   .creq-actions,
-  .nreq-actions {
+  .nreq-actions,
+  .callers-actions,
+  .search-filter-group {
     display: flex !important;
     flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    /* Force side-by-side */
+    flex-wrap: wrap !important;
     align-items: center !important;
     gap: 8px !important;
     width: 100% !important;
   }
 
-  .search-input-wrapper-outlined {
-    flex: 1 !important;
-    min-width: 0 !important;
-    /* Allow it to shrink to fit side-by-side */
+  .creq-actions .search-input-wrapper-outlined,
+  .nreq-actions .search-input-wrapper-outlined,
+  .callers-actions .search-input-wrapper-outlined,
+  .search-filter-group .search-input-wrapper-outlined {
+    width: 100% !important;
+    flex: none !important;
+    min-width: 100% !important;
+    order: -1 !important;
+    margin-bottom: 4px !important;
   }
 
-  /* Ensure buttons don't shrink too much */
+  /* Ensure buttons don't shrink too much and take equal space */
   .creq-filter-container,
   .filter-popup-container,
-  .sort-container {
+  .sort-container,
+  .creq-sort-container,
+  .search-filter-group .filter-popup-container,
+  .search-filter-group .sort-container {
+    flex: 1 !important;
     flex-shrink: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .btn-icon-text {
+    width: 100% !important;
+    justify-content: center !important;
   }
 
   /* Filter panel — centered modal */
   .creq-filter-panel,
-  .filter-panel {
+  .filter-panel,
+  .aadmin-filter-panel {
     position: fixed !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
-    width: 90vw !important;
-    max-height: 80vh !important;
+    width: 92vw !important;
+    max-width: 420px !important;
+    max-height: 85vh !important;
     overflow-y: auto !important;
-    z-index: 9999 !important;
+    z-index: 1000002 !important; /* Extremely high to be above everything */
+    background: white !important;
+    padding: 24px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Fix for filter body to be scrollable if content overflows */
+  .filter-body, .creq-filter-body, .aadmin-filter-body {
+    overflow-y: auto !important;
+    flex: 1 !important;
   }
 
   /* Detail view */
@@ -1607,8 +1657,22 @@
     display: flex !important;
     width: 100% !important;
     gap: 8px !important;
-    flex-wrap: nowrap !important;
+    flex-wrap: wrap !important;
+    /* Allow wrapping */
     align-items: center !important;
+  }
+
+  .search-filter-group .search-input-wrapper-outlined {
+    width: 100% !important;
+    flex: none !important;
+    min-width: 100% !important;
+    order: -1 !important;
+  }
+
+  .search-filter-group .filter-popup-container,
+  .search-filter-group .sort-container {
+    flex: 1 !important;
+    min-width: 0 !important;
   }
 
   .search-input-wrapper-outlined {
@@ -1630,12 +1694,15 @@
   .callers-mobile-card {
     background: #ffffff !important;
     border: 1px solid #edf2f7 !important;
-    border-radius: 12px !important;
-    padding: 16px !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
+    gap: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 4px !important;
   }
 
   .callers-mobile-card-top {
