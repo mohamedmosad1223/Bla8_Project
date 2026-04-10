@@ -429,53 +429,55 @@ const AdminAssociationDetails = () => {
                 />
               </div>
               
-              <div className="admin-dropdown-container" ref={filterRef}>
-                <button 
-                  className={`admin-tool-btn ${isFilterOpen ? 'active' : ''}`}
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                >
-                  <FilterIcon size={18} />
-                  <span>فلتر</span>
-                </button>
-                {isFilterOpen && (
-                  <div className="admin-dropdown-menu">
-                    <div style={{fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '8px', marginBottom: '4px', fontSize: '0.85rem'}}>حالة الداعية</div>
-                    <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
-                      <input type="radio" name="status" checked={filterStatus === 'all'} onChange={() => {setFilterStatus('all'); setIsFilterOpen(false);}} />
-                      الكل
-                    </label>
-                    <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
-                      <input type="radio" name="status" checked={filterStatus === 'active'} onChange={() => {setFilterStatus('active'); setIsFilterOpen(false);}} />
-                      مفعل
-                    </label>
-                    <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
-                      <input type="radio" name="status" checked={filterStatus === 'suspended'} onChange={() => {setFilterStatus('suspended'); setIsFilterOpen(false);}} />
-                      غير مفعل
-                    </label>
-                  </div>
-                )}
-              </div>
+              <div className="adetails-filter-sort-group">
+                <div className="admin-dropdown-container" ref={filterRef}>
+                  <button 
+                    className={`admin-tool-btn ${isFilterOpen ? 'active' : ''}`}
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  >
+                    <FilterIcon size={18} />
+                    <span>فلتر</span>
+                  </button>
+                  {isFilterOpen && (
+                    <div className="admin-dropdown-menu">
+                      <div style={{fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '8px', marginBottom: '4px', fontSize: '0.85rem'}}>حالة الداعية</div>
+                      <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                        <input type="radio" name="status" checked={filterStatus === 'all'} onChange={() => {setFilterStatus('all'); setIsFilterOpen(false);}} />
+                        الكل
+                      </label>
+                      <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                        <input type="radio" name="status" checked={filterStatus === 'active'} onChange={() => {setFilterStatus('active'); setIsFilterOpen(false);}} />
+                        مفعل
+                      </label>
+                      <label className="admin-dropdown-item" style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                        <input type="radio" name="status" checked={filterStatus === 'suspended'} onChange={() => {setFilterStatus('suspended'); setIsFilterOpen(false);}} />
+                        غير مفعل
+                      </label>
+                    </div>
+                  )}
+                </div>
 
-              <div className="admin-dropdown-container" ref={sortRef}>
-                <button 
-                  className={`admin-tool-btn ${isSortOpen ? 'active' : ''}`}
-                  onClick={() => setIsSortOpen(!isSortOpen)}
-                >
-                  <Filter size={18} />
-                  <span>تصنيف: {sortBy === 'latest' ? 'الأحدث' : 'الأقدم'}</span>
-                </button>
-                {isSortOpen && (
-                  <div className="admin-dropdown-menu" style={{left: 0, right: 'auto'}}>
-                    <button 
-                      className={`admin-dropdown-item ${sortBy === 'latest' ? 'selected' : ''}`}
-                      onClick={() => {setSortBy('latest'); setIsSortOpen(false);}}
-                    >الأحدث</button>
-                    <button 
-                      className={`admin-dropdown-item ${sortBy === 'oldest' ? 'selected' : ''}`}
-                      onClick={() => {setSortBy('oldest'); setIsSortOpen(false);}}
-                    >الأقدم</button>
-                  </div>
-                )}
+                <div className="admin-dropdown-container" ref={sortRef}>
+                  <button 
+                    className={`admin-tool-btn ${isSortOpen ? 'active' : ''}`}
+                    onClick={() => setIsSortOpen(!isSortOpen)}
+                  >
+                    <Filter size={18} />
+                    <span>تصنيف: {sortBy === 'latest' ? 'الأحدث' : 'الأقدم'}</span>
+                  </button>
+                  {isSortOpen && (
+                    <div className="admin-dropdown-menu" style={{left: 0, right: 'auto'}}>
+                      <button 
+                        className={`admin-dropdown-item ${sortBy === 'latest' ? 'selected' : ''}`}
+                        onClick={() => {setSortBy('latest'); setIsSortOpen(false);}}
+                      >الأحدث</button>
+                      <button 
+                        className={`admin-dropdown-item ${sortBy === 'oldest' ? 'selected' : ''}`}
+                        onClick={() => {setSortBy('oldest'); setIsSortOpen(false);}}
+                      >الأقدم</button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -552,6 +554,81 @@ const AdminAssociationDetails = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="preachers-mobile-list">
+            {filteredPreachers.map((preacher) => (
+              <div key={preacher.preacher_id} className="preacher-card">
+                <div className="card-header">
+                  <div className="preacher-info-main">
+                    <div className="preacher-name-row">
+                      <span className="preacher-id">#{preacher.preacher_id}</span>
+                      <h3 className="preacher-name">{preacher.full_name}</h3>
+                    </div>
+                  </div>
+                  <div className="status-text-box">
+                    <label className="switch">
+                      <input 
+                        type="checkbox" 
+                        checked={preacher.status === 'active'} 
+                        onChange={() => togglePreacherActive(preacher.preacher_id, preacher.status)}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="card-content-grid">
+                  <div className="info-box">
+                    <span className="info-label">اللغات</span>
+                    <span className="info-value">{preacher.language_names.join(', ') || '—'}</span>
+                  </div>
+                  <div className="info-box">
+                    <span className="info-label">الجنسية</span>
+                    <span className="info-value">{preacher.nationality_name || '—'}</span>
+                  </div>
+                  <div className="info-box">
+                    <span className="info-label">تاريخ الانضمام</span>
+                    <span className="info-value">
+                      {new Date(preacher.created_at).toLocaleDateString('ar-EG')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="card-actions">
+                  <div className="action-icons">
+                    <button 
+                      className="icon-btn-circle"
+                      onClick={() => navigate(`/admin/associations/${id}/preachers/${preacher.preacher_id}`)}
+                    >
+                      <Eye size={18} />
+                      <span>عرض</span>
+                    </button>
+                    <button 
+                      className="icon-btn-circle"
+                      onClick={() => navigate(`/admin/chat/${preacher.user_id}`)}
+                      style={{ color: '#dba841' }}
+                    >
+                      <MessageCircle size={18} />
+                      <span>محادثة</span>
+                    </button>
+                    <button 
+                      className="icon-btn-circle delete"
+                      onClick={() => handleDeletePreacherClick(preacher.preacher_id)}
+                    >
+                      <Trash2 size={18} />
+                      <span>حذف</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!loading && preachers.length === 0 && (
+              <div className="empty-cards-state">
+                لا يوجد دعاة مسجلين لهذه الجمعية حالياً
+              </div>
+            )}
           </div>
         </div>
       )}

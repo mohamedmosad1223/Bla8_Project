@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Calendar, Eye, EyeOff, Check, X, Upload, Loader2 } from 'lucide-react';
+import { ChevronDown, Calendar, Eye, EyeOff, Check, X, Upload, Loader2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import api from '../../services/api';
 import './AdminAddAssociation.css';
 
@@ -32,6 +32,84 @@ const AdminAddAssociation = () => {
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Custom UI States
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [showCountries, setShowCountries] = useState(false);
+  const [showGovernorates, setShowGovernorates] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  
+  // Search state for countries
+  const [countrySearch, setCountrySearch] = useState('');
+
+  // Calendar Logic State
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Refs for click outside
+  const countryRef = useRef<HTMLDivElement>(null);
+  const govRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Governorates List
+  const governorates = [
+    { id: 'jahra', name: 'محافظة الجهراء' },
+    { id: 'asima', name: 'محافظة العاصمة' },
+    { id: 'farwaniya', name: 'محافظة الفروانية' },
+    { id: 'hawalli', name: 'محافظة حولي' },
+    { id: 'mubarak_al_kabeer', name: 'محافظة مبارك الكبير' },
+    { id: 'ahmadi', name: 'محافظة الأحمدي' },
+    { id: 'other', name: 'أخرى' }
+  ];
+
+  // Handle Click Outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (countryRef.current && !countryRef.current.contains(event.target as Node)) setShowCountries(false);
+      if (govRef.current && !govRef.current.contains(event.target as Node)) setShowGovernorates(false);
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) setShowCalendar(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fetch Countries
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await api.get('/preachers/countries');
+        setCountries(res.data.data || []);
+      } catch (err) {
+        console.error('Error fetching countries:', err);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Calendar Helpers
+  const daysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
+
+  const handleMonthNav = (direction: 'next' | 'prev') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'next') newDate.setMonth(prev.getMonth() + 1);
+      else newDate.setMonth(prev.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const selectDate = (day: number) => {
+    const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    // Format YYYY-MM-DD for backend
+    const formatted = selectedDate.toISOString().split('T')[0];
+    setFormData(prev => ({ ...prev, establishment_date: formatted }));
+    setShowCalendar(false);
+  };
+
+  // Derived Values
+  const selectedCountry = countries.find(c => String(c.id) === formData.country_id);
+  const selectedGov = governorates.find(g => g.id === formData.governorate);
+  const filteredCountries = countries.filter(c => c.name.includes(countrySearch));
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -77,9 +155,10 @@ const AdminAddAssociation = () => {
       });
       
       setShowStatusModal('success');
-    } catch (err: any) {
-      console.error('Error registering organization:', err);
-      const detail = err.response?.data?.detail;
+    } catch (err: unknown) {
+      const error = err as any; 
+      console.error('Error registering organization:', error);
+      const detail = error.response?.data?.detail;
       setErrorMessage(Array.isArray(detail) ? detail[0]?.msg : detail || 'حدث خطأ في التسجيل');
       setShowStatusModal('error');
     } finally {
@@ -141,22 +220,43 @@ const AdminAddAssociation = () => {
               placeholder="رقم السجل / الترخيص" 
             />
           </div>
-          <div className="aadd-group">
+          <div className="aadd-group" ref={countryRef}>
             <label className="aadd-label">الدولة</label>
-            <div className="aadd-select-wrapper">
-              <select 
-                name="country_id"
-                value={formData.country_id}
-                onChange={handleChange}
-                className="aadd-input aadd-select"
-              >
-                <option value="">الدولة</option>
-                <option value="1">مصر</option>
-                <option value="2">السعودية</option>
-                <option value="5">الكويت</option>
-              </select>
-              <ChevronDown className="aadd-select-icon" size={18} />
+            <div className="aadd-custom-select" onClick={() => setShowCountries(!showCountries)}>
+              <span>{selectedCountry ? selectedCountry.name : 'الدولة'}</span>
+              <ChevronDown className={`aadd-select-icon ${showCountries ? 'rotate' : ''}`} size={18} />
             </div>
+            
+            {showCountries && (
+              <div className="aadd-dropdown-menu">
+                <div className="aadd-dropdown-search">
+                  <Search size={14} />
+                  <input 
+                    type="text" 
+                    placeholder="ابحث عن دولة..." 
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div className="aadd-dropdown-list">
+                  {filteredCountries.map(country => (
+                    <div 
+                      key={country.id} 
+                      className={`aadd-dropdown-item ${formData.country_id === String(country.id) ? 'selected' : ''}`}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, country_id: String(country.id) }));
+                        setShowCountries(false);
+                      }}
+                    >
+                      {country.name}
+                      {formData.country_id === String(country.id) && <Check size={14} />}
+                    </div>
+                  ))}
+                  {filteredCountries.length === 0 && <div className="aadd-dropdown-empty">لا توجد نتائج</div>}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Row 3 */}
@@ -184,39 +284,75 @@ const AdminAddAssociation = () => {
           </div>
 
           {/* Row 4 */}
-          <div className="aadd-group">
+          <div className="aadd-group" ref={govRef}>
             <label className="aadd-label">المحافظة</label>
-            <div className="aadd-select-wrapper">
-              <select 
-                name="governorate"
-                value={formData.governorate}
-                onChange={handleChange}
-                className="aadd-input aadd-select"
-              >
-                <option value="">المحافظة</option>
-                <option value="jahra">محافظة الجهراء</option>
-                <option value="asima">محافظة العاصمة</option>
-                <option value="farwaniya">محافظة الفروانية</option>
-                <option value="hawalli">محافظة حولي</option>
-                <option value="mubarak_al_kabeer">محافظة مبارك الكبير</option>
-                <option value="ahmadi">محافظة الأحمدي</option>
-                <option value="other">أخرى</option>
-              </select>
-              <ChevronDown className="aadd-select-icon" size={18} />
+            <div className="aadd-custom-select" onClick={() => setShowGovernorates(!showGovernorates)}>
+              <span>{selectedGov ? selectedGov.name : 'المحافظة'}</span>
+              <ChevronDown className={`aadd-select-icon ${showGovernorates ? 'rotate' : ''}`} size={18} />
             </div>
+
+            {showGovernorates && (
+              <div className="aadd-dropdown-menu">
+                <div className="aadd-dropdown-list">
+                  {governorates.map(gov => (
+                    <div 
+                      key={gov.id} 
+                      className={`aadd-dropdown-item ${formData.governorate === gov.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, governorate: gov.id }));
+                        setShowGovernorates(false);
+                      }}
+                    >
+                      {gov.name}
+                      {formData.governorate === gov.id && <Check size={14} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="aadd-group">
+          <div className="aadd-group" ref={calendarRef}>
             <label className="aadd-label">تاريخ تأسيس الجمعية</label>
-            <div className="aadd-input-with-icon left">
-              <Calendar className="aadd-icon-left" size={18} />
-              <input 
-                type="date" 
-                name="establishment_date"
-                value={formData.establishment_date}
-                onChange={handleChange}
-                className="aadd-input" 
-              />
+            <div className="aadd-custom-select" onClick={() => setShowCalendar(!showCalendar)}>
+              <Calendar size={18} className="aadd-field-icon" />
+              <span>{formData.establishment_date || 'تاريخ تأسيس الجمعية'}</span>
+              <ChevronDown className={`aadd-select-icon ${showCalendar ? 'rotate' : ''}`} size={18} />
             </div>
+
+            {showCalendar && (
+              <div className="aadd-calendar-popup">
+                <div className="aadd-cal-header">
+                  <button onClick={() => handleMonthNav('prev')}><ChevronRight size={20} /></button>
+                  <span className="aadd-cal-month">
+                    {currentDate.toLocaleString('ar-EG', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button onClick={() => handleMonthNav('next')}><ChevronLeft size={20} /></button>
+                </div>
+                
+                <div className="aadd-cal-days-header">
+                  {['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'].map(d => <span key={d}>{d}</span>)}
+                </div>
+                
+                <div className="aadd-cal-grid">
+                  {Array.from({ length: firstDayOfMonth(currentDate.getMonth(), currentDate.getFullYear()) }).map((_, i) => (
+                    <div key={`empty-${i}`} className="aadd-cal-day empty" />
+                  ))}
+                  {Array.from({ length: daysInMonth(currentDate.getMonth(), currentDate.getFullYear()) }).map((_, i) => {
+                    const day = i + 1;
+                    const isSelected = formData.establishment_date === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    return (
+                      <div 
+                        key={day} 
+                        className={`aadd-cal-day ${isSelected ? 'selected' : ''}`}
+                        onClick={() => selectDate(day)}
+                      >
+                        {day}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Row 5 - License File Upload */}

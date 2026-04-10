@@ -76,12 +76,13 @@ class OrganizationsController:
         governorate: Optional[str] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
+        status: Optional[str] = None,
         order_by: str = "latest"
     ):
         from sqlalchemy import func, or_
         from app.models.preacher import Preacher
         from app.models.dawah_request import DawahRequest
-        from app.models.enums import RequestStatus
+        from app.models.enums import RequestStatus, AccountStatus
 
         # Subquery for preachers count per org
         preachers_sub = db.query(
@@ -107,7 +108,8 @@ class OrganizationsController:
             func.coalesce(stats_sub.c.pending_count, 0).label("pending_count"),
             func.coalesce(stats_sub.c.rejected_count, 0).label("rejected_count")
         ).outerjoin(preachers_sub, Organization.org_id == preachers_sub.c.org_id) \
-         .outerjoin(stats_sub, Organization.org_id == stats_sub.c.org_id)
+         .outerjoin(stats_sub, Organization.org_id == stats_sub.c.org_id) \
+         .join(User, Organization.user_id == User.user_id)
         
         # 1. Search (Name/ID/Manager)
         if search:
@@ -127,13 +129,17 @@ class OrganizationsController:
         if approval:
             q = q.filter(Organization.approval_status == approval)
 
-        # 3. Country/Governorate
+        # 3. Account Status Filter
+        if status:
+            q = q.filter(User.status == status)
+
+        # 4. Country/Governorate
         if country_id:
             q = q.filter(Organization.country_id == country_id)
         if governorate:
             q = q.filter(Organization.governorate == governorate)
         
-        # 3. Date Range
+        # 5. Date Range
         if created_after:
             q = q.filter(Organization.created_at >= created_after)
         if created_before:

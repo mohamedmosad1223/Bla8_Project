@@ -12,7 +12,7 @@ from app.controllers.organizations_controller import OrganizationsController
 from app.controllers.profiles_controller import ProfilesController
 from app.auth import get_current_user, check_role, get_optional_current_user
 from app.models.user import User
-from app.models.enums import UserRole, ApprovalStatus
+from app.models.enums import UserRole, ApprovalStatus, AccountStatus
 
 router = APIRouter(prefix="/api/organizations", tags=["Organizations"])
 
@@ -60,6 +60,7 @@ def list_organizations(
     governorate: Optional[str] = Query(None),
     created_after: Optional[datetime] = Query(None),
     created_before: Optional[datetime] = Query(None),
+    status: Optional[AccountStatus] = Query(None),
     order_by: str = Query("latest", pattern="^(latest|oldest)$"),
     db: Session = Depends(get_db),
 ):
@@ -69,6 +70,7 @@ def list_organizations(
         approval=approval, search=search,
         country_id=country_id, governorate=governorate,
         created_after=created_after, created_before=created_before,
+        status=status,
         order_by=order_by
     )
 

@@ -1393,6 +1393,257 @@
     gap: 8px !important;
   }
 
+  .aadd-save-btn {
+    width: 100% !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Admin Association Details Page (تفاصيل الجمعية - الأدمن) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .adetails-page {
+    gap: 16px !important;
+  }
+
+  /* 1. Header & Tabs */
+  .adetails-header {
+    margin-bottom: 8px !important;
+  }
+
+  .adetails-title {
+    font-size: 1.4rem !important;
+  }
+
+  .adetails-tabs {
+    gap: 16px !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 4px !important;
+    border-bottom-style: solid !important;
+  }
+
+  .adetails-tab-btn {
+    font-size: 0.9rem !important;
+    padding-bottom: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 2. Association Data Card */
+  .adetails-card {
+    padding: 20px !important;
+    gap: 24px !important;
+  }
+
+  .adetails-section-header {
+    margin-bottom: 20px !important;
+  }
+
+  .adetails-section-header h3 {
+    font-size: 1.1rem !important;
+  }
+
+  .adetails-grid {
+    grid-template-columns: 1fr !important; /* Single column on mobile */
+    gap: 20px !important;
+  }
+
+  /* 3. Stats Grid: 2 per row */
+  .adetails-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* 4. Charts Grid: Stacked */
+  .adetails-charts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* 5. Preachers Tab & Toolbar */
+  .adetails-page .admin-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 0 !important;
+  }
+
+  .adetails-page .admin-toolbar-group {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Side-by-side Filter and Sort */
+  .adetails-page .adetails-filter-sort-group {
+    display: flex !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .adetails-page .adetails-filter-sort-group .admin-dropdown-container {
+    flex: 1 !important;
+    width: auto !important;
+  }
+
+  .adetails-page .admin-search-box {
+    width: 100% !important;
+  }
+
+  .adetails-page .admin-tool-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Hide table on mobile */
+  .adetails-table-container {
+    display: none !important;
+  }
+
+  /* Show cards list */
+  .preachers-mobile-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  /* Preacher card premium styles */
+  .adetails-page .preacher-card {
+    background: white !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 20px !important;
+    padding: 24px !important; /* Increased padding */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important; /* Increased gap */
+  }
+
+  .adetails-page .card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 4px !important;
+  }
+
+  .adetails-page .preacher-name-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+  }
+
+  .adetails-page .preacher-id {
+    font-size: 11px !important;
+    color: #DBA841 !important;
+    font-weight: 700 !important;
+    background: #FFF8E6 !important;
+    padding: 3px 10px !important;
+    border-radius: 8px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .adetails-page .preacher-name {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+  }
+
+  /* Symmetrical 2-column Grid */
+  .adetails-page .card-content-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px 24px !important; /* Larger horizontal gap */
+    padding: 20px 0 !important;
+    border-top: 1px dashed #F3F4F6 !important;
+    border-bottom: 1px dashed #F3F4F6 !important;
+    direction: rtl !important;
+  }
+
+  .adetails-page .info-box {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: right !important;
+  }
+
+  .adetails-page .info-label {
+    font-size: 11px !important;
+    color: #9CA3AF !important;
+    font-weight: 600 !important;
+    display: block !important;
+    margin-bottom: 2px !important;
+  }
+
+  .adetails-page .info-value {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    word-break: break-word !important;
+  }
+
+  /* Actions */
+  .adetails-page .card-actions {
+    margin-top: 8px !important;
+  }
+
+  .adetails-page .action-icons {
+    display: flex !important;
+    gap: 12px !important; /* Balanced gap */
+    width: 100% !important;
+  }
+
+  .adetails-page .icon-btn-circle {
+    flex: 1 !important;
+    height: 46px !important;
+    border-radius: 12px !important;
+    background: #F9FAFB !important;
+    border: 1px solid #E5E7EB !important;
+    display: flex !important;
+    flex-direction: row !important; 
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    color: #4B5563 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    padding: 0 4px !important;
+  }
+
+  .adetails-page .icon-btn-circle span {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+  }
+
+  .adetails-page .icon-btn-circle svg {
+    flex-shrink: 0 !important;
+  }
+
+  .adetails-page .icon-btn-circle:hover {
+    background: #F3F4F6 !important;
+    border-color: #D1D5DB !important;
+  }
+
+  .adetails-page .icon-btn-circle.delete {
+    color: #EF4444 !important;
+    background: #FFF5F5 !important;
+    border-color: #FEE2E2 !important;
+  }
+
+  .adetails-page .icon-btn-circle.delete:hover {
+    background: #FEE2E2 !important;
+  }
+
+  .adetails-page .empty-cards-state {
+    text-align: center !important;
+    padding: 40px !important;
+    color: #9CA3AF !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Association Dashboard Standardized Mobile Layouts ──
+  ═══════════════════════════════════════════════════════════════════ */
+
   /* ═══════════════════════════════════════════════════════════════════
      ── Preacher Details Page (عرض تفاصيل الداعية) ──
   ═══════════════════════════════════════════════════════════════════ */
@@ -2049,6 +2300,74 @@
   .geo-name {
     width: 100px !important;
     font-size: 12px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Admin Dashboard (لوحة تحكم النظام) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .ad-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important; /* 2 per row */
+    gap: 12px !important;
+  }
+
+  .ad-stat-card {
+    padding: 14px !important;
+    gap: 10px !important;
+  }
+
+  .ad-stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .ad-stat-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .ad-stat-value {
+    font-size: 1.4rem !important;
+  }
+
+  .ad-stat-title {
+    font-size: 0.75rem !important;
+  }
+
+  .ad-tables-row,
+  .ad-charts-row {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .ad-card {
+    padding: 16px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ── Admin Add Supervisor Page (إضافة أدمن جديد) ──
+  ═══════════════════════════════════════════════════════════════════ */
+
+  .aadd-card {
+    padding: 20px !important;
+    gap: 20px !important;
+  }
+
+  .aadd-grid {
+    grid-template-columns: 1fr !important; /* Single column for form */
+    gap: 20px !important;
+  }
+
+  .aadd-title {
+    font-size: 1.4rem !important;
+  }
+
+  .aadd-actions {
+    justify-content: center !important;
+  }
+
+  .aadd-save-btn {
+    width: 100% !important;
   }
 }
 
