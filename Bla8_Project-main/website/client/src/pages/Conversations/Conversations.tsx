@@ -310,7 +310,7 @@ const Conversations = () => {
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
   // ─── Fetch AI History ────────────────────────────────────────────────────
-  useEffect(() => {
+  const fetchAIHistory = useCallback(() => {
     api.get('/chat/ai/history')
       .then(res => {
         const msgs: AIMessage[] = (res.data?.history || []).map((m: any) => ({
@@ -320,16 +320,16 @@ const Conversations = () => {
         }));
         setAiMessages(msgs);
         if (msgs.length > 0) {
-          // Attempt to find conversation_id from the latest message from backend if applicable
-          // 'history' endpoint doesn't strictly give conversation_id directly at top level,
-          // but if we had conversational scope, we'd grab it.
-          // For now, let's grab it if it exists in data
           const lastM = res.data?.history?.[res.data.history.length - 1];
           if (lastM?.conversation_id) setAiConversationId(lastM.conversation_id);
         }
       })
-      .catch(() => { });
+      .catch(err => console.error('Failed to fetch AI history:', err));
   }, []);
+
+  useEffect(() => {
+    fetchAIHistory();
+  }, [fetchAIHistory]);
 
   // ─── Scroll helpers ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -425,6 +425,8 @@ const Conversations = () => {
         },
         onDone: () => {
           setAiLoading(false);
+          // Fetch history again to ensure final formatting is synced (as in NonMuslimDashboard)
+          fetchAIHistory();
         },
         onError: (err) => {
           console.error('AI Stream error:', err);
