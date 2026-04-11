@@ -16,7 +16,7 @@ FALLBACK_MODEL = "llama-3.3-70b-versatile"
 # Initialize Logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-fh = logging.FileHandler("C:/Users/Dell/chat_debug.log", encoding="utf-8")
+fh = logging.FileHandler("/var/log/chat_debug.log", encoding="utf-8")
 fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(fh)
 
