@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Send, X, Download, ChevronRight } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/dateUtils';
+import { useSSEStream } from '../../hooks/useSSEStream';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Conversations.css';
@@ -173,6 +174,8 @@ const AIBotIcon = ({ size = 40 }: { size?: number }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Conversations = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { stream } = useSSEStream();
   const initRequestId = searchParams.get('request_id');
   const initUserId = searchParams.get('user_id');
 
@@ -383,30 +386,55 @@ const Conversations = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  // ─── Send AI Message (No streaming for Analytics) ────────────────────────────────────
+  // ─── Send AI Message (With Streaming) ────────────────────────────────────
   const sendAI = async () => {
     if (!aiInput.trim() || aiLoading) return;
     const text = aiInput.trim();
     setAiInput('');
-    setAiMessages(p => [...p, { role: 'user', content: text }]);
+    
+    // Add user message
+    const userMsg: AIMessage = { role: 'user', content: text, created_at: new Date().toISOString() };
+    setAiMessages(p => [...p, userMsg]);
     setAiLoading(true);
+
+    // Initial placeholder for assistant message
+    const assistantMsgIndex = aiMessages.length + 1;
 
     try {
       const payload: any = { content: text };
       if (aiConversationId) payload.conversation_id = aiConversationId;
 
-      const response = await api.post('/chat/ai/send', payload);
-
-      const content = response.data?.ai_response?.content || response.data?.content || 'تعذر الحصول على رد.';
-      setAiMessages(p => [...p, { role: 'assistant', content }]);
-
-      if (response.data?.conversation_id && !aiConversationId) {
-        setAiConversationId(response.data.conversation_id);
-      }
+      await stream('/api/chat/ai/send?stream=true', {
+        body: payload,
+        onChunk: (fullContent) => {
+          setAiMessages(prev => {
+            const next = [...prev];
+            // If the last message is from assistant, update it. Otherwise add it.
+            if (next.length > 0 && next[next.length - 1].role === 'assistant' && next.length > assistantMsgIndex) {
+              next[next.length - 1] = { ...next[next.length - 1], content: fullContent };
+            } else {
+              // Only add if it's the first chunk
+              if (next[next.length - 1].role === 'user') {
+                next.push({ role: 'assistant', content: fullContent });
+              } else {
+                 next[next.length - 1] = { ...next[next.length - 1], content: fullContent };
+              }
+            }
+            return next;
+          });
+        },
+        onDone: () => {
+          setAiLoading(false);
+        },
+        onError: (err) => {
+          console.error('AI Stream error:', err);
+          setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
+          setAiLoading(false);
+        }
+      });
 
     } catch (err) {
       setAiMessages(p => [...p, { role: 'assistant', content: 'حدث خطأ، يرجى المحاولة مجدداً.' }]);
-    } finally {
       setAiLoading(false);
     }
   };
@@ -613,7 +641,27 @@ const Conversations = () => {
               <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
                 {msg.role === 'assistant' ? (
                   <div className="conv-msg-text markdown-content" id={`ai-msg-${i}`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ node, ...props }) => {
+                          const isRegisterLink = props.href === '/register';
+                          if (isRegisterLink) {
+                            return (
+                              <button 
+                                className="nm-register-btn-inline"
+                                onClick={() => navigate('/register')}
+                              >
+                                {props.children}
+                              </button>
+                            );
+                          }
+                          return <a {...props} />;
+                        }
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   <p className="conv-msg-text">{msg.content}</p>

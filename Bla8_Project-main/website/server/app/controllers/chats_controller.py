@@ -16,6 +16,7 @@ from app.utils.analytics_service import AnalyticsAIOrchestrator
 
 class ChatsController:
 
+    GUEST_CONVERSION_PROMPT = "\n\n---\nهل ترغب في حفظ محادثاتك والوصول لمميزات أكثر؟ [إنشاء حساب الآن 🔗](/register)"
     WELCOME_MESSAGE = "مرحباً بك! أنا مساعد ذكي هنا للإجابة على استفساراتك حول الإسلام والتعريف به. كيف يمكنني مساعدتك اليوم؟"
 
     @staticmethod
@@ -58,7 +59,7 @@ class ChatsController:
             db.query(AIChatMessage)
             .filter(AIChatMessage.conversation_id == conversation_id)
             .order_by(AIChatMessage.created_at.desc())
-            .limit(10)
+            .limit(5)
             .all()
         )
         recent_history.reverse()
@@ -71,8 +72,8 @@ class ChatsController:
         # 4. استدعاء الـ LLM واصطناع رد
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
 
-        # وزير الأوقاف ومشرف الجمعية والداعية → Orchestrator التحليلي
-        if user_role in ("minister", "organization", "preacher"):
+        # وزير الأوقاف ومشرف الجمعية → Orchestrator التحليلي
+        if user_role in ("minister", "organization"):
             org_id = None
             preacher_id = None
             if user_role == "organization":
@@ -126,8 +127,8 @@ class ChatsController:
         db.add(user_msg)
         db.commit()
         
-        # 2. جلب المحادثات السابقة باستخدام session_id
-        recent_history = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id).order_by(AIChatMessage.created_at.desc()).limit(10).all()
+        # 2. جلب المحادثات السابقة باستخدام session_id بإرجاع رسالة واحدة قِبَلية
+        recent_history = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id).order_by(AIChatMessage.created_at.desc()).limit(5).all()
         recent_history.reverse()
         
         messages = []
@@ -137,8 +138,13 @@ class ChatsController:
             
         # 3. إرسال الرسائل للذكاء الاصطناعي (الزوار دائماً يأخذون برومبت الغير مسلم)
         ai_response_text = LLMService.generate_chat_response(messages, role="guest")
+
+        # 4. تحقق من عدد الرسائل لإظهار دعوة التسجيل (بعد 5 رسائل من المستخدم)
+        user_msg_count = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id, AIChatMessage.role == "user").count()
+        if user_msg_count == 5:
+            ai_response_text += ChatsController.GUEST_CONVERSION_PROMPT
         
-        # 4. حفظ رد الذكاء الاصطناعي
+        # 5. حفظ رد الذكاء الاصطناعي
         ai_msg = AIChatMessage(
             session_id=payload.session_id,
             role="ai",
@@ -176,8 +182,8 @@ class ChatsController:
         db.add(user_msg)
         db.commit()
 
-        # 3. جلب التاريخ
-        recent_history = db.query(AIChatMessage).filter(AIChatMessage.conversation_id == conversation_id).order_by(AIChatMessage.created_at.desc()).limit(11).all()
+        # 3. جلب التاريخ بحد أقصى الرسالة السابقة
+        recent_history = db.query(AIChatMessage).filter(AIChatMessage.conversation_id == conversation_id).order_by(AIChatMessage.created_at.desc()).limit(5).all()
         recent_history.reverse()
         
         messages = []
@@ -188,8 +194,8 @@ class ChatsController:
         # 4. الـ Generator اللي هيعمل الـ Stream ويسيف في الآخر
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
 
-        # وزير الأوقاف ومشرف الجمعية والداعية → Orchestrator التحليلي (لا يدعم streaming — نجمع الرد ثم نبثه)
-        if user_role in ("minister", "organization", "preacher"):
+        # وزير الأوقاف ومشرف الجمعية → Orchestrator التحليلي (لا يدعم streaming — نجمع الرد ثم نبثه)
+        if user_role in ("minister", "organization"):
             org_id = None
             preacher_id = None
             if user_role == "organization":
@@ -254,8 +260,8 @@ class ChatsController:
         db.add(user_msg)
         db.commit()
 
-        # 2. جلب التاريخ
-        recent_history = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id).order_by(AIChatMessage.created_at.desc()).limit(11).all()
+        # 2. جلب التاريخ بحد أقصى الرسالة السابقة
+        recent_history = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id).order_by(AIChatMessage.created_at.desc()).limit(5).all()
         recent_history.reverse()
         
         messages = []
@@ -268,6 +274,14 @@ class ChatsController:
             for chunk in LLMService.generate_chat_response_stream(messages, role="guest"):
                 full_response += chunk
                 yield f"data: {chunk}\n\n"
+            
+            # تحقق من عدد الرسائل لبث دعوة التسجيل في نهاية الستريم
+            user_msg_count = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id, AIChatMessage.role == "user").count()
+            if user_msg_count >= 3:
+                # إرسال الزرار سطر بسطر لضمان وصوله صح للفرونت إند
+                for line in ChatsController.GUEST_CONVERSION_PROMPT.split('\n'):
+                    yield f"data: {line}\n\n"
+                full_response += ChatsController.GUEST_CONVERSION_PROMPT
             
             if full_response:
                 ai_msg = AIChatMessage(
@@ -389,12 +403,12 @@ class ChatsController:
         db.add(user_msg)
         db.commit()
 
-        # 2. جلب تاريخ المحادثة (آخر 10 رسائل في هذه الجلسة تحديداً)
+        # 2. جلب تاريخ المحادثة (الرسالة الحالية + الرسالة السابقة)
         recent_history = (
             db.query(AIChatMessage)
             .filter(AIChatMessage.conversation_id == conversation_id)
             .order_by(AIChatMessage.created_at.desc())
-            .limit(10)
+            .limit(5)
             .all()
         )
         recent_history.reverse()

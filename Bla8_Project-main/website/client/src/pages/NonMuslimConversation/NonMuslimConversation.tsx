@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Send, User } from 'lucide-react';
 import api from '../../services/api';
 import { formatTimeAgo } from '../../utils/dateUtils';
@@ -33,6 +33,7 @@ interface Message {
 const NonMuslimConversation: React.FC = () => {
   const { t, dir } = useLanguage();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initRequestId = searchParams.get('request_id');
 
   const [msgInput, setMsgInput] = useState('');
@@ -255,7 +256,31 @@ const NonMuslimConversation: React.FC = () => {
                       <p className="nm-msg-text">{msg.message_text}</p>
                     ) : (
                       <div className="nm-msg-text markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.message_text}</ReactMarkdown>
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ node, ...props }) => {
+                              const isRegisterLink = props.href === '/register';
+                              if (isRegisterLink) {
+                                return (
+                                  <a 
+                                    href="/register" 
+                                    className="nm-register-btn-inline"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      navigate('/register');
+                                    }}
+                                  >
+                                    {props.children}
+                                  </a>
+                                );
+                              }
+                              return <a {...props} />;
+                            }
+                          }}
+                        >
+                          {msg.message_text}
+                        </ReactMarkdown>
                       </div>
                     )}
                     <span className="nm-msg-time">

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bot, Plus, Send, MessageCircle, Calendar } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -23,6 +24,7 @@ interface ChatSession {
 
 const NonMuslimDashboard: React.FC = () => {
   const { t, dir } = useLanguage();
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -214,29 +216,32 @@ const NonMuslimDashboard: React.FC = () => {
           
           const chunk = decoder.decode(value, { stream: true });
           const lines = (partialLine + chunk).split('\n');
-          partialLine = lines.pop() || ''; // الحفاظ على الجزء غير الكامل للchunk القادم
+          partialLine = lines.pop() || '';
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const content = line.substring(6);
-              fullContent += content;
+            if (!line || line === 'data: [DONE]') continue;
 
-              // تحديث الواجهة لحظياً بالقطعة الجديدة
-              setSessions(prev => prev.map(session => {
-                if (session.id === activeChatId) {
-                  const updatedMessages = [...session.messages];
-                  const lastMsgIndex = updatedMessages.length - 1;
-                  if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
-                    updatedMessages[lastMsgIndex] = { 
-                      ...updatedMessages[lastMsgIndex], 
-                      text: fullContent 
-                    };
-                  }
-                  return { ...session, messages: updatedMessages, lastMessage: fullContent };
-                }
-                return session;
-              }));
+            // Robustly strip the "data:" prefix but PRESERVE following spaces in content
+            const content = line.replace(/^data:\s?/i, '');
+            if (content) {
+              fullContent += content;
             }
+
+            // تحديث الواجهة لحظياً بالقطعة الجديدة
+            setSessions(prev => prev.map(session => {
+              if (session.id === activeChatId) {
+                const updatedMessages = [...session.messages];
+                const lastMsgIndex = updatedMessages.length - 1;
+                if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
+                  updatedMessages[lastMsgIndex] = { 
+                    ...updatedMessages[lastMsgIndex], 
+                    text: fullContent 
+                  };
+                }
+                return { ...session, messages: updatedMessages, lastMessage: fullContent };
+              }
+              return session;
+            }));
           }
         }
       }
@@ -258,11 +263,7 @@ const NonMuslimDashboard: React.FC = () => {
     } finally {
       setLoading(false);
 
-      // ─── Auto-sync: re-fetch history from API after stream ends ───────────
-      // The backend saves the full message after streaming completes.
-      // Fetching it here ensures the UI shows the clean API version
-      // (identical to what a manual page refresh would do).
-      const currentId = activeChatId; // capture in closure before any state change
+      const currentId = activeChatId;
       if (currentId) {
         const historyUrl = isGuest
           ? `/chat/ai/guest/history/${currentId}`
@@ -284,10 +285,8 @@ const NonMuslimDashboard: React.FC = () => {
               ));
             }
           })
-          .catch(() => { /* silent — local state already looks fine */ });
+          .catch(() => { /* silent */ });
       }
-      // ──────────────────────────────────────────────────────────────────────
-
     }
   };
 
@@ -367,7 +366,31 @@ const NonMuslimDashboard: React.FC = () => {
                 >
                   {msg.sender === 'bot' ? (
                     <div className="markdown-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          a: ({ node, ...props }) => {
+                            const isRegisterLink = props.href === '/register';
+                            if (isRegisterLink) {
+                              return (
+                                <a 
+                                  href="/register" 
+                                  className="nm-register-btn-inline"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    navigate('/register');
+                                  }}
+                                >
+                                  {props.children}
+                                </a>
+                              );
+                            }
+                            return <a {...props} />;
+                          }
+                        }}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     msg.text

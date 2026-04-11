@@ -722,3 +722,32 @@
   color: #0A304E;
   font-weight: 700;
 }
+/* ─── Registration Button (Inline in AI Markdown) ─── */
+.nm-register-btn-inline {
+  display: inline-block;
+  margin: 12px 0 4px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #dba829, #1a517e);
+  color: white !important;
+  text-decoration: none !important;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 15px rgba(219, 168, 65, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.nm-register-btn-inline:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(219, 168, 65, 0.5);
+  filter: brightness(1.1);
+}
+
+.nm-register-btn-inline:active {
+  transform: translateY(0) scale(0.98);
+}

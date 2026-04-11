@@ -128,11 +128,28 @@ class AnalyticsAIOrchestrator:
         preacher_id: Optional[int] = None
     ) -> str:
         """
-        دورة المحادثة التحليلية.
-        role: 'minister', 'organization', أو 'preacher'
-        org_id: مطلوب فقط لو role == 'organization'
-        preacher_id: مطلوب فقط لو role == 'preacher'
+        دورة المحادثة التحليلية مع توجيه ذكي للأسئلة العامة.
         """
+        user_question = messages[-1]["content"] if messages else ""
+        
+        # 1. تصنيف النية (Intent Classification)
+        # لو السؤال عام وليس له علاقة بالبيانات، نحوله لمحرك البحث الإسلامي (RAG)
+        intel = LLMService.analyze_query(user_question)
+        category = intel.get("category", "")
+        
+        # قائمة الفئات التي تعتبر "بحث إسلامي" وليست "تحليل بيانات"
+        rag_categories = {
+            "introducing_islam", "quran", "sunnah", "aqeedah", 
+            "fiqh", "virtues", "sins_prohibitions", "shubuhaat", "comparative_religion"
+        }
+        
+        if category in rag_categories or "القرآن" in user_question or "الإسلام" in user_question:
+            logger.info(f"Analytics Routing: General Knowledge detected. Category: {category}. Routing to RAG.")
+            # استخدام الـ role كـ preacher (المرشد) وليس preacher_analytics (المحلل)
+            target_role = "preacher" if role == "preacher" else "guest"
+            return LLMService.generate_chat_response(messages, role=target_role)
+
+        # 2. الاستمرار في المسار التحليلي (SQL)
         request_messages = messages.copy()
         
         # Inject role correctly (preacher uses preacher_analytics prompt in LLMService if routed)

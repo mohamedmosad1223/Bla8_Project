@@ -1,0 +1,9 @@
+--------------------------------------------------
+Query: ما هو القرآن
+Context Length: 1393
+--------------------------------------------------
+[3.213 Christianity and Islam.pdf | match 83%]
+220 The Qur’an- As was said before, the Qur ’an is the speech of Allah containing no speech whatsoever of his Creation - not from any Angel, nor Prophet nor anyone else. Allah also challenged the Arabs, non Arabs and all of mankind and Jinn, to produce something similar to the Qur’an.  Allah says: } اﻟﻘﺮان ھﺬا ﺑﻤﺜﻞ ﯾﺄﺗﻮا ان ﻋﻠﻰ اﻟﺠﻦ و اﻹﻧﺲ اﺟﺘﻤﻌﺖ ﻟﺌﻦ ﻗﻞ ﻇﮭﯿﺮا ﻟﺒﻌﺾ ﺑﻌﻀﮭﻢ ﻛﺎن ﻟﻮ و ﺑﻤﺜﻠﮫ ﯾﺄﺗﻮن ﻻ{ اﻹﺳﺮاء:٨٨ Say: If all of mankind and Jinn  come together to produce the like of this Qur ’ an, they will not be able to come up with the like of it, even if they all assisted each other.)                          [Al-Isra:88] Allah even challenged them to produce one single chapter of the Qur’an. } ﻣﺜﻠﮫ ﻣﻦ ﺑﺴﻮره ﻓﺄﺗﻮا ﻋﺒﺪﻧﺎ ﻋﻠﻰ ﻧﺰﻟﻨﺎ ﻣﻤﺎ رﯾﺐ ﻓﻲ ﻛﻨﺘﻢ ان و ﺗﻔﻌﻠﻮا، ﻟﻢ ان ﺎدﻗﯿﻦ،وﺻ ﻛﻨﺘﻢ ان ﷲا دون ﻣﻦ ﮭﺪاءﻛﻢﺷ وادﻋﻮا اﻋﺪت اﻟﺤﺠﺎره و اﻟﻨﺎس وﻗﻮدھﺎ اﻟﺘﻲ اﻟﻨﺎر ﻓﺎﺗﻘﻮا ﺗﻔﻌﻠﻮا، ﻟﻦ و ﻟﻠﻜﺎﻓﺮﯾﻦ{ اﻟﺒﻘﺮه:)٢٣-٢٤ ( “ And if you (Arabs pagans, Jews and Christians) are in doubt concerning that  which We have sent down to our slave, then produce a Surah (Chapter) of the like thereof and call your witnesses besides Allah, if you are truthful. But if you do not do this, and you can never do it, then fear the Hell fire whose fuel is men and stones, prepared for the disbelievers. ” [Al-Quran: 2:23-24] PDF created with pdfFactory Pro trial version www.pdffactory.com
+--------------------------------------------------
+
+'_challenge_' NOT FOUND in context.

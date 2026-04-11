@@ -67,15 +67,11 @@ export function useSSEStream() {
         leftover = lines.pop() ?? '';
 
         for (const line of lines) {
-          const trimmed = line.trim();
+          if (!line || line === 'data: [DONE]') continue;
 
-          // Ignore empty lines and SSE completion signal
-          if (!trimmed || trimmed === 'data: [DONE]') continue;
-
-          // Strip the "data: " prefix
-          const chunk = trimmed.startsWith('data: ')
-            ? trimmed.slice(6)
-            : trimmed;
+          // Robustly strip the "data:" prefix but PRESERVE following spaces in content
+          const chunk = line.replace(/^data:\s?/i, '');
+          if (!chunk && line !== 'data: ') continue; // Skip if truly empty and not just a single space chunk
 
           accumulated += chunk;
           options.onChunk(accumulated);

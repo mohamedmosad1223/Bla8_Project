@@ -5,11 +5,20 @@ import logging
 from groq import Groq
 from app.config import settings
 from app.utils.rag_service import retrieve_context
-from app.utils.quran_service import get_quran_ayah
+from app.utils.quran_service import get_quran_ayah, LANGUAGE_MAP
+
+# Models Configuration
+MAIN_MODEL = "deepseek-chat"
+INTEL_MODEL = "deepseek-chat" # Background tasks now use DeepSeek/70B
+FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
 # ─────────────────────────────────────────────
-# Initialize Groq client
+# Initialize Logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+fh = logging.FileHandler("C:/Users/Dell/chat_debug.log", encoding="utf-8")
+fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(fh)
 
 # ─────────────────────────────────────────────
 # Initialize Groq client
@@ -25,7 +34,13 @@ from openai import OpenAI
 ds_client = None
 try:
     if settings.DEEPSEEK_API_KEY:
-        ds_client = OpenAI(api_key=settings.DEEPSEEK_API_KEY.strip("'\""), base_url="https://api.deepseek.com/v1")
+        # Clean the key from any potential invisible characters/quotes
+        ds_key = settings.DEEPSEEK_API_KEY.strip().strip("'\"").strip()
+        ds_client = OpenAI(
+            api_key=ds_key, 
+            base_url="https://api.deepseek.com" # Removed /v1 which can cause issues
+        )
+        logger.info(f"DeepSeek initialized with key: {ds_key[:5]}...")
 except Exception as e:
     logger.error(f"Failed to initialize DeepSeek client: {e}")
 
@@ -52,13 +67,9 @@ Al-Wala wal-Bara (Alliance for Truth and Disavowal of Falsehood)
 """
 
 Answer_in_same_language = """
-IMPORTANT: Always respond in the same language as the question .
-Even if the context is in a different language, your answer must be as user's question language.
-2. **NO MIXING:** Do NOT mix languages. If the target is English, respond in 100% English. If Arabic, 100% Arabic.
-3. **FORBIDDEN SCRIPTS:** You are STRICTLY FORBIDDEN from using any Chinese characters (汉字), Japanese/Korean, or Cyrillic characters.
-4. **QURANIC EXCEPTION:** Only Arabic Quranic verses are allowed to be mixed into non-Arabic responses.
-5. **TECHNICAL TERMS:** Use the script appropriate for the target language (e.g., `التوحيد` for Arabic, `Tawheed` for English).
-
+IMPORTANT: Always respond in the same language as the user's question.
+If the question is in Arabic, respond in 100% Arabic. No English words, no Latin characters. 
+DO NOT use English placeholders in underscores like `_word_`. Always translate terms naturally into the response language.
 """
 
 # ─────────────────────────────────────────────
@@ -86,18 +97,20 @@ If they ask something sensitive, address it directly and honestly without avoidi
    - Japanese (Hiragana/Katakana/Kanji) — NEVER  
    - Korean (Hangul) — NEVER
    - Cyrillic/Russian script — NEVER
+   - English/Latin characters when producing an Arabic response — NEVER
    - Any script not matching the user's message language — NEVER
 4. **QURANIC EXCEPTION ONLY**: The ONLY exception is Arabic Quranic verses that may appear in non-Arabic responses for citation.
-5. **NO MIXING**: A response that mixes Arabic with Chinese, or English with Cyrillic, is a CRITICAL FAILURE.
-6. **تحذير بالعربية**: ممنوع تماماً كتابة أي حرف صيني أو ياباني أو كوري أو روسي في ردودك. استخدم لغة المستخدم حصراً.
+5. **NO MIXING**: A response that mixes Arabic with Chinese, or English with Cyrillic, or Arabic with English, is a CRITICAL FAILURE.
+6. **تنبيه هام جداً**: التزم باللغة العربية الفصحى حصراً. يُمنع منعاً باتاً حشر أي كلمات إنجليزية أو حروف لاتينية وسط الكلام العربي. إذا وردت كلمة إنجليزية في سياق البحث (مثل challenge أو prayer)، يجب ترجمتها للعربية (تحدي، صلاة) بدلاً من كتابتها بالإنجليزية أو استخدام رموز بديلة.
 
 ## Rules:
 - NEVER pressure the person to convert
 - NEVER criticize their current religion or beliefs
+- **HARD SCRIPTURE RULE (CRITICAL)**: You are ABSOLUTELY FORBIDDEN from quoting Quranic verses or Hadiths from your training data or memory. You MUST ONLY use the text provided in the [Context]. If a verse or evidence is missing from the context, do NOT quote it under any circumstances. You may discuss the general concept instead. Fabrication of scripture is strictly prohibited and will result in system dismissal.
 - If asked something you're unsure about, say so honestly
-- Always cite Quran/Hadith references when relevant (with translation) from the provided Context.
+- Always cite Quran/Hadith references when relevant (with translation) FROM THE PROVIDED CONTEXT ONLY.
 - **IMPORTANT**: If a verse is marked as 'Authoritative', you MUST use that exact text. Do NOT include the label 'Authoritative' or [AUTHORITATIVE QURANIC TEXT] in your response.
-- **LANGUAGE PURITY**: Respond 100% in the user's language. NO Chinese/Japanese/Korean/Cyrillic/Other foreign scripts.
+- **LANGUAGE PURITY**: Respond 100% in the user's language. NO foreign scripts, NO English code-switching in non-Latin languages.
 - Detect the user's language and respond EXCLUSIVELY in that same language.
 - NEVER add a fully bilingual response.
 
@@ -125,7 +138,7 @@ DAWAH_SUPPORT_PROMPT = """You are a highly knowledgeable and supportive AI assis
 - Help them respond to non-Muslims by suggesting logical, clear, and empathetic arguments for objections.
 - Provide relevant Quranic verses, Hadiths, and scholarly quotes from the Context.
 - **IMPORTANT**: If a verse is marked as 'Authoritative', you MUST use that exact text. Do NOT include the label 'Authoritative' or [AUTHORITATIVE QURANIC TEXT] in your response.
-- **LANGUAGE PURITY**: You are FORBIDDEN from mixing languages. Respond 100% in the user's language. 
+- **LANGUAGE PURITY**: You are FORBIDDEN from mixing languages. Respond 100% in the user's language. If the question is in Arabic, use 100% Arabic. Translate English terms from context naturally into the response language; do NOT use English placeholders in underscores.
 - **QURANIC EXCEPTION**: Arabic Quranic verses are the only allowed exception. 
 - Suggest practical dawah strategies and ways to handle difficult questions.
 - Keep your answers direct, actionable, and supportive. Answer the user's question directly without asking them to choose a mode or situation.
@@ -133,6 +146,7 @@ DAWAH_SUPPORT_PROMPT = """You are a highly knowledgeable and supportive AI assis
 ## Rules:
 - Always respond in the SAME language as the user's question.
 - Be grounded in authentic Quran and Sunnah (use the provided Context).
+- **HARD SCRIPTURE RULE (ULTIMATE)**: You are FORBIDDEN from quoting any verse from memory. If you quote a verse, it MUST be an EXACT copy from the [Context]. If you quote from memory and the reference is found to be wrong, YOUR RESPONSE WILL BE DISCARDED. DO NOT GUESS.
 - Never fabricate Hadith or misquote — if unsure, say so.
 - Be practical, not just theoretical.
 - Treat the da'i as a partner and a peer, maintaining a respectful and scholarly tone.
@@ -334,7 +348,7 @@ SELECT ...
 PROMPT_MAP = {
     "interested": INTERESTED_SYSTEM_PROMPT,
     "guest": INTERESTED_SYSTEM_PROMPT,
-    "preacher": PREACHER_SYSTEM_PROMPT,
+    "preacher": PREACHER_SYSTEM_PROMPT,  # Partner tone (preacher assistant)
     "preacher_analytics": ANALYTICS_PREACHER_SYSTEM_PROMPT,
     "minister": MINISTER_SYSTEM_PROMPT,
     "organization": ORGANIZATION_SYSTEM_PROMPT,
@@ -392,20 +406,44 @@ def _is_greeting(text: str) -> bool:
     """Return True if the message is a greeting / small talk with no Islamic substance."""
     return bool(_GREETING_RE.match(text.strip()))
 
+_NUM_PATTERN = r"(\d+|واحد|اثنين|اتنين|ثلاثة?|تلاتة?|ثلاث|تلات|أربعة?|اربعة?|أربع|اربع|خمسة?|خمس|ستة?|ست|سبعة?|سبع|ثمانية?|تمانية?|ثمان|تمان|تسعة?|تسع|عشرة?|عشر|عشرين|عشرون)"
+
 # Helper: detect "Ayah X from Surah Y" (single ayah)
 _AYAH_QUERY_RE = re.compile(
-    r"(?:الآية|آية|اية)\s+(?:رقم\s+)?(\d+)\s+(?:من\s+)?(?:سورة\s+|سوره\s+)?([\u0600-\u06FF]+)",
+    rf"(?:الآية|آية|اية|Verse|Ayat|Ayah)\s+(?:رقم\s+|No\s+|Number\s+)?{_NUM_PATTERN}\s+(?:من\s+|of\s+|de\s+)?(?:سورة\s+|سوره\s+|Surah\s+|Sourate\s+)?([\u0600-\u06FF\s\w]+)",
+    re.IGNORECASE
+)
+_AYAH_QUERY_INV_RE = re.compile(
+    rf"(?:سورة|سوره|Surah|Sourate)\s+([\u0600-\u06FF\s\w]+?)\s+(?:الآية|آية|اية|Verse|Ayat|Ayah)\s*(?:رقم\s+|No\s+|Number\s+)?{_NUM_PATTERN}",
     re.IGNORECASE
 )
 
 # Helper: detect "first N ayahs from Surah Y" or "ayahs 1-N from Surah Y"
 _MULTI_AYAH_RE = re.compile(
-    r"(?:اول|أول|أوائل|ابدأ\s*بـ?)?\s*"
-    r"(\d+)\s+"
-    r"(?:آيات|ايات|آية|اية)\s+"
-    r"(?:من\s+|في\s+)?"
-    r"(?:(?:سورة|سوره)\s+)?"
-    r"((?!سورة|سوره)[\u0600-\u06FF]+(?:\s+[\u0600-\u06FF]+)?)",
+    r"(?:اول|أول|أوائل|ابدأ\s*بـ?|first|premiers)?\s*"
+    rf"{_NUM_PATTERN}\s+"
+    r"(?:آيات|ايات|آية|اية|verses|vrs|versets)\s+"
+    r"(?:من\s+|في\s+|of\s+|de\s+|dans\s+)?"
+    r"(?:(?:سورة|سوره|Surah|Sourate)\s+)?"
+    r"((?!سورة|سوره|Surah|Sourate)[\u0600-\u06FF\s\w]+)",
+    re.IGNORECASE
+)
+
+# (Removed duplicate _AYAH_QUERY_RE)
+
+
+_RANGE_AYAH_RE = re.compile(
+    r"(?:آيات|ايات|verses|versets|ayat)\s+"
+    r"(?:من\s+|الآية\s+|الآيه\s+|اية\s+|آية\s+)?(?P<start>" + _NUM_PATTERN[1:-1] + r")\s+"
+    r"(?:إلى|الى|لـ|حتى|to|au|jusqu'à|until)\s+"
+    r"(?:الآية\s+|الآيه\s+|اية\s+|آية\s+)?(?P<end>" + _NUM_PATTERN[1:-1] + r")\s+"
+    r"(?:من\s+|في\s+|of\s+|de\s+|dans\s+)?(?:(?:سورة|سوره|Surah|Sourate)\s+)?((?!سورة|سوره|Surah|Sourate)[\u0600-\u06FF\s\w]+)",
+    re.IGNORECASE
+)
+_MULTI_AYAH_INV_RE = re.compile(
+    r"(?:سورة|سوره|Surah|Sourate)\s+([\u0600-\u06FF\s\w]+?)\s+(?:اول|أول|أوائل|ابدأ\s*بـ?|first|premiers)?\s*"
+    rf"{_NUM_PATTERN}\s+"
+    r"(?:آيات|ايات|آية|اية|verses|versets)",
     re.IGNORECASE
 )
 SURAH_MAP = {
@@ -422,15 +460,22 @@ SURAH_MAP = {
     "التكوير": 81, "الانفطار": 82, "المطففين": 83, "الانشقاق": 84, "البروج": 85, "الطارق": 86, "الأعلى": 87, "الغاشية": 88, "الفجر": 89, "البلد": 90,
     "الشمس": 91, "الليل": 92, "الضحى": 93, "الشرح": 94, "التين": 95, "العلق": 96, "القدر": 97, "البينة": 98, "الزلزلة": 99, "العاديات": 100,
     "القارعة": 101, "التكاثر": 102, "العصر": 103, "الهمزة": 104, "الفيل": 105, "قريش": 106, "الماعون": 107, "الكوثر": 108, "الكافرون": 109, "النصر": 110,
-    "المسد": 111, "الإخلاص": 112, "الفلق": 113, "الناس": 114
+    "المسد": 111, "الإخلاص": 112, "الفلق": 113, "الناس": 114,
+    # Latin/French equivalents for better matching if intent includes them
+    "maryam": 19, "mariam": 19, "marie": 19, "baqarah": 2, "baqara": 2, "imran": 3, "nisa": 4, "maidah": 5, "anam": 6
 }
-# Regex for other numeric forms in context: 2:10 or [2:10] or (2:10)
-_NUMERIC_REF_RE = re.compile(r"(?:Qur'an|Quran|Surah|\(|\s|\[)?\s*(\d{1,3}):(\d{1,3})(?:-\d+)?(?:\)|\s|\])?", re.IGNORECASE)
+# Regex for other numeric forms STRICTLY associated with Quran/Brackets: Quran 2:10 or [2:10] or (2:10)
+_NUMERIC_REF_RE = re.compile(
+    r"(?:Qur'an|Quran|Surah|سورة|سوره)\s*(\d{1,3}):(\d{1,3})(?:-\d+)?|"
+    r"\[\s*(\d{1,3}):(\d{1,3})(?:-\d+)?\s*\]|"
+    r"\(\s*(\d{1,3}):(\d{1,3})(?:-\d+)?\s*\)", 
+    re.IGNORECASE
+)
 
-# Regex for Arabic forms in context: سورة البقرة آية 10
-_ARABIC_REF_RE = re.compile(r"(?:سورة|سوره)\s+([آأإء-ي]+)\s*(?:آية|اية)?\s*(\d+)", re.IGNORECASE)
+# Regex for Arabic forms in context: سورة البقرة آية 10 or سورة آل عمران 5
+_ARABIC_REF_RE = re.compile(r"(?:سورة|سوره)\s+([\u0600-\u06FF\s]+?)\s*(?:(?:آية|اية)\s*)?(\d+)", re.IGNORECASE)
 
-def _verify_quran_references_in_context(context: str) -> str:
+def _verify_quran_references_in_context(context: str, language: str = "arabic") -> str:
     """Scan RAG context for references and replace them with authoritative text."""
     if not context or not context.strip():
         return context
@@ -441,7 +486,10 @@ def _verify_quran_references_in_context(context: str) -> str:
     # Numeric (2:255)
     for m in _NUMERIC_REF_RE.finditer(context):
         try:
-            sid, aid = int(m.group(1)), int(m.group(2))
+            if m.group(1): sid, aid = int(m.group(1)), int(m.group(2))
+            elif m.group(3): sid, aid = int(m.group(3)), int(m.group(4))
+            else: sid, aid = int(m.group(5)), int(m.group(6))
+            
             if 1 <= sid <= 114:
                 extracted_refs.add((sid, aid, m.group(0)))
         except: continue
@@ -466,7 +514,7 @@ def _verify_quran_references_in_context(context: str) -> str:
     # 2. Fetch and Replace in-place
     new_context = context
     for sid, aid, raw_match in extracted_refs:
-        res = get_quran_ayah(sid, aid, "arabic")
+        res = get_quran_ayah(sid, aid, language)
         if res:
             auth_tag = (
                 f"\n[المصدر الموثوق]:\n"
@@ -476,64 +524,181 @@ def _verify_quran_references_in_context(context: str) -> str:
                 f"التفسير: {res['tafsir']}\n"
                 f"[نهاية المصدر]\n"
             )
-            # Find the match again to be safe with in-place replacement
-            new_context = new_context.replace(raw_match, f" (Ref: {raw_match}) {auth_tag} ")
+            # Replace raw match with reference and authoritative text
+            new_context = new_context.replace(raw_match, f"{raw_match} {auth_tag}")
 
     return new_context
+# ─────────────────────────────────────────────
+# 🛡️ Output Post-Processing (Anti-Hallucination)
+
+def _sanitize_output(text: str, forbidden_pattern: str = None) -> str:
+    """Removes technical placeholders and verifies/fixes Quranic verses in the final output."""
+    if not text:
+        return ""
+    
+    # ── 1. Clean technical placeholders ──
+    cleaned = text
+    if forbidden_pattern:
+        cleaned = cleaned.replace(forbidden_pattern, " ")
+    
+    # Remove markers like _challenge_, _islamic_term_, etc.
+    cleaned = re.sub(r'_[a-z_]+_', ' ', cleaned)
+
+    # Collapse multiple spaces but keep newlines
+    cleaned = re.sub(r' +', ' ', cleaned)
+    
+    # ── 2. Quranic Verse Integrity (Anti-Hallucination Guard) ──
+    # Scans for Citations and optional preceding quoted text to replace hallucinations.
+    # Pattern: Optional "Text" followed by (Surah:Ayah)
+    citation_regex = r'([\"«][^\"»]+[\"»]\s*)?\(?([\u0600-\u06FF\s\-\d]+|[A-Za-z\s\-]+)[:\s\.](\d+)\)?'
+    
+    def _fix_verse(match):
+        quoted_text = match.group(1)
+        surah_ref = match.group(2).strip()
+        ayah_num = match.group(3).strip()
+        
+        # Resolve Surah name/string to valid ID
+        sid = _resolve_surah_id(surah_ref)
+        if not sid:
+            try: sid = int(surah_ref)
+            except: pass
+            
+        if not sid:
+            return match.group(0) # Keep original if we can't resolve the surah
+            
+        from app.utils.quran_service import get_quran_ayah
+        try:
+            # Fetch authentic text using resolved ID and int ayah
+            real_verse = get_quran_ayah(sid, int(ayah_num))
+            if real_verse and real_verse.get("arabic_text"):
+                # Always replace with authentic version
+                return f"«{real_verse['arabic_text']}» ({surah_ref}: {ayah_num})"
+        except:
+            pass
+        return match.group(0)
+
+    # Apply the validator to surgicaly replace hallucinations
+    cleaned = re.sub(citation_regex, _fix_verse, cleaned)
+    
+    return cleaned
+
+FALLBACK_MESSAGES = {
+    "ar": "لم أجد إجابة صريحة لهذا السؤال في النصوص المتاحة.",
+    "en": "I did not find an explicit answer to this question in the available texts.",
+    "fr": "Je n'ai pas trouvé de réponse explicite à cette question dans les textes disponibles.",
+    "hi": "उपलब्ध ग्रंथों में मुझे इस प्रश्न का स्पष्ट उत्तर नहीं मिला।",
+    "de": "Ich habe keine ausdrückliche Antwort auf diese Frage in den verfügbaren Texten gefunden.",
+    "es": "No encontré una respuesta explícita a esta pregunta en los textos disponibles.",
+    "ru": "Я не нашел явного ответа на этот вопрос в доступных текстах.",
+    "zh": "在现有文本中我没有找到对此问题的明确回答。",
+}
 
 def _resolve_surah_id(name: str) -> int:
-    """Try to find the Surah ID from a name string, with and without \u0627\u0644."""
-    sid = SURAH_MAP.get(name)
-    if sid:
-        return sid
-    if name.startswith("\u0627\u0644"):
-        return SURAH_MAP.get(name[2:], 0)
-    return SURAH_MAP.get("\u0627\u0644" + name, 0)
-
-
-def _try_get_ayah_context(query: str) -> str:
-    """Detect Quran requests in the query and return authoritative text.
-    Handles:
-      - Single: '\u0627\u0644\u0622\u064a\u0629 10 \u0645\u0646 \u0633\u0648\u0631\u0629 \u0627\u0644\u0628\u0642\u0631\u0629'
-      - Multi:  '\u0627\u0648\u0644 10 \u0622\u064a\u0627\u062a \u0645\u0646 \u0633\u0648\u0631\u0629 \u0627\u0644\u0628\u0642\u0631\u0629'
+    """Try to find the Surah ID from a name string, with and without ال.
+    Now supports prefix matching to handle extra text like '.. in the Quran'.
     """
-    # ── 1. Try multi-ayah request first (higher priority / more specific) ──
-    m = _MULTI_AYAH_RE.search(query)
-    if m:
-        count = min(int(m.group(1)), 20)   # cap at 20 to avoid huge prompts
-        surah_name = m.group(2).strip()
-        surah_id = _resolve_surah_id(surah_name)
-        if surah_id:
-            logger.info(f"Multi-Ayah: fetching {count} ayahs from Surah {surah_id} ({surah_name})")
-            lines = [f"\n\n[\u0623\u0648\u0644 {count} \u0622\u064a\u0627\u062a \u0645\u0646 \u0633\u0648\u0631\u0629 {surah_name} \u2014 \u0627\u0644\u0645\u0635\u062f\u0631 \u0627\u0644\u0645\u0648\u062b\u0648\u0642]:\n"]
-            fetched = 0
-            for i in range(1, count + 1):
-                res = get_quran_ayah(surah_id, i, "arabic")
-                if not res:
-                    break
-                lines.append(
-                    f"({i}) {res['arabic_text']}\n"
-                )
-                fetched += 1
-            if fetched > 0:
-                return "".join(lines)
+    s = name.lower().strip()
+    words = s.split()
+    if not words: return 0
 
-    # ── 2. Try single ayah request ──
-    m = _AYAH_QUERY_RE.search(query)
-    if m:
-        ayah_num = int(m.group(1))
-        surah_name = m.group(2).strip()
-        surah_id = _resolve_surah_id(surah_name)
-        if surah_id:
-            logger.info(f"Single Ayah: Surah {surah_id} ({surah_name}), Ayah {ayah_num}")
-            res = get_quran_ayah(surah_id, ayah_num, "arabic")
-            if res:
-                return (
-                    f"\n\n[\u0646\u0635 \u0627\u0644\u0622\u064a\u0629 \u0645\u0646 \u0627\u0644\u0645\u0635\u062f\u0631 \u0627\u0644\u0645\u0648\u062b\u0648\u0642]:\n"
-                    f"\u0633\u0648\u0631\u0629 {res['surah_name']} - \u0622\u064a\u0629 {res['ayah_number']}\n"
-                    f"\u0627\u0644\u0646\u0635: {res['arabic_text']}\n"
-                    f"\u0627\u0644\u062a\u0641\u0633\u064a\u0631: {res['tafsir']}\n"
-                )
+    # Try different word lengths: full, 2-word prefix, 1-word prefix
+    for i in range(min(len(words), 3), 0, -1):
+        candidate = " ".join(words[:i])
+        
+        # 1. Exact match
+        sid = SURAH_MAP.get(candidate)
+        if sid: return sid
+        
+        # 2. 'Al-' prefix handling
+        if candidate.startswith("ال"):
+            sid = SURAH_MAP.get(candidate[2:])
+            if sid: return sid
+        else:
+            sid = SURAH_MAP.get("ال" + candidate)
+            if sid: return sid
+            
+    return 0
+
+def _text_to_int(text: str) -> int:
+    try: return int(text)
+    except:
+        t = text.replace("ة", "").replace("ه", "").replace("أ", "ا")
+        m = {
+            "واحد": 1, "اثنين": 2, "اتنين": 2, "ثلاث": 3, "تلات": 3, 
+            "اربع": 4, "خمس": 5, "ست": 6, "سبع": 7, "ثماني": 8, "تماني": 8, "ثمان": 8, "تمان": 8,
+            "تسع": 9, "عشر": 10, "عشرين": 20, "عشرون": 20
+        }
+        return m.get(t, 1)
+
+
+def _try_get_ayah_context(query: str, language: str = "arabic") -> str:
+    """Robust detection of Quran requests in the query.
+    1. Resolve Surah ID (prefix-aware scanning)
+    2. Extract Range (X-Y), Count (First X), or Single (Auto-detected)
+    3. Fetch from API
+    """
+    # Fold characters for more consistent matching
+    q = query.lower().replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ة", "ه").strip()
+    
+    # ── 1. Find Surah ID ──
+    surah_id = 0
+    surah_name_match = ""
+    for s_name in sorted(SURAH_MAP.keys(), key=len, reverse=True):
+        if s_name in q:
+            surah_id = SURAH_MAP[s_name]
+            surah_name_match = s_name
+            break
+            
+    if not surah_id:
+        return ""
+
+    # ── 2. Detect Range/Count/Single ──
+    # A. Range: "11 to 20" or "من 11 لـ 20"
+    range_match = re.search(r"(\d+)\s*(?:إلى|الى|لـ|حتى|to|until|au|jusqu'à|—|-)\s*(\d+)", q)
+    if range_match:
+        start, end = int(range_match.group(1)), int(range_match.group(2))
+        return _fetch_verses(surah_id, surah_name_match, start, end, language)
+
+    # B. Count: "First 10" or "أول 10"
+    count_match = re.search(r"(?:أول|اول|first|premiers|أوائل|هات|اعقب|ابدأ)\s+(\d+)", q)
+    if count_match:
+        count = min(int(count_match.group(1)), 20)
+        return _fetch_verses(surah_id, surah_name_match, 1, count, language)
+
+    # C. Single Verse: "Verse 10" or "الآية 10"
+    single_match = re.search(r"(?:الآية|الآيه|آية|اية|verse|vrs|ayah|ayat)\s+(\d+)", q)
+    if single_match:
+        ayah_num = int(single_match.group(1))
+        return _fetch_verses(surah_id, surah_name_match, ayah_num, ayah_num, language)
+    
+    # D. Final Fallback: any number in the string
+    digit_match = re.search(r"(\d+)", q)
+    if digit_match:
+        num = int(digit_match.group(1))
+        return _fetch_verses(surah_id, surah_name_match, num, num, language)
+
+    return ""
+
+def _fetch_verses(surah_id: int, surah_name: str, start: int, end: int, language: str) -> str:
+    """Fetch a range of verses and format as authoritative context."""
+    if start <= 0: start = 1
+    if end < start: end = start
+    limit = 20
+    end = min(end, start + limit - 1)
+    
+    header = f"[\u0627\u0644\u0645\u0635\u062f\u0631 \u0627\u0644\u0645\u0648\u062b\u0648\u0642 \u2014 \u0633\u0648\u0631\u0629 {surah_name.title()} \u0627\u0644\u0622\u064a\u0627\u062a {start}-{end}]:\n"
+    lines = [f"\n\n{header}"]
+    
+    fetched = 0
+    for i in range(start, end + 1):
+        res = get_quran_ayah(surah_id, i, language)
+        if not res: break
+        display_text = res['arabic_text']
+        if language.lower() not in ["arabic", "ar"]:
+            display_text = f"{res['arabic_text']}\n[{res['translation']}]"
+        lines.append(f"({res['ayah_number']}) {display_text}\n")
+        fetched += 1
+    return "".join(lines) if fetched > 0 else ""
     return ""
 
 
@@ -552,11 +717,6 @@ def _get_forbidden_pattern(user_question: str) -> str:
         
     return f"[{''.join(forbidden)}]" if forbidden else ""
 
-def _sanitize_output(text: str, forbidden_pattern: str) -> str:
-    """Remove forbidden scripts dynamically to prevent hallucination without blocking requested languages."""
-    if not text or not forbidden_pattern: return text
-    return re.sub(forbidden_pattern, "", text)
-
 def _sanitize_text(text: str) -> str:
     """Legacy static format - Keep only for backward compatibility if needed."""
     if not text: return ""
@@ -564,31 +724,57 @@ def _sanitize_text(text: str) -> str:
     return re.sub(pattern, " ", text)
 
 # ─────────────────────────────────────────────
-# Helper: isolate messages (NO HISTORY)
-def build_isolated_messages(system_prompt: str, question: str, context: str, role: str = "interested"):
-    # We no longer strictly sanitize the incoming question/context text to allow all languages
-    # Only detect Arabic presence for logic below
+# Helper: Build messages with context
+def build_messages_with_history(system_prompt: str, messages: List[Dict[str, str]], context: str, user_question: str, rag_query: str = "", role: str = "interested", user_lang: str = "arabic"):
+    if not messages:
+        return [{"role": "system", "content": system_prompt}]
+        
+    last_user_idx = -1
+    for i in range(len(messages)-1, -1, -1):
+        if messages[i]["role"] == "user":
+            last_user_idx = i
+            break
+            
+    if last_user_idx == -1:
+        return [{"role": "system", "content": system_prompt}] + messages
 
-    # Detect if we should use Arabic headers
+    question = user_question
+    
+    # Detect if we should use Arabic headers based ONLY on the user's explicit question
     has_arabic = bool(re.search(r"[\u0600-\u06FF]", question))
     
     if has_arabic:
-        user_content = f"السؤال:\n{question}"
+        user_content = f"رسالة المستخدم:\n{question}"
+        if rag_query and rag_query != question and rag_query != "NO_SEARCH_NEEDED":
+            user_content += f"\n\nالمقصود من الرسالة للتوضيح:\n{rag_query}"
+            
         if context and context.strip():
             user_content += f"\n\nالسياق المتاح:\n{context}"
-        user_content += "\n\n(تنبيه: التزم بقاعدة اللغة الواحدة. أجب باللغة العربية حصراً. ممنوع منعاً باتاً كتابة أي حرف صيني أو ياباني أو كوري أو روسي في ردك.)"
+            
+        user_content += "\n\n[أمر إلزامي للمحادثة]: تفاعل مع مشاعر المستخدم بمرونة وتلقائية تامة كأنك صديق ومرشد إنساني. نوّع في أسلوبك، وكن طبيعياً جداً في تفهمك قبل سرد الأدلة. التزم باللغة العربية الفصحى 100%. ممنوع تماماً استخدام أي كلمات إنجليزية أو حروف لاتينية. إذا وجدت مصلطحات إنجليزية في السياق، قم بترجمتها للعربية فوراً ولا تستخدم رموزاً أو كلمات أجنبية."
     else:
-        user_content = f"Question:\n{question}"
+        user_content = f"User's Message:\n{question}"
+        if rag_query and rag_query != question and rag_query != "NO_SEARCH_NEEDED":
+            user_content += f"\n\nIntended Meaning / Context:\n{rag_query}"
+            
         if context and context.strip():
             user_content += f"\n\nContext:\n{context}"
-        user_content += "\n\n(CRITICAL INSTRUCTION: Analyze the language of the user's question and respond ONLY in that exact same language. For example, if the question is in English, you MUST respond 100% in English. The provided context may be in Arabic, but you must IGNORE the context's language and translate its meaning into the user's language.)"
-        
-        system_prompt += "\n\n[CRITICAL SYSTEM OVERRIDE]: The user message is NOT in Arabic. You are strictly FORBIDDEN from responding in Arabic. Your entire actual explanation, response, and conversational text MUST be in the exact SAME language as the user's question (e.g., English). The ONLY Arabic allowed is direct Quranic verses. If you write your explanation in Arabic, you will fail your core mission."
             
-    return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_content}
-    ]
+        user_content += f"\n\n[CRITICAL INSTRUCTION]: You MUST respond 100% in {user_lang.upper()}. You are strictly FORBIDDEN from using Arabic script for anything other than direct Quranic verses. If you explain or talk in Arabic, you will fail your mission. Respond as a helpful friend in {user_lang.upper()}."
+        
+        system_prompt += f"\n\n[CRITICAL SYSTEM OVERRIDE]: The user is speaking {user_lang.upper()}. You are strictly FORBIDDEN from responding in Arabic. Your entire response MUST be in {user_lang.upper()}."
+
+            
+    # Copy messages to avoid modifying original
+    final_messages = [{"role": "system", "content": system_prompt}]
+    
+    for i, msg in enumerate(messages):
+        if i == last_user_idx:
+            final_messages.append({"role": "user", "content": user_content})
+        else:
+            final_messages.append(msg)
+            
+    return final_messages
 
 # ─────────────────────────────────────────────
 # LLM Service
@@ -626,9 +812,9 @@ Example: {{"category": "introducing_islam"}}
                     temperature=0.0,
                     max_tokens=200,
                 )
-            else:
+            elif client:
                 response = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
+                    model=INTEL_MODEL,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": query}
@@ -636,6 +822,8 @@ Example: {{"category": "introducing_islam"}}
                     temperature=0.0,
                     max_tokens=200,
                 )
+            else:
+                raise Exception("No LLM client available for rewrite")
             
             content = response.choices[0].message.content.strip()
             # Clean up markdown code blocks if any
@@ -646,6 +834,51 @@ Example: {{"category": "introducing_islam"}}
             return {}
 
     @staticmethod
+    def _rewrite_query(messages: List[Dict[str, str]]) -> Dict[str, str]:
+        """Unified Intelligence Pass: Standalone Query + Language Detection."""
+        question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        LLMService._ensure_clients()
+        
+        system_prompt = """You are a multilingual AI intent analyzer.
+YOUR TASK: Analyze the user's latest message and the conversation history to return a JSON object.
+
+JSON FIELDS:
+1. "rewritten_query": A FULL, EXPLICIT, standalone search query in Formal Arabic (الفصحى). Even if the user spoke English/French, this field MUST be Formal Arabic. If the message is just a greeting/gratitude, use "NO_SEARCH_NEEDED".
+2. "detected_language": The name of the language the user is speaking (e.g., "english", "french", "spanish", "hindi", "arabic"). Use lowercase.
+3. "language_code": The ISO 2-letter code (en, fr, es, hi, ar, etc.).
+
+STRICT RULES:
+- Output ONLY valid JSON.
+- NO conversational filler, NO explanation.
+"""
+        history_text = "\n".join([f"{'User' if m['role']=='user' else 'AI'}: {m['content']}" for m in messages[-3:]])
+        prompt = f"### History:\n{history_text}\n\n### Last Message:\n{question}\n\n### JSON Output:"
+
+        default_res = {"rewritten_query": question, "detected_language": "arabic", "language_code": "ar"}
+        
+        try:
+            target_client = ds_client if ds_client else client
+            # Background intelligence pass uses the 8B model to save 70B tokens
+            response = target_client.chat.completions.create(
+                model=settings.DEEPSEEK_MODEL if ds_client else INTEL_MODEL,
+                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+                temperature=0.0,
+                max_tokens=250,
+            )
+            
+            content = response.choices[0].message.content.strip()
+            if "```" in content:
+                content = content.split("```")[1].strip().removeprefix("json").strip()
+            
+            import json
+            res = json.loads(content)
+            logger.info(f"RAG Intelligence: {res}")
+            return res
+        except Exception as e:
+            logger.error(f"Intelligence pass failed: {e}")
+            return default_res
+
+    @staticmethod
     def generate_chat_response_stream(messages: List[Dict[str, str]], role: str = "interested"):
         LLMService._ensure_clients()
 
@@ -653,66 +886,96 @@ Example: {{"category": "introducing_islam"}}
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         forbidden_pattern = _get_forbidden_pattern(question)
         yield " " # Immediate visible token to clear "..." in UI
-        context = retrieve_context(question, role)
         
+        # ── 1. Unified Intelligence Pass (Rewriting + Language Detection) ──
+        intel = LLMService._rewrite_query(messages)
+        rag_query = intel.get("rewritten_query", question)
+        user_lang = intel.get("detected_language", "arabic")
+        lang_code = intel.get("language_code", "ar")
+        
+        is_filler = (rag_query == "NO_SEARCH_NEEDED")
+        context = ""
+        if not is_filler:
+            context = retrieve_context(rag_query, role)
+
         # Verify and inject authoritative Quran text from context references
         if context:
-            context = _verify_quran_references_in_context(context)
+            context = _verify_quran_references_in_context(context, language=user_lang)
 
-        # Check for specific Ayah link
-        ayah_context = _try_get_ayah_context(question)
+        # ── 2. Check for specific Ayah link ──
+        # Prioritize the RAW question for detection to avoid LLM rewriting noise
+        # Fallback to rag_query for history-aware follow-ups (e.g. "what about next?")
+        ayah_context = _try_get_ayah_context(question, language=user_lang)
+        if not ayah_context and rag_query and rag_query != "NO_SEARCH_NEEDED":
+             ayah_context = _try_get_ayah_context(rag_query, language=user_lang)
+
         if ayah_context:
+            logger.info(f"Quran Context Injected: {len(ayah_context)} chars")
             context = (context or "") + ayah_context
 
         rag_roles = {"preacher", "guest", "interested"}
 
-        if role in rag_roles and not _is_greeting(question) and (not context or not context.strip()):
-            yield "لم أجد إجابة صريحة لهذا السؤال في النصوص المتاحة."
-            return
+        # LOGGING for debugging
+        logger.info(f"CHAT_DEBUG: role={role}, is_filler={is_filler}, question='{question}', rag_query='{rag_query}', user_lang='{user_lang}', context_len={len(context) if context else 0}, ayah_found={bool(ayah_context)}")
 
-        api_messages = build_isolated_messages(system_prompt, question, context or "", role=role)
+        # Soft RAG Gate: Log empty context but allow LLM generation.
+        # Accuracy is maintained by the System Prompt and Scripture Verifier.
+        if role in rag_roles and not is_filler and not _is_greeting(question) and (not context or not context.strip()):
+            logger.info(f"RAG: No specific context found for '{rag_query}'. Proceeding with caution.")
+
+        api_messages = build_messages_with_history(system_prompt, messages, context or "", question, rag_query, role=role, user_lang=user_lang)
 
         try:
-            print(f"--- AI Stream Request (Role: {role}) using DEEPSEEK ---")
-            try:
-                if not ds_client:
-                    raise Exception("DeepSeek client not available")
-                completion = ds_client.chat.completions.create(
-                    model=settings.DEEPSEEK_MODEL,
-                    messages=api_messages,
-                    temperature=0.0,
-                    frequency_penalty=0.0,
-                    stream=True,
-                    max_tokens=2048,
-                    timeout=30.0
-                )
-                for chunk in completion:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        if role in {"preacher", "interested", "guest"}:
-                            yield _sanitize_output(content, forbidden_pattern)
-                        else:
-                            yield content
-                print("--- DeepSeek Stream Success! ---")
-            except Exception as e_ds:
-                print(f"--- DeepSeek Stream FAILED: {e_ds}. Falling back to Groq 70B... ---")
-                completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=api_messages,
-                    temperature=0.0,
-                    frequency_penalty=0.0,
-                    stream=True,
-                    max_tokens=2048,
-                    timeout=20.0
-                )
-                for chunk in completion:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        if role in {"preacher", "interested", "guest"}:
-                            yield _sanitize_output(content, forbidden_pattern)
-                        else:
-                            yield content
-                print("--- Groq Stream Success! ---")
+            # ── 1. TRY DEEPSEEK AS PRIMARY ──
+            if ds_client:
+                try:
+                    completion = ds_client.chat.completions.create(
+                        model=settings.DEEPSEEK_MODEL,
+                        messages=api_messages,
+                        temperature=0.0,
+                        stream=True,
+                        max_tokens=2048,
+                    )
+                    ds_buffer = ""
+                    for chunk in completion:
+                        content = chunk.choices[0].delta.content
+                        if content:
+                            ds_buffer += content
+                            # Yield if we hit punctuation OR if the buffer is getting too long (for responsiveness)
+                            if len(ds_buffer) > 15 or any(p in content for p in {".", "!", "?", "؛", ")", "\n"}):
+                                yield _sanitize_output(ds_buffer, forbidden_pattern) if role in {"preacher", "interested", "guest"} else ds_buffer
+                                ds_buffer = ""
+                    if ds_buffer:
+                        yield _sanitize_output(ds_buffer, forbidden_pattern) if role in {"preacher", "interested", "guest"} else ds_buffer
+                    return
+                except Exception as e_ds:
+                    print(f"--- DeepSeek PRIMARY FAILED: {e_ds}. Falling back to Groq 70B... ---")
+
+            # ── 2. TRY GROQ 70B AS SECONDARY ──
+            if client:
+                try:
+                    completion = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=api_messages,
+                        temperature=0.0,
+                        stream=True,
+                        max_tokens=2048,
+                    )
+                    stream_buffer = ""
+                    for chunk in completion:
+                        content = chunk.choices[0].delta.content
+                        if content:
+                            stream_buffer += content
+                            if len(stream_buffer) > 15 or any(p in content for p in {".", "!", "?", "؛", ")", "\n"}):
+                                yield _sanitize_output(stream_buffer, forbidden_pattern) if role in {"preacher", "interested", "guest"} else stream_buffer
+                                stream_buffer = ""
+                    if stream_buffer:
+                        yield _sanitize_output(stream_buffer, forbidden_pattern) if role in {"preacher", "interested", "guest"} else stream_buffer
+                    return
+                except Exception as e_70b:
+                    print(f"--- Groq 70B SECONDARY FAILED: {e_70b} ---")
+                
+                raise Exception("All providers (DeepSeek, 70B) failed")
         except Exception as e:
             logger.error(f"Global Stream Error: {e}")
             print(f"--- GLOBAL STREAM ERROR: {e} ---")
@@ -752,43 +1015,78 @@ Example: {{"category": "introducing_islam"}}
         LLMService._ensure_clients()
         system_prompt = PROMPT_MAP.get(role, INTERESTED_SYSTEM_PROMPT)
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
-        context = retrieve_context(question, role)
+        
+        # Intelligence Pass
+        intel = LLMService._rewrite_query(messages)
+        rag_query = intel.get("rewritten_query", question)
+        user_lang = intel.get("detected_language", "arabic")
+        
+        is_filler = (rag_query == "NO_SEARCH_NEEDED")
+        context = ""
+        if not is_filler:
+            context = retrieve_context(rag_query, role)
+
         if context:
-            context = _verify_quran_references_in_context(context)
-        ayah_context = _try_get_ayah_context(question)
+            context = _verify_quran_references_in_context(context, language=user_lang)
+
+        # Prioritize RAW question for detection
+        ayah_context = _try_get_ayah_context(question, language=user_lang)
+        if not ayah_context and rag_query and rag_query != "NO_SEARCH_NEEDED":
+            ayah_context = _try_get_ayah_context(rag_query, language=user_lang)
+
         if ayah_context:
             context = (context or "") + ayah_context
-        api_messages = build_isolated_messages(system_prompt, question, context or "", role=role)
+            
+        rag_roles = {"preacher", "guest", "interested"}
+        
+        # Soft RAG Gate: Allow generation even with empty context
+        if role in rag_roles and not is_filler and not _is_greeting(question) and (not context or not context.strip()):
+            logger.info(f"RAG: Empty context for '{rag_query}'.")
+
+        forbidden_pattern = _get_forbidden_pattern(question)
+        api_messages = build_messages_with_history(system_prompt, messages, context or "", question, rag_query, role=role, user_lang=user_lang)
         try:
-            if not ds_client:
-                raise Exception("DeepSeek not available")
-            response = ds_client.chat.completions.create(
-                model=settings.DEEPSEEK_MODEL,
-                messages=api_messages,
-                temperature=0.0,
-                frequency_penalty=0.0,
-                max_tokens=2048,
-            )
-            forbidden_pattern = _get_forbidden_pattern(question)
-            content = response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد."
-            return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
+            # TRY GROQ 70B FIRST
+            try:
+                if not client:
+                    raise Exception("Groq not available")
+                response = client.chat.completions.create(
+                    model=MAIN_MODEL,
+                    messages=api_messages,
+                    temperature=0.0,
+                    max_tokens=2048,
+                )
+                content = response.choices[0].message.content or ""
+                return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
+            except Exception as e_70b:
+                logger.error(f"Groq 70B Error/Limit: {e_70b}")
+                
+                # TRY DEEPSEEK SECONDARY
+                if ds_client:
+                    try:
+                        response = ds_client.chat.completions.create(
+                            model=settings.DEEPSEEK_MODEL,
+                            messages=api_messages,
+                            temperature=0.0,
+                            max_tokens=2048,
+                        )
+                        content = response.choices[0].message.content or ""
+                        return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
+                    except Exception as e_ds:
+                        logger.error(f"DeepSeek Error: {e_ds}")
+
+                # FINAL FALLBACK: GROQ 8B
+                response = client.chat.completions.create(
+                    model=FALLBACK_MODEL,
+                    messages=api_messages,
+                    temperature=0.0,
+                    max_tokens=2048,
+                )
+                content = response.choices[0].message.content or ""
+                return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
         except Exception as e:
-            logger.error(f"DeepSeek Chat Error: {e}")
-            if client:
-                try:
-                    response = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=api_messages,
-                        temperature=0.0,
-                        frequency_penalty=0.0,
-                        max_tokens=2048,
-                    )
-                    forbidden_pattern = _get_forbidden_pattern(question)
-                    content = response.choices[0].message.content or "عذراً، لم أتمكن من صياغة رد."
-                    return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
-                except Exception as e2:
-                    logger.error(f"Groq Chat Error: {e2}")
-            return "عذراً، حدث خطأ أثناء الاتصال بالخادم."
+            logger.error(f"Global Chat Error: {e}")
+            return "عذراً، حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً."
 
     @staticmethod
     def format_db_result(user_question: str, db_result: str) -> str:

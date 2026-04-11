@@ -408,3 +408,31 @@
     flex-shrink: 0;
   }
 }
+
+/* ─── Inline Register Button ─── */
+.nm-register-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #dba829, #b0841a);
+  color: #fff !important;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none !important;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(219, 168, 41, 0.2);
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.nm-register-btn-inline:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(219, 168, 41, 0.3);
+  background: linear-gradient(135deg, #ecb93a, #dba829);
+}
+
+.nm-register-btn-inline:active {
+  transform: translateY(0);
+}
