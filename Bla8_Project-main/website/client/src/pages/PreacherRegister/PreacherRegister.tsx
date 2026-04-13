@@ -4,10 +4,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
 import { preacherService } from '../../services/preacherService';
+import { useLanguage } from '../../i18n';
+import { OPTION_TRANSLATIONS, NATIVE_LANGUAGE_NAMES } from '../../constants/translations';
 import './PreacherRegister.css';
 
 const PreacherRegister: React.FC = () => {
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
+  const currentLang = lang === 'SA' ? 'ar' : lang === 'US' ? 'en' : lang === 'PK' ? 'ur' : lang.toLowerCase();
+  const translations = OPTION_TRANSLATIONS[currentLang] || OPTION_TRANSLATIONS['en'];
+  
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,7 +187,7 @@ const PreacherRegister: React.FC = () => {
                 style={{ cursor: 'pointer', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0 1rem 0 3.5rem' }}
               >
                 <div style={{ color: formData.nationalityId ? 'var(--text-dark)' : '#a0aec0' }}>
-                  {formData.nationalityId ? availableCountries.find(c => String(c.id) === String(formData.nationalityId))?.name : 'الجنسية'}
+                  {formData.nationalityId ? (translations[availableCountries.find(c => String(c.id) === String(formData.nationalityId))?.name.trim() || ''] || availableCountries.find(c => String(c.id) === String(formData.nationalityId))?.name) : 'الجنسية'}
                 </div>
                 <span className="preg-icon" style={{ left: '1.25rem' }}>
                   <ChevronDown size={18} className={`transition-transform ${isNationalityOpen ? 'rotate-180' : ''}`} />
@@ -201,7 +207,7 @@ const PreacherRegister: React.FC = () => {
                       style={{ flexDirection: 'row', justifyContent: 'flex-start' }}
                     >
                       <span className="nat-text">
-                        {country.name}
+                        {translations[country.name.trim()] || country.name}
                       </span>
                     </div>
                   ))}
@@ -222,7 +228,7 @@ const PreacherRegister: React.FC = () => {
                     const lang = availableLangs.find(l => l.id === langId);
                     return (
                       <span key={langId} className="preg-tag" onClick={(e) => e.stopPropagation()}>
-                        {lang?.name}
+                        {NATIVE_LANGUAGE_NAMES[lang?.name.trim() || ''] || translations[lang?.name.trim() || ''] || lang?.name}
                         <button type="button" className="tag-remove" onClick={(e) => {
                           e.stopPropagation();
                           toggleLanguage(langId);
@@ -245,7 +251,7 @@ const PreacherRegister: React.FC = () => {
                         <div className={`checkbox-custom check-align-right ${isSelected ? 'checked' : ''}`}>
                           {isSelected && <Check size={12} strokeWidth={4} color="white" />}
                         </div>
-                        <span>{lang.name}</span>
+                        <span>{NATIVE_LANGUAGE_NAMES[lang.name.trim()] || translations[lang.name.trim()] || lang.name}</span>
                       </div>
                     );
                   })}

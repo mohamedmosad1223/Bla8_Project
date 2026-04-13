@@ -16,6 +16,8 @@ FALLBACK_MODEL = "llama-3.3-70b-versatile"
 # Initialize Logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Logging to central file
 fh = logging.FileHandler("/var/log/chat_debug.log", encoding="utf-8")
 fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(fh)
@@ -858,9 +860,11 @@ STRICT RULES:
         
         try:
             target_client = ds_client if ds_client else client
-            # Background intelligence pass uses the 8B model to save 70B tokens
+            # Background intelligence pass uses DeepSeek if available, otherwise Groq 8B
+            model_to_use = settings.DEEPSEEK_MODEL if ds_client else "llama-3.1-8b-instant"
+            
             response = target_client.chat.completions.create(
-                model=settings.DEEPSEEK_MODEL if ds_client else INTEL_MODEL,
+                model=model_to_use,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=250,
@@ -1046,36 +1050,36 @@ STRICT RULES:
         forbidden_pattern = _get_forbidden_pattern(question)
         api_messages = build_messages_with_history(system_prompt, messages, context or "", question, rag_query, role=role, user_lang=user_lang)
         try:
-            # TRY GROQ 70B FIRST
-            try:
-                if not client:
-                    raise Exception("Groq not available")
-                response = client.chat.completions.create(
-                    model=MAIN_MODEL,
-                    messages=api_messages,
-                    temperature=0.0,
-                    max_tokens=2048,
-                )
-                content = response.choices[0].message.content or ""
-                return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
-            except Exception as e_70b:
-                logger.error(f"Groq 70B Error/Limit: {e_70b}")
-                
-                # TRY DEEPSEEK SECONDARY
-                if ds_client:
-                    try:
-                        response = ds_client.chat.completions.create(
-                            model=settings.DEEPSEEK_MODEL,
-                            messages=api_messages,
-                            temperature=0.0,
-                            max_tokens=2048,
-                        )
-                        content = response.choices[0].message.content or ""
-                        return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
-                    except Exception as e_ds:
-                        logger.error(f"DeepSeek Error: {e_ds}")
+            # ── 1. TRY DEEPSEEK AS PRIMARY ──
+            if ds_client:
+                try:
+                    response = ds_client.chat.completions.create(
+                        model=settings.DEEPSEEK_MODEL,
+                        messages=api_messages,
+                        temperature=0.0,
+                        max_tokens=2048,
+                    )
+                    content = response.choices[0].message.content or ""
+                    return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
+                except Exception as e_ds:
+                    logger.error(f"DeepSeek Primary Error: {e_ds}. Falling back to Groq...")
 
-                # FINAL FALLBACK: GROQ 8B
+            # ── 2. TRY GROQ 70B AS SECONDARY ──
+            if client:
+                try:
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=api_messages,
+                        temperature=0.0,
+                        max_tokens=2048,
+                    )
+                    content = response.choices[0].message.content or ""
+                    return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
+                except Exception as e_70b:
+                    logger.error(f"Groq 70B Secondary Error: {e_70b}")
+
+            # ── 3. FINAL FALLBACK: GROQ 8B (if available) ──
+            if client:
                 response = client.chat.completions.create(
                     model=FALLBACK_MODEL,
                     messages=api_messages,
@@ -1084,6 +1088,8 @@ STRICT RULES:
                 )
                 content = response.choices[0].message.content or ""
                 return _sanitize_output(content, forbidden_pattern) if role in {"preacher", "interested", "guest"} else content
+            
+            raise Exception("No LLM providers available")
         except Exception as e:
             logger.error(f"Global Chat Error: {e}")
             return "عذراً، حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً."

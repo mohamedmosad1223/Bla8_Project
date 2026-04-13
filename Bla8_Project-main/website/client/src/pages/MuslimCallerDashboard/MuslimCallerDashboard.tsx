@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../../i18n';
+import { OPTION_TRANSLATIONS, NATIVE_LANGUAGE_NAMES } from '../../constants/translations';
 import {
   User, BookOpen, Flag, Languages, Phone,
   Calendar, Users, ClipboardList, ChevronDown, MessageSquare, Link as LinkIcon
@@ -85,6 +87,10 @@ const fieldLabels: Record<string, string> = {
 
 /* ── Main Component ─────────────────────────────────────────────── */
 const MuslimCallerDashboard: React.FC = () => {
+  const { t, lang } = useLanguage();
+  const currentLang = lang === 'SA' ? 'ar' : lang === 'US' ? 'en' : lang === 'PK' ? 'ur' : lang.toLowerCase();
+  const translations = OPTION_TRANSLATIONS[currentLang] || OPTION_TRANSLATIONS['en'];
+
   const [form, setForm] = useState({
     fullName: '', 
     religion: '', 
@@ -266,17 +272,20 @@ const MuslimCallerDashboard: React.FC = () => {
           <div className="mc-row">
             <SelectField name="nationality" placeholder="الجنسية" icon={<Flag size={18} />}
               value={form.nationality} onChange={handle} error={getError('nationality')}
-              options={countries.map(c => ({ value: String(c.id), label: c.name }))}
+              options={countries.map(c => ({ value: String(c.id), label: translations[c.name.trim()] || c.name }))}
             />
             <SelectField name="religion" placeholder="الديانة" icon={<BookOpen size={18} />}
               value={form.religion} onChange={handle} error={getError('religion')}
-              options={religions.map(r => ({ value: String(r.id), label: r.name }))}
+              options={religions.map(r => ({ value: String(r.id), label: translations[r.name.trim()] || r.name }))}
             />
           </div>
 
           <SelectField name="language" placeholder="اللغة" icon={<Languages size={18} />}
             value={form.language} onChange={handle} error={getError('language')}
-            options={languages.map(l => ({ value: String(l.id), label: l.name }))}
+            options={languages.map(l => ({ 
+              value: String(l.id), 
+              label: NATIVE_LANGUAGE_NAMES[l.name.trim()] || translations[l.name.trim()] || l.name 
+            }))}
           />
 
           <div className="mc-field-wrap">

@@ -514,5 +514,36 @@
     "b4": "Nous utilisons un cryptage avancé et des protocoles de sécurité stricts pour protéger vos informations.",
     "t5": "Droits de l'utilisateur",
     "b5": "Vous pouvez modifier vos données ou supprimer complètement votre compte à tout moment en toute sécurité."
+  },
+  "data": {
+    "languages": {
+      "العربية": "Arabe",
+      "الإنجليزية": "Anglais",
+      "الفرنسية": "Français",
+      "الإسبانية": "Espagnol",
+      "الهندية": "Hindi",
+      "التاغالوغية": "Tagalog",
+      "الأردية": "Ourdou"
+    },
+    "countries": {
+      "مصر": "Égypte",
+      "السعودية": "Arabie Saoudite",
+      "الكويت": "Koweït",
+      "الإمارات": "EAU",
+      "الفلبين": "Philippines",
+      "الهند": "Inde",
+      "سريلانكا": "Sri Lanka",
+      "نيبال": "Népal",
+      "أمريكا": "États-Unis",
+      "بريطانيا": "Royaume-Uni"
+    },
+    "religions": {
+      "الإسلام": "Islam",
+      "المسيحية": "Christianisme",
+      "الهندوسية": "Hindouisme",
+      "البوذية": "Bouddhisme",
+      "لاديني": "Athée/Aucun",
+      "أخرى": "Autre"
+    }
   }
 }

@@ -514,5 +514,36 @@
     "b4": "Wir verwenden fortschrittliche Verschlüsselung und strenge Sicherheitsprotokolle, um Ihre Informationen zu schützen.",
     "t5": "Benutzerrechte",
     "b5": "Sie können Ihre Daten jederzeit sicher ändern oder Ihr Konto vollständig löschen."
+  },
+  "data": {
+    "languages": {
+      "العربية": "Arabisch",
+      "الإنجليزية": "Englisch",
+      "الفرنسية": "Französisch",
+      "الإسبانية": "Spanisch",
+      "الهندية": "Hindi",
+      "التاغالوغية": "Tagalog",
+      "الأردية": "Urdu"
+    },
+    "countries": {
+      "مصر": "Ägypten",
+      "السعودية": "Saudi-Arabien",
+      "الكويت": "Kuwait",
+      "الإمارات": "VAE",
+      "الفلبين": "Philippinen",
+      "الهند": "Indien",
+      "سريلانكا": "Sri Lanka",
+      "نيبال": "Nepal",
+      "أمريكا": "USA",
+      "بريطانيا": "Großbritannien"
+    },
+    "religions": {
+      "الإسلام": "Islam",
+      "المسيحية": "Christentum",
+      "الهندوسية": "Hinduismus",
+      "البوذية": "Buddhismus",
+      "لاديني": "Atheist/Keine",
+      "أخرى": "Andere"
+    }
   }
 }

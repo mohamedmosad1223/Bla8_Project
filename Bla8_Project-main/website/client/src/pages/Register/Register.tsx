@@ -7,6 +7,7 @@ import { interestedPersonService } from '../../services/interestedPersonService'
 import { muslimCallerService } from '../../services/muslimCallerService';
 import { preacherService } from '../../services/preacherService';
 import { useLanguage } from '../../i18n';
+import { OPTION_TRANSLATIONS, NATIVE_LANGUAGE_NAMES } from '../../constants/translations';
 import './Register.css';
 
 /* ── Reusable Autocomplete Field ─────────────────────────────────── */
@@ -26,7 +27,7 @@ const FormAutocomplete: React.FC<{
   const selectedOption = options.find(o => o.value === value);
   const displayValue = selectedOption ? selectedOption.label : '';
 
-  const filteredOptions = options.filter(o => 
+  const filteredOptions = options.filter(o =>
     o.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -69,8 +70,8 @@ const FormAutocomplete: React.FC<{
       {isOpen && filteredOptions.length > 0 && (
         <ul className="custom-autocomplete-dropdown">
           {filteredOptions.map(o => (
-            <li 
-              key={o.value} 
+            <li
+              key={o.value}
               className={`autocomplete-item ${o.value === value ? 'active' : ''}`}
               onClick={() => handleSelect(o.value)}
             >
@@ -119,8 +120,8 @@ const FormSelect: React.FC<{
       {isOpen && (
         <ul className="custom-autocomplete-dropdown">
           {options.map(o => (
-            <li 
-              key={o.value} 
+            <li
+              key={o.value}
               className={`autocomplete-item ${o.value === value ? 'active' : ''}`}
               onClick={() => {
                 onChange(name, o.value);
@@ -138,7 +139,10 @@ const FormSelect: React.FC<{
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { t, dir } = useLanguage();
+  const { t, lang, dir } = useLanguage();
+  const currentLang = lang === 'SA' ? 'ar' : lang === 'US' ? 'en' : lang === 'PK' ? 'ur' : lang.toLowerCase();
+  const translations = OPTION_TRANSLATIONS[currentLang] || OPTION_TRANSLATIONS['en'];
+
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') || sessionStorage.getItem('registerRole');
   const isNonMuslim = role === 'non_muslim' || (localStorage.getItem('appLanguage') !== null && localStorage.getItem('appLanguage') !== 'SA');
@@ -159,13 +163,13 @@ const Register: React.FC = () => {
   // Dynamic Options with Initial Fallbacks to prevent empty menus
   const [options, setOptions] = useState({
     countries: [
-        {id: 1, name: 'مصر'}, {id: 2, name: 'الكويت'}, {id: 3, name: 'السعودية'}, {id: 4, name: 'الإمارات'}
+      { id: 1, name: 'مصر' }, { id: 2, name: 'الكويت' }, { id: 3, name: 'السعودية' }, { id: 4, name: 'الإمارات' }
     ],
     languages: [
-        {id: 1, name: 'العربية'}, {id: 2, name: 'الإنجليزية'}, {id: 3, name: 'الأردية'}, {id: 4, name: 'الفرنسية'}
+      { id: 1, name: 'العربية' }, { id: 2, name: 'الإنجليزية' }, { id: 3, name: 'الأردية' }, { id: 4, name: 'الفرنسية' }
     ],
     religions: [
-        {id: 1, name: 'مسيحية'}, {id: 2, name: 'ملحد'}, {id: 3, name: 'بوذي'}, {id: 4, name: 'هندوسي'}, {id: 5, name: 'أخرى'}
+      { id: 1, name: 'مسيحية' }, { id: 2, name: 'ملحد' }, { id: 3, name: 'بوذي' }, { id: 4, name: 'هندوسي' }, { id: 5, name: 'أخرى' }
     ],
   });
 
@@ -259,7 +263,7 @@ const Register: React.FC = () => {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {
         // Extract field-specific error messages
-        const errorMsgs = detail.map((d: { loc: (string | number)[], msg: string }) => `${d.loc[d.loc.length-1]}: ${d.msg}`).join('\n');
+        const errorMsgs = detail.map((d: { loc: (string | number)[], msg: string }) => `${d.loc[d.loc.length - 1]}: ${d.msg}`).join('\n');
         setError(errorMsgs);
       } else {
         setError(detail || 'حدث خطأ أثناء التسجيل. تفقد الحقول وحاول مرة أخرى.');
@@ -279,7 +283,7 @@ const Register: React.FC = () => {
         <div className="form-container">
           <div className="header-text register-header">
             <div className="top-logo">
-               <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
+              <img src="/bla8_logo.png" alt="Balagh Logo" className="logo-colored" />
             </div>
             <h2>{isNonMuslim ? t('register.title') : `إنشاء حساب ${role === 'muslim_caller' ? '(مسلم داعي)' : ''}`}</h2>
             <p>{isNonMuslim ? t('register.subtitle') : 'من فضلك قم بملأ البيانات التالية لإنشاء حساب جديد'}</p>
@@ -313,32 +317,35 @@ const Register: React.FC = () => {
             {role !== 'muslim_caller' && (
               <>
                 <div className="register-row">
-                  <FormAutocomplete 
+                  <FormAutocomplete
                     name="nationality_country_id" placeholder={isNonMuslim ? t('register.nationality') : 'الجنسية'} icon={<Flag size={18} />}
-                    options={options.countries.map(c => ({ value: String(c.id), label: c.name }))}
+                    options={options.countries.map(c => ({ value: String(c.id), label: translations[c.name.trim()] || c.name }))}
                     value={formData.nationality_country_id} onChange={handleValueChange} required
                   />
-                  <FormAutocomplete 
+                  <FormAutocomplete
                     name="current_country_id" placeholder={isNonMuslim ? t('register.residence') : 'بلد الإقامة'} icon={<Globe size={18} />}
-                    options={options.countries.map(c => ({ value: String(c.id), label: c.name }))}
+                    options={options.countries.map(c => ({ value: String(c.id), label: translations[c.name.trim()] || c.name }))}
                     value={formData.current_country_id} onChange={handleValueChange} required
                   />
                 </div>
 
                 <div className="register-row">
-                  <FormAutocomplete 
+                  <FormAutocomplete
                     name="religion_id" placeholder={isNonMuslim ? t('register.religion') : 'الديانة الحالية'} icon={<BookOpen size={18} />}
-                    options={options.religions.map(r => ({ value: String(r.id), label: r.name }))}
+                    options={options.religions.map(r => ({ value: String(r.id), label: translations[r.name.trim()] || r.name }))}
                     value={formData.religion_id} onChange={handleValueChange} required
                   />
-                  <FormAutocomplete 
+                  <FormAutocomplete
                     name="communication_lang_id" placeholder={isNonMuslim ? t('register.language') : 'لغة التواصل'} icon={<Languages size={18} />}
-                    options={options.languages.map(l => ({ value: String(l.id), label: l.name }))}
+                    options={options.languages.map(l => ({ 
+                      value: String(l.id), 
+                      label: NATIVE_LANGUAGE_NAMES[l.name.trim()] || translations[l.name.trim()] || l.name 
+                    }))}
                     value={formData.communication_lang_id} onChange={handleValueChange} required
                   />
                 </div>
 
-                <FormSelect 
+                <FormSelect
                   name="gender" placeholder={isNonMuslim ? t('register.gender') : 'الجنس'} icon={<Users size={18} />}
                   options={[{ value: 'male', label: isNonMuslim ? t('common.male') : 'ذكر' }, { value: 'female', label: isNonMuslim ? t('common.female') : 'أنثى' }]}
                   value={formData.gender} onChange={handleValueChange} required
