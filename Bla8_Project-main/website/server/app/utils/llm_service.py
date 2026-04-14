@@ -801,11 +801,12 @@ class LLMService:
         
         system_prompt = f"""You are a helpful text classification assistant.
 Analyze the user's query and determine its category.
-Map the category to one of the values in this mapping based on the topic:
+If the query is about data analysis, reports, statistics, database queries, organization performance, or preacher performance, the category MUST be "analytics".
+Otherwise, map the category to one of the values in this mapping based on the Islamic topic:
 {json.dumps(CATEGORY_MAP, ensure_ascii=False)}
 
 Return ONLY a valid JSON object with keys "category". Do not output any other text or markdown block formatting.
-Example: {{"category": "introducing_islam"}}
+Example: {{"category": "analytics"}}
 """
 
         try:
