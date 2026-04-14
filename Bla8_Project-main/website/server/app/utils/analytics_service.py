@@ -143,7 +143,7 @@ class AnalyticsAIOrchestrator:
             "fiqh", "virtues", "sins_prohibitions", "shubuhaat", "comparative_religion"
         }
         
-        if category in rag_categories or "القرآن" in user_question or "الإسلام" in user_question:
+        if category in rag_categories or (category != "analytics" and ("القرآن" in user_question or "الإسلام" in user_question)):
             logger.info(f"Analytics Routing: General Knowledge detected. Category: {category}. Routing to RAG.")
             # استخدام الـ role كـ preacher (المرشد) وليس preacher_analytics (المحلل)
             target_role = "preacher" if role == "preacher" else "guest"
