@@ -1038,6 +1038,10 @@ class AIChatConversationUpdate(BaseModel):
 class AIChatMessageCreate(BaseModel):
     content: str = Field(..., min_length=1)
     conversation_id: Optional[int] = None
+    period: Optional[str] = Field(
+        None,
+        description="الإطار الزمني: today | this_month | last_month | last_3_months | last_6_months | last_year"
+    )
 
 class GuestAIChatCreate(BaseModel):
     session_id: str = Field(..., min_length=1, max_length=255, description="معرف الجلسة الخاص بالزائر")

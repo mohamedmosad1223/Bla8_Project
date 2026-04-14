@@ -10,7 +10,6 @@ from app.schemas.schemas import (
     AIChatConversationCreate, AIChatConversationRead, AIChatConversationListResponse
 )
 from app.controllers.chats_controller import ChatsController
-from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/api/chat", tags=["Chats & AI"])
 
@@ -47,8 +46,17 @@ def cleanup_guest_chats(days: int = 30, db: Session = Depends(get_db), current_u
 
 @router.post("/analytics/send")
 def send_analytics_ai_message(payload: AIChatMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """شات تحليل الأداء الخاص بوزير الأوقاف ومشرفي الجمعيات — Read-Only آمن"""
+    """شات تحليل الأداء الخاص بوزير الأوقاف ومشرفي الجمعيات والمديرين — Read-Only آمن"""
     return ChatsController.send_analytics_ai_message(db, current_user, payload)
+
+@router.get("/analytics/history")
+def get_analytics_chat_history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    جلب تاريخ المحادثة الثابتة للـ Admin مع الـ AI.
+    — الفرونت يستدعيه مرة واحدة لما الصفحة تفتح.
+    — يرجع: { conversation_id, history: [{role, content, created_at}] }
+    """
+    return ChatsController.get_analytics_chat_history(db, current_user)
 
 @router.get("/preachers")
 def get_preacher_chats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

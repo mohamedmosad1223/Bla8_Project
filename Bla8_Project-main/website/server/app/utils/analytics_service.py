@@ -125,7 +125,8 @@ class AnalyticsAIOrchestrator:
         role: str,
         db: Session,
         org_id: Optional[int] = None,
-        preacher_id: Optional[int] = None
+        preacher_id: Optional[int] = None,
+        period_label: str = ""
     ) -> str:
         """
         دورة المحادثة التحليلية مع توجيه ذكي للأسئلة العامة.
@@ -195,8 +196,31 @@ class AnalyticsAIOrchestrator:
         if not sql_matches:
             with open("analytics_debug.log", "a", encoding="utf-8") as f:
                 f.write(f"\n--- NO SQL GENERATED ---\nRole: {role}, OrgID: {org_id}\nAI Response:\n{ai_response}\n")
-            # لا SQL → أعد الرد مباشرة (مثلاً سؤال توضيحي أو رسالة خطأ)
-            return ai_response
+
+            # ── Retry: أجبر الـ AI على توليد SQL ─────────────────────────────
+            # لو الـ AI رجع رد بدون SQL (مثل "لا توجد بيانات")، أعد الطلب بتحذير صارم
+            retry_messages = request_messages + [
+                {"role": "assistant", "content": ai_response},
+                {
+                    "role": "user",
+                    "content": (
+                        "خطأ: لقد أعطيت إجابة مباشرة بدون إنشاء استعلام SQL. "
+                        "هذا مخالف صريح للقواعد الأساسية. "
+                        "يجب عليك الآن إنشاء استعلام SQL يجلب البيانات المطلوبة أولاً، "
+                        "ثم توقف — لا تذكر أي نتائج في ردك، فقط اكتب استعلام SQL داخل الوسوم <SQL>...</SQL>."
+                    )
+                }
+            ]
+            ai_response = LLMService.generate_analytics_response(retry_messages, role=active_role)
+            sql_matches = list(SQL_TAG_PATTERN.finditer(ai_response))
+
+            with open("analytics_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"\n--- RETRY SQL ---\nAI Response:\n{ai_response}\n")
+
+            if not sql_matches:
+                # بعد الـ retry مازال مش بيولد SQL → رجّع رسالة واضحة
+                return "لم أتمكن من استرجاع البيانات حالياً. يرجى إعادة صياغة السؤال أو التحقق من قاعدة البيانات."
+
 
         db_results = []
         for idx, match in enumerate(sql_matches, 1):
@@ -219,6 +243,7 @@ class AnalyticsAIOrchestrator:
         final_response = LLMService.format_db_result(
             user_question=user_question,
             db_result=combined_result,
+            period_label=period_label,
         )
         return final_response
 
