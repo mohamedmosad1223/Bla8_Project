@@ -38,6 +38,7 @@ import AwqafPreacherDetails from './pages/AwqafPreacherDetails/AwqafPreacherDeta
 import AwqafPreacherPerformance from './pages/AwqafPreacherPerformance/AwqafPreacherPerformance';
 import AwqafReportsAnalytics from './pages/AwqafReportsAnalytics/AwqafReportsAnalytics';
 import AwqafAICenter from './pages/AwqafAICenter/AwqafAICenter';
+import AssociationAICenter from './pages/AssociationAICenter/AssociationAICenter';
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminAssociations from './pages/AdminAssociations/AdminAssociations';
 import AdminAddAssociation from './pages/AdminAddAssociation/AdminAddAssociation';
@@ -93,8 +94,8 @@ function App() {
       if (currentRole) {
         try {
           await authService.getMe();
-        } catch (err: any) {
-          if (err.response?.status === 401) {
+        } catch (err: unknown) {
+          if ((err as { response?: { status?: number } }).response?.status === 401) {
             localStorage.removeItem('userRole');
             localStorage.removeItem('userData');
             setRole(null);
@@ -147,6 +148,7 @@ function App() {
           <Route path="/conversations" element={<ProtectedRoute allowedRoles={['organization', 'preacher', 'non_muslim', 'interested']}><RoleConversations role={role} /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute allowedRoles={['preacher']}><PreacherReports /></ProtectedRoute>} />
           <Route path="/submissions" element={<ProtectedRoute allowedRoles={['muslim_caller']}><MuslimCallerSubmissions /></ProtectedRoute>} />
+          <Route path="/association/ai" element={<ProtectedRoute allowedRoles={['organization']}><AssociationAICenter /></ProtectedRoute>} />
 
           {/* Awqaf Routes */}
           <Route path="/awqaf-dashboard" element={<ProtectedRoute allowedRoles={['minister', 'awqaf_manager']}><AwqafDashboard /></ProtectedRoute>} />

@@ -93,8 +93,15 @@ const Sidebar = () => {
                   المحادثات
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink to="/association/ai" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeMobileMenu}>
+                  <Bot size={20} className="nav-icon" />
+                  التقارير و التحليلات
+                </NavLink>
+              </li>
             </>
           )}
+
 
           {/* Preacher-only */}
           {isPreacher && (

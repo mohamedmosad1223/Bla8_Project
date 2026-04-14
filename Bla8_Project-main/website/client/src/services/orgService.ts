@@ -58,4 +58,12 @@ export const orgService = {
     });
     return response.data;
   },
+
+  /**
+   * Send association AI chat message (reuses the analytics endpoint which supports organization role)
+   */
+  sendAssociationAIMessage: async (content: string) => {
+    const response = await api.post('/chat/analytics/send', { content });
+    return response.data;
+  },
 };
