@@ -16,7 +16,7 @@ from app.utils.analytics_service import AnalyticsAIOrchestrator
 
 class ChatsController:
 
-    GUEST_CONVERSION_PROMPT = "\n\n---\nهل ترغب في حفظ محادثاتك والوصول لمميزات أكثر؟ [إنشاء حساب الآن 🔗](/register)"
+    GUEST_CONVERSION_PROMPT = "\n\n---\nهل تريد التسجيل للتواصل مع الدعاة للمساعدة في الوصول للهداية ويجاوب عليك بأفضل وأدق المعلومات؟ [إنشاء حساب الآن 🔗](/register)"
     WELCOME_MESSAGE = "مرحباً بك! أنا مساعد ذكي هنا للإجابة على استفساراتك حول الإسلام والتعريف به. كيف يمكنني مساعدتك اليوم؟"
 
     @staticmethod
@@ -134,7 +134,11 @@ class ChatsController:
         messages = []
         for msg in recent_history:
             mapped_role = "assistant" if msg.role == "ai" else "user"
-            messages.append({"role": mapped_role, "content": msg.content})
+            content = msg.content
+            # Strip conversion prompt if it exists to avoid LLM repeating it
+            if mapped_role == "assistant" and "\n\n---" in content:
+                content = content.split("\n\n---")[0]
+            messages.append({"role": mapped_role, "content": content})
             
         # 3. إرسال الرسائل للذكاء الاصطناعي (الزوار دائماً يأخذون برومبت الغير مسلم)
         ai_response_text = LLMService.generate_chat_response(messages, role="guest")
@@ -267,7 +271,11 @@ class ChatsController:
         messages = []
         for msg in recent_history:
             mapped_role = "assistant" if msg.role == "ai" else "user"
-            messages.append({"role": mapped_role, "content": msg.content})
+            content = msg.content
+            # Strip conversion prompt if it exists to avoid LLM repeating it
+            if mapped_role == "assistant" and "\n\n---" in content:
+                content = content.split("\n\n---")[0]
+            messages.append({"role": mapped_role, "content": content})
 
         def stream_generator():
             full_response = ""
@@ -275,9 +283,9 @@ class ChatsController:
                 full_response += chunk
                 yield f"data: {chunk}\n\n"
             
-            # تحقق من عدد الرسائل لبث دعوة التسجيل في نهاية الستريم
+            # تحقق من عدد الرسائل لبث دعوة التسجيل في نهاية الستريم (عند الرسالة الخامسة)
             user_msg_count = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id, AIChatMessage.role == "user").count()
-            if user_msg_count >= 3:
+            if user_msg_count == 5:
                 # إرسال الزرار سطر بسطر لضمان وصوله صح للفرونت إند
                 for line in ChatsController.GUEST_CONVERSION_PROMPT.split('\n'):
                     yield f"data: {line}\n\n"

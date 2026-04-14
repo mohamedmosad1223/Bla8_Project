@@ -285,19 +285,22 @@
 .nm-bot-message {
   background: white;
   color: #1a202c;
-  align-self: flex-start;
-  border-radius: 4px 18px 18px 18px;
+  align-self: flex-start; /* Right in RTL */
+  border-radius: 18px 4px 18px 18px; /* Sharp top-right for Right bubble */
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   border: 1px solid rgba(226,232,240,0.8);
-  border-left: 3px solid #dca83e;
+  border-right: 3px solid #dca83e; /* Gold border on Right */
+  border-left: none;
+  text-align: initial;
 }
 
 .nm-user-message {
   background: linear-gradient(135deg, #17648B 0%, #104461 100%);
   color: white;
-  align-self: flex-end;
-  border-radius: 18px 4px 18px 18px;
+  align-self: flex-end; /* Left in RTL */
+  border-radius: 4px 18px 18px 18px; /* Sharp top-left for Left bubble */
   box-shadow: 0 4px 14px rgba(23,100,139,0.2);
+  text-align: initial;
 }
 
 /* Input area */
@@ -423,7 +426,7 @@
 }
 
 /* ─── Markdown rendering inside bot bubbles ─── */
-.nm-bot-message .markdown-content { text-align: right; }
+.nm-bot-message .markdown-content { text-align: initial; }
 .nm-bot-message .markdown-content h1,
 .nm-bot-message .markdown-content h2,
 .nm-bot-message .markdown-content h3 {
@@ -437,7 +440,9 @@
 .nm-bot-message .markdown-content em { font-style: italic; }
 .nm-bot-message .markdown-content ul,
 .nm-bot-message .markdown-content ol {
-  padding-right: 1.4em;
+  list-style-position: outside;
+  padding-inline-start: 1.5em;
+  padding-inline-end: 0;
   margin: 0.4em 0;
 }
 .nm-bot-message .markdown-content li { margin: 0.2em 0; }
@@ -447,8 +452,9 @@
   margin: 0.6em 0;
 }
 .nm-bot-message .markdown-content blockquote {
-  border-right: 3px solid #dca83e;
-  padding-right: 0.8em;
+  border-inline-start: 3px solid #dca83e;
+  padding-inline-start: 0.8em;
+  padding-inline-end: 0;
   margin: 0.5em 0;
   color: #718096;
   font-style: italic;
@@ -463,7 +469,7 @@
 .nm-bot-message .markdown-content td {
   border: 1px solid #e2e8f0;
   padding: 6px 10px;
-  text-align: right;
+  text-align: inherit;
 }
 .nm-bot-message .markdown-content thead { background: #f0f7ff; font-weight: 700; }
 .nm-bot-message .markdown-content code {

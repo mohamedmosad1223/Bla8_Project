@@ -291,7 +291,7 @@ const NonMuslimDashboard: React.FC = () => {
   };
 
   return (
-    <div className="nm-page" dir={dir}>
+    <div className="nm-page" dir="rtl">
       {/* ── Right Sidebar: Sessions ── */}
       <aside className="nm-sidebar">
         {/* Bot header */}
@@ -363,6 +363,7 @@ const NonMuslimDashboard: React.FC = () => {
                 <div
                   key={msg.id}
                   className={`nm-message ${msg.sender === 'bot' ? 'nm-bot-message' : 'nm-user-message'}`}
+                  dir={dir}
                 >
                   {msg.sender === 'bot' ? (
                     <div className="markdown-content">

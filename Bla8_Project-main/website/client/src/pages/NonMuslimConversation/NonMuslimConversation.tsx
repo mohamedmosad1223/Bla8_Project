@@ -154,7 +154,7 @@ const NonMuslimConversation: React.FC = () => {
   );
 
   return (
-    <div className="nm-conversation-page" dir={dir}>
+    <div className="nm-conversation-page" dir="rtl">
 
       {/* ─── Contacts Sidebar (Right) ─── */}
       <div className="nm-contacts-sidebar">
@@ -251,7 +251,7 @@ const NonMuslimConversation: React.FC = () => {
                   <div className="nm-msg-avatar">
                     <User size={18} color="#94a3b8" />
                   </div>
-                  <div className="nm-msg-bubble">
+                  <div className="nm-msg-bubble" dir={dir}>
                     {msg.is_mine ? (
                       <p className="nm-msg-text">{msg.message_text}</p>
                     ) : (
