@@ -28,55 +28,38 @@ from app.auth import get_password_hash
 
 session = SessionLocal()
 
-def get_or_create_lang(code, name):
-    lang = session.execute(select(Language).where(Language.language_code == code)).scalar_one_or_none()
-    if not lang:
-        lang = Language(language_code=code, language_name=name)
-        session.add(lang)
-        session.commit()
-        session.refresh(lang)
-    return lang
+def get_lang(code):
+    return session.execute(select(Language).where(Language.language_code == code)).scalar_one_or_none()
 
-def get_or_create_country(code, name):
-    country = session.execute(select(Country).where(Country.country_code == code)).scalar_one_or_none()
-    if not country:
-        country = Country(country_code=code, country_name=name)
-        session.add(country)
-        session.commit()
-        session.refresh(country)
-    return country
+def get_country(code):
+    return session.execute(select(Country).where(Country.country_code == code)).scalar_one_or_none()
 
-# --- Phase 0: Setup References ---
-print("Setting up references (Countries, Languages, Religions)...")
-kuwait = get_or_create_country('KW', 'Kuwait')
-india = get_or_create_country('IN', 'India')
-phil = get_or_create_country('PH', 'Philippines')
-usa = get_or_create_country('US', 'United States')
-gb = get_or_create_country('GB', 'United Kingdom')
+# --- Phase 0: Get References ---
+print("Fetching references (Countries, Languages, Religions)...")
+kuwait = get_country('KW')
+india = get_country('IN')
+phil = get_country('PH')
+pakistan = get_country('PK')
+usa = get_country('US')
+gb = get_country('GB')
 
-lang_ar = get_or_create_lang('ar', 'Arabic')
-lang_en = get_or_create_lang('en', 'English')
-lang_tl = get_or_create_lang('tl', 'Tagalog')
-lang_hi = get_or_create_lang('hi', 'Hindi')
-lang_ur = get_or_create_lang('ur', 'Urdu')
+lang_ar = get_lang('ar')
+lang_en = get_lang('en')
+lang_tl = get_lang('tl')
+lang_hi = get_lang('hi')
+lang_ur = get_lang('ur')
 
 rel_christian = session.execute(select(Religion).where(Religion.religion_name.ilike('%Christian%'))).scalars().first()
-if not rel_christian:
-    rel_christian = Religion(religion_name='Christianity')
-    session.add(rel_christian)
-    session.commit()
-
 rel_hindu = session.execute(select(Religion).where(Religion.religion_name.ilike('%Hindu%'))).scalars().first()
-if not rel_hindu:
-    rel_hindu = Religion(religion_name='Hinduism')
-    session.add(rel_hindu)
-    session.commit()
 
 # --- Phase 1: Organizations (10 in Kuwait) ---
 govs = ['العاصمة', 'حولي', 'الفروانية', 'الأحمدي', 'الجهراء', 'مبارك الكبير']
 orgs_objs = []
 print("Creating 10 Organizations...")
 for i in range(1, 11):
+    if not kuwait:
+        print("Skipping organizations: Kuwait not found in DB.")
+        break
     email = f"org{i}@example.com"
     user = session.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if not user:
@@ -122,6 +105,9 @@ p_data = [
 
 preachers_objs = []
 for p in p_data:
+    if not p['country']:
+        print(f"Skipping preacher {p['name']}: Country not found.")
+        continue
     user = session.execute(select(User).where(User.email == p['email'])).scalar_one_or_none()
     if not user:
         user = User(
@@ -151,7 +137,8 @@ for p in p_data:
         session.flush()
         
         for l, prof in p['langs']:
-            session.add(PreacherLanguage(preacher_id=preacher.preacher_id, language_id=l.language_id, proficiency=prof))
+            if l:
+                session.add(PreacherLanguage(preacher_id=preacher.preacher_id, language_id=l.language_id, proficiency=prof))
         
         session.add(PreacherStatistics(preacher_id=preacher.preacher_id))
         preachers_objs.append(preacher)
@@ -211,10 +198,14 @@ nm_data = [
     {"first": "Amit", "last": "Sharma", "email": "amit@example.com", "country": india, "lang": lang_hi, "rel": rel_hindu},
     {"first": "Maria", "last": "Santos", "email": "maria@example.com", "country": phil, "lang": lang_tl, "rel": rel_christian},
     {"first": "Ali", "last": "Hassan", "email": "ali_urdu@example.com", "country": india, "lang": lang_ur, "rel": rel_christian},
+    {"first": "Zubair", "last": "Khan", "email": "zubair@example.com", "country": pakistan, "lang": lang_ur, "rel": rel_christian},
     {"first": "Robert", "last": "Brown", "email": "robert@example.com", "country": india, "lang": lang_ur, "rel": None},
 ]
 
 for nm in nm_data:
+    if not nm['country'] or not nm['lang']:
+        print(f"Skipping interested person {nm['first']}: Country or Language not found.")
+        continue
     user = session.execute(select(User).where(User.email == nm['email'])).scalar_one_or_none()
     if not user:
         user = User(
@@ -245,6 +236,9 @@ session.commit()
 print("Creating Muslim Callers...")
 callers_objs = []
 for i in range(1, 6):
+    if not kuwait:
+        print("Skipping Muslim Callers: Kuwait not found.")
+        break
     email = f"caller{i}@example.com"
     user = session.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if not user:
@@ -283,11 +277,13 @@ if callers_objs:
         {"f": "Kevin", "l": "M", "c": usa, "l_id": lang_en},
     ]
     for inv in inv_data:
-        # Check if already invited
+        if not inv['c'] or not inv['l_id']:
+            print(f"Skipping invitation {inv['f']}: Country or Language not found.")
+            continue
         exists = session.execute(select(DawahRequest).where(
             DawahRequest.invited_first_name == inv['f'],
             DawahRequest.invited_last_name == inv['l']
-        )).scalar_one_or_none()
+        )).scalars().first()
         if not exists:
             req = DawahRequest(
                 request_type=RequestType.invited,
