@@ -34,8 +34,20 @@ export const ministerService = {
   /**
    * Send analytics AI chat message
    */
-  sendAnalyticsAIMessage: async (content: string) => {
-    const response = await api.post('/chat/analytics/send', { content });
+  getAnalyticsChatHistory: async () => {
+    const response = await api.get('/chat/analytics/history');
+    return response.data;
+  },
+
+  sendAnalyticsAIMessage: async (
+    content: string,
+    period?: 'all_time' | 'this_month' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year',
+    conversationId?: number | null
+  ) => {
+    const payload: { content: string; period?: string; conversation_id?: number } = { content };
+    if (period && period !== 'all_time') payload.period = period;
+    if (conversationId) payload.conversation_id = conversationId;
+    const response = await api.post('/chat/analytics/send', payload);
     return response.data;
   },
 

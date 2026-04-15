@@ -21,6 +21,7 @@ from app.routers.help import router as help_router
 from app.routers.profiles import router as profiles_router
 from app.routers.chats import router as chats_router
 from app.routers.minister import router as minister_router
+from app.routers.report_schedules_router import router as report_schedules_router
 
 __all__ = [
     "users_router",
@@ -40,5 +41,6 @@ __all__ = [
     "help_router",
     "profiles_router",
     "chats_router",
-    "minister_router"
+    "minister_router",
+    "report_schedules_router"
 ]

@@ -374,13 +374,71 @@ class ChatsController:
         return {"history": messages, "welcome_message": f"مرحباً بك في جلسة: {conv.title}"}
 
     @staticmethod
+    def _get_or_create_admin_conversation(db: Session, user_id: int) -> int:
+        """
+        الـ admin لديه محادثة واحدة دائمة مع الـ AI تفضل شغالة دايماً.
+        لو موجودة → يرجع الـ id بتاعها | لو مش موجودة → ينشئها مرة واحدة فقط.
+        """
+        existing = (
+            db.query(AIChatConversation)
+            .filter(AIChatConversation.user_id == user_id)
+            .order_by(AIChatConversation.created_at.asc())  # الأولى دايماً هي المحادثة الثابتة
+            .first()
+        )
+        if existing:
+            return existing.id
+        conv = AIChatConversation(
+            user_id=user_id,
+            title="المساعد الذكي — مركز التقارير"
+        )
+        db.add(conv)
+        db.commit()
+        db.refresh(conv)
+        return conv.id
+
+    @staticmethod
+    def get_analytics_chat_history(db: Session, user: User):
+        """
+        يجيب تاريخ المحادثة الثابتة للـ Admin مع الـ AI.
+        الفرونت يستدعيه مرة واحدة لما صفحة الـ AI Center تفتح.
+        الرد: { conversation_id, history: [{id, role, content, created_at}] }
+        """
+        user_role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
+        if user_role_val not in ("minister", "organization", "admin"):
+            raise HTTPException(status_code=403, detail="غير مصرح لك بالوصول.")
+
+        # جيب أو أنشئ المحادثة الثابتة
+        conversation_id = ChatsController._get_or_create_admin_conversation(db, user.user_id)
+
+        # جيب كل رسائل المحادثة مرتبة من الأقدم للأحدث
+        messages = (
+            db.query(AIChatMessage)
+            .filter(AIChatMessage.conversation_id == conversation_id)
+            .order_by(AIChatMessage.created_at.asc())
+            .all()
+        )
+
+        return {
+            "conversation_id": conversation_id,
+            "history": [
+                {
+                    "id": msg.id,
+                    "role": msg.role,         # "user" أو "ai"
+                    "content": msg.content,
+                    "created_at": msg.created_at.isoformat() if msg.created_at else None,
+                }
+                for msg in messages
+            ]
+        }
+
+    @staticmethod
     def send_analytics_ai_message(db: Session, user: User, payload: AIChatMessageCreate):
-        """شات تحليلي خاص بوزير الأوقاف ومشرف الجمعية — Read-Only آمن 100%"""
+        """شات تحليلي خاص بوزير الأوقاف ومشرف الجمعية والمدير (Admin) — Read-Only آمن 100%"""
         user_role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
 
         # تأكد من الصلاحية
-        if user_role_val not in ("minister", "organization"):
-            raise HTTPException(status_code=403, detail="هذا الشات مخصص لوزير الأوقاف ومشرفي الجمعيات فقط.")
+        if user_role_val not in ("minister", "organization", "admin"):
+            raise HTTPException(status_code=403, detail="هذا الشات مخصص لوزير الأوقاف ومشرفي الجمعيات والمديرين فقط.")
 
         # لو كان مشرف جمعية → جيب org_id تلقائياً
         org_id: Optional[int] = None
@@ -393,13 +451,19 @@ class ChatsController:
         # 1. إعداد الجلسة (Conversation)
         conversation_id = payload.conversation_id
         if not conversation_id:
-            # لو لم يتم إرسال id جلسة، انشئ واحدة جديدة بعنوان مقتبس من الرسالة
-            title_text = payload.content[:30] + ("..." if len(payload.content) > 30 else "")
-            new_conv = AIChatConversation(user_id=user.user_id, title=title_text)
-            db.add(new_conv)
-            db.commit()
-            db.refresh(new_conv)
-            conversation_id = new_conv.id
+            if user_role_val == "admin":
+                # الـ admin دايماً يكمل في نفس المحادثة الوحيدة الثابتة
+                conversation_id = ChatsController._get_or_create_admin_conversation(
+                    db, user.user_id
+                )
+            else:
+                # وزير / مشرف جمعية → conversation جديدة لكل جلسة
+                title_text = payload.content[:30] + ("..." if len(payload.content) > 30 else "")
+                new_conv = AIChatConversation(user_id=user.user_id, title=title_text)
+                db.add(new_conv)
+                db.commit()
+                db.refresh(new_conv)
+                conversation_id = new_conv.id
 
         # 1. حفظ رسالة المستخدم
         user_msg = AIChatMessage(
@@ -426,13 +490,46 @@ class ChatsController:
             mapped_role = "assistant" if msg.role == "ai" else "user"
             messages.append({"role": mapped_role, "content": msg.content})
 
+        # ── حقن الإطار الزمني كـ system message بـ SQL dates دقيقة ─────────
+        if payload.period:
+            period_map = {
+                "today":          ("اليوم",          "DATE(created_at) = CURRENT_DATE"),
+                "this_month":     ("هذا الشهر",      "DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)"),
+                "last_month":     ("الشهر السابق",   "DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')"),
+                "last_3_months":  ("آخر 3 أشهر",     "created_at >= CURRENT_DATE - INTERVAL '3 months'"),
+                "last_6_months":  ("آخر 6 أشهر",     "created_at >= CURRENT_DATE - INTERVAL '6 months'"),
+                "last_year":      ("آخر سنة",         "created_at >= CURRENT_DATE - INTERVAL '1 year'"),
+            }
+            period_label, sql_filter = period_map.get(
+                payload.period,
+                ("الفترة المحددة", f"created_at >= CURRENT_DATE - INTERVAL '1 month'")
+            )
+            period_hint = (
+                f"[تعليمات النظام — الإطار الزمني المطلوب]\n"
+                f"الإطار الزمني: {period_label}\n"
+                f"يجب أن يكون كل استعلام SQL الخاص بالتقرير مقيداً بـ: WHERE {sql_filter}\n"
+                f"في عنوان التقرير النهائي، اذكر صراحةً: \"خلال {period_label}\""
+            )
+            # أضفه كأول رسالة system في السياق (قبل رسائل المحادثة)
+            messages.insert(0, {"role": "user", "content": period_hint})
+            messages.insert(1, {"role": "assistant", "content": f"تم الأخذ بعين الاعتبار. سأقيّد جميع استعلاماتي بالإطار الزمني: {period_label} ({sql_filter})."})
+
+        # استخراج period_label لو موجود عشان يتحط في عنوان التقرير
+        period_label_for_report = ""
+        if payload.period:
+            period_label_for_report = period_map.get(
+                payload.period, ("الفترة المحددة", "")
+            )[0]
+
         # 3. أرسل للذكاء الاصطناعي واجلب البيانات بأمان
         ai_response_text = AnalyticsAIOrchestrator.chat(
             messages=messages,
             role=user_role_val,
             db=db,
-            org_id=org_id
+            org_id=org_id,
+            period_label=period_label_for_report,
         )
+
 
         # 4. حفظ رد الذكاء الاصطناعي
         ai_msg = AIChatMessage(
