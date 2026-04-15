@@ -210,26 +210,26 @@ const AwqafAICenter = () => {
         builtPrompt = `أنشئ أداء ومقارنة الجمعيات للإطار الزمني ${timeframeLabel} مع فلتر الجمعيات باسم "${orgName}"، واعرض أهم 5 مؤشرات ونقاط التحسين. مع عرض بيانات هذه الجمعية فقط في الجدول.`;
       }
     } else {
-      // Logic for 'تقرير استجابة الدعاة' (Preacher Response Report)
       if (filter === 'all') {
         builtPrompt = `أنشئ تقرير استجابة الدعاة للإطار الزمني ${timeframeLabel} لجميع الدعاة في المنصة، واعرض جدولاً يوضح لكل داعية: اسمه، الجمعية التابع لها، عدد الطلبات، ونسبة النجاح.`;
       } else if (filter === '0') {
         builtPrompt = `أنشئ تقرير استجابة الدعاة للإطار الزمني ${timeframeLabel} لجميع "الدعاة المنفردين" (المتطوعين) فقط، واعرض جدولاً يوضح لكل داعية: اسمه، عدد الطلبات، وعدد الذين أسلموا.`;
       } else {
         const orgName = organizations.find((org) => String(org.org_id) === filter)?.organization_name || 'جمعية محددة';
-        // USE THE SUCCESSFUL TEMPLATE FOUND BY THE USER
         builtPrompt = `أريد تقرير شامل عن "${orgName}" يشمل دعاتها بشكل كامل للإطار الزمني ${timeframeLabel}، مع عرض جدول يوضح (اسم الداعية، الحالة، إجمالي الطلبات، عدد المسلمين، ونسبة النجاح).`;
       }
     }
 
+    // إضافة رسالة المستخدم فوراً قبل انتظار الرد
+    setChatMessages((prev) => [...prev, { role: 'user' as const, content: builtPrompt }]);
+
     try {
       setReportLoading(true);
       const result = await ministerService.sendAnalyticsAIMessage(builtPrompt, timeframe, conversationId);
-      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: builtPrompt };
       const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.' };
       const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
       if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
-      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
+      setChatMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error('Create report error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'تعذر إنشاء التقرير حالياً، حاول مرة أخرى.' }]);
@@ -256,14 +256,14 @@ const AwqafAICenter = () => {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
     setChatInput('');
+    setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
       setChatLoading(true);
       const result = await ministerService.sendAnalyticsAIMessage(text, timeframe, conversationId);
-      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: text };
       const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تعذر الحصول على رد من المساعد.' };
       const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
       if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
-      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
+      setChatMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error('Analytics chat error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'حدث خطأ أثناء التواصل مع المساعد الذكي.' }]);
@@ -412,7 +412,7 @@ const AwqafAICenter = () => {
                 </ReactMarkdown>
               </div>
             ))}
-            {chatLoading && (
+            {(chatLoading || reportLoading) && (
               <div className="ai-chat-loading">
                 <Loader2 size={16} className="spin-icon" />
                 <span>جاري التفكير...</span>

@@ -29,9 +29,16 @@
 }
 
 .ai-top-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 32px;
+}
+.ai-interactive-builder {
+  flex: 0 0 350px;
+  width: 350px;
+}
+.ai-smart-assistant {
+  flex: 1;
+  min-width: 0;
 }
 
 @media (max-width: 768px) {

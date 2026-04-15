@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { orgService } from '../../services/orgService';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import '../AwqafAICenter/AwqafAICenter.css';
+import './AssociationAICenter.css';
 
 const generatePDF = async (elementId: string, filename: string = 'تقرير_تحليلي') => {
   const element = document.getElementById(elementId);
@@ -190,14 +190,16 @@ const AssociationAICenter = () => {
       builtPrompt = `أنشئ تقرير تحليلي عن المحادثات في الجمعية للإطار الزمني ${timeframeLabel}، يتضمن: عدد المحادثات، الجنسيات الأكثر تفاعلاً، ومعدل التحويل إلى الإسلام.`;
     }
 
+    // إضافة رسالة المستخدم فوراً قبل انتظار الرد
+    setChatMessages((prev) => [...prev, { role: 'user' as const, content: builtPrompt }]);
+
     try {
       setReportLoading(true);
       const result = await orgService.sendAssociationAIMessage(builtPrompt, timeframe, conversationId);
-      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: builtPrompt };
       const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.' };
       const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
       if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
-      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
+      setChatMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error('Create report error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'تعذر إنشاء التقرير حالياً، حاول مرة أخرى.' }]);
@@ -224,14 +226,14 @@ const AssociationAICenter = () => {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
     setChatInput('');
+    setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
       setChatLoading(true);
       const result = await orgService.sendAssociationAIMessage(text, timeframe, conversationId);
-      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: text };
       const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تعذر الحصول على رد من المساعد.' };
       const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
       if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
-      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
+      setChatMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error('Association AI chat error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'حدث خطأ أثناء التواصل مع المساعد الذكي.' }]);
@@ -362,7 +364,7 @@ const AssociationAICenter = () => {
                 </ReactMarkdown>
               </div>
             ))}
-            {chatLoading && (
+            {(chatLoading || reportLoading) && (
               <div className="ai-chat-loading">
                 <Loader2 size={16} className="spin-icon" />
                 <span>جاري التفكير...</span>

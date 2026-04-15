@@ -137,8 +137,7 @@ const AdminAICenter = () => {
     },
   ]);
 
-  const [schedules, setSchedules] = useState<{ id: number; name: string; timing: string; report_type: string }[]>([]);
-  const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [schedules, setSchedules] = useState<string[]>([]);
   const [newScheduleReportType, setNewScheduleReportType] = useState(REPORT_TYPES[0]);
   const [newScheduleDuration, setNewScheduleDuration] = useState<(typeof SCHEDULE_DURATION_OPTIONS)[number]['value']>('1_month');
   const [newScheduleTiming, setNewScheduleTiming] = useState<(typeof SCHEDULE_TIMING_OPTIONS)[number]>(SCHEDULE_TIMING_OPTIONS[0]);
@@ -167,20 +166,7 @@ const AdminAICenter = () => {
     fetchChatHistory();
   }, []);
 
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      setSchedulesLoading(true);
-      try {
-        const data = await orgService.getReportSchedules();
-        setSchedules(data);
-      } catch (err) {
-        console.error('Failed to load schedules:', err);
-      } finally {
-        setSchedulesLoading(false);
-      }
-    };
-    fetchSchedules();
-  }, []);
+
 
   const buildReportPrompt = () => {
     const timeframeLabel =
@@ -205,14 +191,15 @@ const AdminAICenter = () => {
 
   const handleCreateReport = async () => {
     const prompt = buildReportPrompt();
+    // إضافة رسالة المستخدم فوراً قبل انتظار الرد
+    setChatMessages((prev) => [...prev, { role: 'user' as const, content: prompt }]);
     try {
       setReportLoading(true);
       const result = await orgService.sendAssociationAIMessage(prompt, timeframe, conversationId);
-      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: prompt };
       const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.' };
       const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
       if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
-      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
+      setChatMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error('Create report error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'تعذر إنشاء التقرير حالياً، حاول مرة أخرى.' }]);
@@ -225,14 +212,14 @@ const AdminAICenter = () => {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
     setChatInput('');
+    setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
       setChatLoading(true);
       const result = await orgService.sendAssociationAIMessage(text, timeframe, conversationId);
-      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: text };
       const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تعذر الحصول على رد من المساعد.' };
       const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
       if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
-      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
+      setChatMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error('Analytics chat error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'حدث خطأ أثناء التواصل مع المساعد الذكي.' }]);
@@ -241,30 +228,18 @@ const AdminAICenter = () => {
     }
   };
 
-  const handleAddSchedule = async () => {
+  const handleAddSchedule = () => {
     const durationLabel = SCHEDULE_DURATION_OPTIONS.find((item) => item.value === newScheduleDuration)?.label ?? 'لمدة شهر';
     const name = `${newScheduleReportType} - ${durationLabel}`;
     const timing = newScheduleTiming;
-    try {
-      const created = await orgService.addReportSchedule({ name, timing, report_type: newScheduleReportType });
-      setSchedules((prev) => [...prev, created]);
-      setNewScheduleReportType(REPORT_TYPES[0]);
-      setNewScheduleDuration('1_month');
-      setNewScheduleTiming(SCHEDULE_TIMING_OPTIONS[0]);
-    } catch (err) {
-      console.error('Failed to add schedule:', err);
-      alert('تعذر إضافة الجدول، حاول مرة أخرى.');
-    }
+    setSchedules((prev) => [...prev, `${name} - ${timing}`]);
+    setNewScheduleReportType(REPORT_TYPES[0]);
+    setNewScheduleDuration('1_month');
+    setNewScheduleTiming(SCHEDULE_TIMING_OPTIONS[0]);
   };
 
-  const handleDeleteSchedule = async (id: number) => {
-    try {
-      await orgService.deleteReportSchedule(id);
-      setSchedules((prev) => prev.filter((s) => s.id !== id));
-    } catch (err) {
-      console.error('Failed to delete schedule:', err);
-      alert('تعذر حذف الجدول، حاول مرة أخرى.');
-    }
+  const handleDeleteSchedule = (index: number) => {
+    setSchedules((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleExportAIReport = async () => {
@@ -369,7 +344,7 @@ const AdminAICenter = () => {
             </button>
           </div>
 
-          <div className="ai-chat-area" ref={chatAreaRef} style={{ backgroundColor: '#fff' }}>
+          <div className="ai-chat-area" ref={chatAreaRef} style={{ backgroundColor: '#fff', minHeight: '380px' }}>
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`ai-chat-bubble ${msg.role === 'user' ? 'user' : ''}`}>
                 <ReactMarkdown
@@ -421,14 +396,13 @@ const AdminAICenter = () => {
         <p className="ai-subtitle">إعداد التقارير ليتم إنشاؤها وإرسالها تلقائياً</p>
 
         <div className="ai-schedule-list">
-          {schedulesLoading && <p style={{ textAlign: 'center', color: '#888' }}>جاري التحميل...</p>}
-          {!schedulesLoading && schedules.length === 0 && (
+          {schedules.length === 0 && (
             <p style={{ textAlign: 'center', color: '#aaa' }}>لا توجد جداول مضافة بعد.</p>
           )}
-          {schedules.map((item) => (
-            <div className="ai-schedule-item" key={item.id}>
-              <span className="ai-schedule-text">{item.name} — {item.timing}</span>
-              <button className="ai-btn-trash" onClick={() => handleDeleteSchedule(item.id)}>
+          {schedules.map((item, idx) => (
+            <div className="ai-schedule-item" key={idx}>
+              <span className="ai-schedule-text">{item}</span>
+              <button className="ai-btn-trash" onClick={() => handleDeleteSchedule(idx)}>
                 <Trash2 size={16} />
               </button>
             </div>
