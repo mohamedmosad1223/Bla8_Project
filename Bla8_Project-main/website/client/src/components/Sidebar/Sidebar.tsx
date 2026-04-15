@@ -157,7 +157,7 @@ const Sidebar = () => {
               <li className="nav-item">
                 <NavLink to="/ai" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeMobileMenu}>
                   <Bot size={20} className="nav-icon" />
-                  الذكاء الاصطناعي
+                  التقارير والإحصائيات
                 </NavLink>
               </li>
             </>
@@ -196,6 +196,12 @@ const Sidebar = () => {
                 <NavLink to="/admin/chat" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeMobileMenu}>
                   <MessageCircle size={20} className="nav-icon" />
                   المحادثة
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/admin/ai" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeMobileMenu}>
+                  <Bot size={20} className="nav-icon" />
+                  التقارير والإحصائيات
                 </NavLink>
               </li>
             </>

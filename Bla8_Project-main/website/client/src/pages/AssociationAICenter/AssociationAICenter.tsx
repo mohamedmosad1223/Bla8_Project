@@ -98,20 +98,46 @@ interface ChatMessage {
   content: string;
 }
 
+const ASSOCIATION_WELCOME_MESSAGE =
+  'السلام عليكم! أنا المساعد الذكي لمنصة بلاغ. يمكنني مساعدتك في تحليل بيانات جمعيتك، وتوليد التقارير، والإجابة عن أسئلتك. ماذا تريد أن تعرف؟';
+
+const REPORT_TYPES = ['أداء الدعاة', 'تقرير الطلبات', 'تقرير المحادثات'] as const;
+
+const TIMEFRAME_OPTIONS = [
+  { value: 'this_month', label: 'هذا الشهر' },
+  { value: 'last_month', label: 'الشهر السابق' },
+  { value: 'last_3_months', label: 'آخر 3 أشهر' },
+  { value: 'last_6_months', label: 'آخر 6 أشهر' },
+  { value: 'last_year', label: 'آخر سنة' },
+] as const;
+
+const SCHEDULE_TIMING_OPTIONS = [
+  'يوميًا - 9:00 صباحًا',
+  'أسبوعيًا - الجمعة 4:00 مساءً',
+  'شهريًا - اليوم الأول 9:00 صباحًا',
+] as const;
+
+const normalizeAiContent = (content: string) =>
+  content
+    .replace(/(^|\n)\s*([0-9٠-٩]+)\.\s*\n+\s*/g, '$1$2. ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
 const AssociationAICenter = () => {
-  const [reportType, setReportType] = useState('أداء الدعاة');
-  const [timeframe, setTimeframe] = useState<'this_month' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year'>('this_month');
+  const [reportType, setReportType] = useState<(typeof REPORT_TYPES)[number]>('أداء الدعاة');
+  const [timeframe, setTimeframe] = useState<(typeof TIMEFRAME_OPTIONS)[number]['value']>('this_month');
   const [reportLoading, setReportLoading] = useState(false);
 
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportContent, setExportContent] = useState<string | null>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       role: 'ai',
-      content: 'السلام عليكم! أنا المساعد الذكي لمنصة بلاغ. يمكنني مساعدتك في تحليل بيانات جمعيتك، وتوليد التقارير، والإجابة عن أسئلتك. ماذا تريد أن تعرف؟'
+      content: ASSOCIATION_WELCOME_MESSAGE
     }
   ]);
 
@@ -119,8 +145,27 @@ const AssociationAICenter = () => {
     'تقرير أداء الدعاة الشهري - كل أول يوم من الشهر الساعة 9 صباحاً',
     'ملخص الطلبات الأسبوعي - كل يوم جمعة الساعة 4 مساءً'
   ]);
-  const [newScheduleName, setNewScheduleName] = useState('');
-  const [newScheduleTime, setNewScheduleTime] = useState('');
+  const [newScheduleReportType, setNewScheduleReportType] = useState<(typeof REPORT_TYPES)[number]>(REPORT_TYPES[0]);
+  const [newScheduleTimeframe, setNewScheduleTimeframe] = useState<(typeof TIMEFRAME_OPTIONS)[number]['value']>('this_month');
+  const [newScheduleTiming, setNewScheduleTiming] = useState<(typeof SCHEDULE_TIMING_OPTIONS)[number]>(SCHEDULE_TIMING_OPTIONS[0]);
+
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      try {
+        const data = await orgService.getAnalyticsChatHistory();
+        const history = Array.isArray(data?.history) ? data.history : [];
+        setConversationId(typeof data?.conversation_id === 'number' ? data.conversation_id : null);
+        if (history.length > 0) {
+          setChatMessages(history.map((msg: { role: 'user' | 'ai'; content: string }) => ({ role: msg.role, content: msg.content })));
+        } else {
+          setChatMessages([{ role: 'ai', content: ASSOCIATION_WELCOME_MESSAGE }]);
+        }
+      } catch (err) {
+        console.error('Failed to load analytics history:', err);
+      }
+    };
+    fetchChatHistory();
+  }, []);
 
   useEffect(() => {
     const el = chatAreaRef.current;
@@ -129,14 +174,7 @@ const AssociationAICenter = () => {
   }, [chatMessages, chatLoading]);
 
   const handleCreateReport = async () => {
-    const timeframeLabelMap: Record<string, string> = {
-      this_month: 'هذا الشهر',
-      last_month: 'الشهر السابق',
-      last_3_months: 'آخر 3 أشهر',
-      last_6_months: 'آخر 6 أشهر',
-      last_year: 'آخر سنة',
-    };
-    const timeframeLabel = timeframeLabelMap[timeframe] ?? timeframe;
+    const timeframeLabel = TIMEFRAME_OPTIONS.find((item) => item.value === timeframe)?.label ?? timeframe;
 
     let builtPrompt = '';
 
@@ -148,12 +186,14 @@ const AssociationAICenter = () => {
       builtPrompt = `أنشئ تقرير تحليلي عن المحادثات في الجمعية للإطار الزمني ${timeframeLabel}، يتضمن: عدد المحادثات، الجنسيات الأكثر تفاعلاً، ومعدل التحويل إلى الإسلام.`;
     }
 
-    setChatMessages((prev) => [...prev, { role: 'user', content: builtPrompt }]);
     try {
       setReportLoading(true);
-      const result = await orgService.sendAssociationAIMessage(builtPrompt);
-      const aiText = result?.ai_response?.content || 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.';
-      setChatMessages((prev) => [...prev, { role: 'ai', content: aiText }]);
+      const result = await orgService.sendAssociationAIMessage(builtPrompt, timeframe, conversationId);
+      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: builtPrompt };
+      const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.' };
+      const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
+      if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
+      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
     } catch (err) {
       console.error('Create report error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'تعذر إنشاء التقرير حالياً، حاول مرة أخرى.' }]);
@@ -163,12 +203,13 @@ const AssociationAICenter = () => {
   };
 
   const handleAddSchedule = () => {
-    const name = newScheduleName.trim();
-    const timing = newScheduleTime.trim();
-    if (!name || !timing) return;
+    const timeframeLabel = TIMEFRAME_OPTIONS.find((item) => item.value === newScheduleTimeframe)?.label ?? 'هذا الشهر';
+    const name = `${newScheduleReportType} - ${timeframeLabel}`;
+    const timing = newScheduleTiming;
     setSchedules((prev) => [...prev, `${name} - ${timing}`]);
-    setNewScheduleName('');
-    setNewScheduleTime('');
+    setNewScheduleReportType(REPORT_TYPES[0]);
+    setNewScheduleTimeframe('this_month');
+    setNewScheduleTiming(SCHEDULE_TIMING_OPTIONS[0]);
   };
 
   const handleDeleteSchedule = (index: number) => {
@@ -179,12 +220,14 @@ const AssociationAICenter = () => {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
     setChatInput('');
-    setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
       setChatLoading(true);
-      const result = await orgService.sendAssociationAIMessage(text);
-      const aiText = result?.ai_response?.content || 'تعذر الحصول على رد من المساعد.';
-      setChatMessages((prev) => [...prev, { role: 'ai', content: aiText }]);
+      const result = await orgService.sendAssociationAIMessage(text, timeframe, conversationId);
+      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: text };
+      const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تعذر الحصول على رد من المساعد.' };
+      const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
+      if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
+      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
     } catch (err) {
       console.error('Association AI chat error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'حدث خطأ أثناء التواصل مع المساعد الذكي.' }]);
@@ -235,7 +278,7 @@ const AssociationAICenter = () => {
 
   return (
     <div className="ai-center-page">
-      <div className="ai-breadcrumb-right">الذكاء الاصطناعي</div>
+      <div className="ai-breadcrumb-right">التقارير والإحصائيات</div>
 
       <div className="ai-center-title-area">
         <h1 className="ai-main-title">مركز التقارير الذكية</h1>
@@ -252,10 +295,10 @@ const AssociationAICenter = () => {
             <div className="ai-form-group">
               <label>نوع التقرير</label>
               <div className="ai-select-wrapper">
-                <select value={reportType} onChange={e => setReportType(e.target.value)} className="ai-select">
-                  <option>أداء الدعاة</option>
-                  <option>تقرير الطلبات</option>
-                  <option>تقرير المحادثات</option>
+                <select value={reportType} onChange={e => setReportType(e.target.value as (typeof REPORT_TYPES)[number])} className="ai-select">
+                  {REPORT_TYPES.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
                 </select>
                 <ChevronDown size={16} className="ai-select-icon" />
               </div>
@@ -264,12 +307,10 @@ const AssociationAICenter = () => {
             <div className="ai-form-group">
               <label>الإطار الزمني</label>
               <div className="ai-select-wrapper">
-                <select value={timeframe} onChange={e => setTimeframe(e.target.value as 'this_month' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year')} className="ai-select">
-                  <option value="this_month">هذا الشهر</option>
-                  <option value="last_month">الشهر السابق</option>
-                  <option value="last_3_months">آخر 3 أشهر</option>
-                  <option value="last_6_months">آخر 6 أشهر</option>
-                  <option value="last_year">آخر سنة</option>
+                <select value={timeframe} onChange={e => setTimeframe(e.target.value as (typeof TIMEFRAME_OPTIONS)[number]['value'])} className="ai-select">
+                  {TIMEFRAME_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
                 </select>
                 <ChevronDown size={16} className="ai-select-icon" />
               </div>
@@ -313,7 +354,7 @@ const AssociationAICenter = () => {
                     )
                   }}
                 >
-                  {msg.content}
+                  {msg.role === 'ai' ? normalizeAiContent(msg.content) : msg.content}
                 </ReactMarkdown>
               </div>
             ))}
@@ -363,19 +404,43 @@ const AssociationAICenter = () => {
           ))}
         </div>
 
-        <div className="ai-schedule-add">
-          <input
-            className="ai-chat-input"
-            placeholder="اسم الجدولة"
-            value={newScheduleName}
-            onChange={(e) => setNewScheduleName(e.target.value)}
-          />
-          <input
-            className="ai-chat-input"
-            placeholder="الموعد (مثال: كل جمعة 4 مساءً)"
-            value={newScheduleTime}
-            onChange={(e) => setNewScheduleTime(e.target.value)}
-          />
+        <div className="ai-schedule-add ai-schedule-add--four">
+          <div className="ai-select-wrapper">
+            <select
+              value={newScheduleReportType}
+              onChange={(e) => setNewScheduleReportType(e.target.value as (typeof REPORT_TYPES)[number])}
+              className="ai-select"
+            >
+              {REPORT_TYPES.map((item) => (
+                <option key={`assoc-schedule-report-${item}`} value={item}>{item}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="ai-select-icon" />
+          </div>
+          <div className="ai-select-wrapper">
+            <select
+              value={newScheduleTimeframe}
+              onChange={(e) => setNewScheduleTimeframe(e.target.value as (typeof TIMEFRAME_OPTIONS)[number]['value'])}
+              className="ai-select"
+            >
+              {TIMEFRAME_OPTIONS.map((item) => (
+                <option key={`assoc-schedule-timeframe-${item.value}`} value={item.value}>{item.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="ai-select-icon" />
+          </div>
+          <div className="ai-select-wrapper">
+            <select
+              value={newScheduleTiming}
+              onChange={(e) => setNewScheduleTiming(e.target.value as (typeof SCHEDULE_TIMING_OPTIONS)[number])}
+              className="ai-select"
+            >
+              {SCHEDULE_TIMING_OPTIONS.map((item) => (
+                <option key={`assoc-schedule-timing-${item}`} value={item}>{item}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="ai-select-icon" />
+          </div>
           <button className="ai-btn-primary" onClick={handleAddSchedule}>
             <Plus size={16} /> إضافة
           </button>

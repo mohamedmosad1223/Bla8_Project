@@ -1,3 +1,5 @@
+/* ─── AdminAICenter.css ─── inherits same design tokens as AwqafAICenter ─── */
+
 .ai-center-page {
   display: flex;
   flex-direction: column;
@@ -10,7 +12,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: #6B7280;
-  text-align: left; /* Because RTL header, "بلاغ للتعريف بالاسلام" is on the right, so "الذكاء الاصطناعي" is opposite */
+  text-align: left;
 }
 
 .ai-center-title-area {
@@ -32,6 +34,13 @@
   gap: 32px;
 }
 
+@media (max-width: 768px) {
+  .ai-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Cards ── */
 .ai-card {
   background: white;
   border: 1px solid #E5E7EB;
@@ -49,17 +58,9 @@
   margin-bottom: 24px;
 }
 
-.ai-header-icon {
-  flex-shrink: 0;
-}
-
-.text-gray .ai-header-icon {
-  color: #6B7280;
-}
-
-.text-blue .ai-header-icon {
-  color: #3B82F6;
-}
+.ai-header-icon { flex-shrink: 0; }
+.text-gray .ai-header-icon { color: #6B7280; }
+.text-blue .ai-header-icon { color: #3B82F6; }
 
 .ai-card-header h2 {
   font-size: 1.1rem;
@@ -68,7 +69,7 @@
   margin: 0;
 }
 
-/* ── Interactive Builder Form ── */
+/* ── Form ── */
 .ai-form {
   display: flex;
   flex-direction: column;
@@ -108,13 +109,11 @@
   outline: none;
 }
 
-.ai-select:focus {
-  border-color: #10B981;
-}
+.ai-select:focus { border-color: #10B981; }
 
 .ai-select-icon {
   position: absolute;
-  left: 14px; /* RTL left side */
+  left: 14px;
   color: #6B7280;
   pointer-events: none;
 }
@@ -124,6 +123,7 @@
   padding-top: 16px;
 }
 
+/* ── Buttons ── */
 .ai-btn-primary {
   background: #10B981;
   color: white;
@@ -137,21 +137,11 @@
   transition: background 0.2s;
 }
 
-.ai-btn-primary:hover {
-  background: #059669;
-}
+.ai-btn-primary:hover { background: #059669; }
+.ai-btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
 
-.ai-btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-
-/* ── Smart Assistant Chat ── */
-.ai-smart-assistant {
-  display: flex;
-  flex-direction: column;
-}
+/* ── Chat Area ── */
+.ai-smart-assistant { display: flex; flex-direction: column; }
 
 .ai-chat-area {
   flex: 1;
@@ -214,7 +204,7 @@
   margin-bottom: 6px;
 }
 
-/* ─── Markdown Tables ─── */
+/* ── Markdown Tables ── */
 .markdown-table-wrapper {
   margin: 1.25rem 0;
   border-radius: 10px;
@@ -232,11 +222,7 @@
   min-width: 300px;
 }
 
-.ai-chat-bubble thead {
-  background: #0A304E;
-  color: #fff;
-}
-
+.ai-chat-bubble thead { background: #1E3A5F; color: #fff; }
 .ai-chat-bubble th {
   padding: 12px 16px;
   text-align: right;
@@ -252,17 +238,9 @@
   transition: background 0.2s;
 }
 
-.ai-chat-bubble tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.ai-chat-bubble tbody tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.ai-chat-bubble tbody tr:hover td {
-  background-color: #fef3c7;
-}
+.ai-chat-bubble tbody tr:last-child td { border-bottom: none; }
+.ai-chat-bubble tbody tr:nth-child(even) { background-color: #f9fafb; }
+.ai-chat-bubble tbody tr:hover td { background-color: #eff6ff; }
 
 .ai-chat-loading {
   margin-top: 8px;
@@ -273,10 +251,8 @@
   font-size: 0.85rem;
 }
 
-.ai-chat-input-wrapper {
-  position: relative;
-  width: 100%;
-}
+/* ── Input ── */
+.ai-chat-input-wrapper { position: relative; width: 100%; }
 
 .ai-chat-input-container {
   display: flex;
@@ -287,9 +263,7 @@
   overflow: hidden;
 }
 
-.ai-chat-input-container:focus-within {
-  border-color: #3B82F6;
-}
+.ai-chat-input-container:focus-within { border-color: #3B82F6; }
 
 .ai-chat-input {
   flex: 1;
@@ -301,9 +275,7 @@
   color: #111827;
 }
 
-.ai-chat-input::placeholder {
-  color: #9CA3AF;
-}
+.ai-chat-input::placeholder { color: #9CA3AF; }
 
 .ai-send-btn {
   background: #3B82F6;
@@ -319,26 +291,13 @@
   flex-shrink: 0;
 }
 
-.ai-send-btn:hover {
-  background: #2563EB;
-}
+.ai-send-btn:hover { background: #2563EB; }
+.ai-send-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
-.ai-send-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
+/* ── Scheduler ── */
+.ai-scheduler-section { display: flex; flex-direction: column; }
 
-/* ── Scheduler Section ── */
-.ai-scheduler-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.ai-subtitle {
-  color: #6B7280;
-  font-size: 0.95rem;
-  margin: 0 0 24px 0;
-}
+.ai-subtitle { color: #6B7280; font-size: 0.95rem; margin: 0 0 24px 0; }
 
 .ai-schedule-list {
   display: flex;
@@ -358,15 +317,9 @@
   transition: background 0.2s;
 }
 
-.ai-schedule-item:hover {
-  background: #F3F4F6;
-}
+.ai-schedule-item:hover { background: #F3F4F6; }
 
-.ai-schedule-text {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #111827;
-}
+.ai-schedule-text { font-size: 0.95rem; font-weight: 500; color: #111827; }
 
 .ai-btn-trash {
   background: transparent;
@@ -379,32 +332,66 @@
 
 .ai-schedule-add {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr auto;
   gap: 10px;
   align-items: center;
 }
 
-.ai-schedule-add.ai-schedule-add--four {
-  grid-template-columns: 1fr 1fr 1fr auto;
-}
-
 @media (max-width: 1024px) {
-  .ai-schedule-add.ai-schedule-add--four {
+  .ai-schedule-add {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .ai-schedule-add.ai-schedule-add--four {
+  .ai-schedule-add {
     grid-template-columns: 1fr;
   }
 }
 
-.spin-icon {
-  animation: spin 1s linear infinite;
-}
+/* ── Spinner ── */
+.spin-icon { animation: spin 1s linear infinite; }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ── PDF Export Template (hidden off-screen) ── */
+.pdf-export-wrapper {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  width: 780px;
+  background: #fff;
+  padding: 40px 48px;
+  font-family: 'Cairo', 'Amiri', 'Arial', sans-serif;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #1a1a1a;
+  direction: rtl;
+  text-align: right;
+}
+
+.pdf-export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.pdf-export-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1E3A5F;
+  margin: 0;
+}
+
+.pdf-export-date { color: #6b7280; font-size: 0.9rem; }
+
+.pdf-export-divider {
+  height: 3px;
+  background: linear-gradient(to left, #1E3A5F, #10B981);
+  border-radius: 2px;
+  margin-bottom: 24px;
 }

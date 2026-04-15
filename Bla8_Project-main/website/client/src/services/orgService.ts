@@ -62,8 +62,38 @@ export const orgService = {
   /**
    * Send association AI chat message (reuses the analytics endpoint which supports organization role)
    */
-  sendAssociationAIMessage: async (content: string) => {
-    const response = await api.post('/chat/analytics/send', { content });
+  getAnalyticsChatHistory: async () => {
+    const response = await api.get('/chat/analytics/history');
+    return response.data;
+  },
+
+  sendAssociationAIMessage: async (
+    content: string,
+    period?: 'all_time' | 'this_month' | 'last_month' | 'last_3_months' | 'last_6_months' | 'last_year',
+    conversationId?: number | null
+  ) => {
+    const payload: { content: string; period?: string; conversation_id?: number } = { content };
+    if (period && period !== 'all_time') payload.period = period;
+    if (conversationId) payload.conversation_id = conversationId;
+    const response = await api.post('/chat/analytics/send', payload);
+    return response.data;
+  },
+
+  /**
+   * Report Scheduling APIs
+   */
+  getReportSchedules: async () => {
+    const response = await api.get('/report-schedules/');
+    return response.data;
+  },
+
+  addReportSchedule: async (data: { name: string; timing: string; report_type: string }) => {
+    const response = await api.post('/report-schedules/', data);
+    return response.data;
+  },
+
+  deleteReportSchedule: async (id: number) => {
+    const response = await api.delete(`/report-schedules/${id}`);
     return response.data;
   },
 };

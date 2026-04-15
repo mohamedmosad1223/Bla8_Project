@@ -107,6 +107,15 @@ interface ChatMessage {
   content: string;
 }
 
+const AWQAF_WELCOME_MESSAGE =
+  'السلام عليكم! أنا المساعد الذكي لمنصة بلاغ. يمكنني مساعدتك في تحليل بيانات المنصة، وتوليد التقارير، والإجابة عن أسئلتك حول الاتجاهات. ماذا تريد أن تعرف؟';
+
+const normalizeAiContent = (content: string) =>
+  content
+    .replace(/(^|\n)\s*([0-9٠-٩]+)\.\s*\n+\s*/g, '$1$2. ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
 const AwqafAICenter = () => {
   const [reportType, setReportType] = useState('أداء ومقارنة الجمعيات');
   const [timeframe, setTimeframe] = useState<'all_time' | 'this_month' | 'last_month'>('all_time');
@@ -116,13 +125,14 @@ const AwqafAICenter = () => {
 
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportContent, setExportContent] = useState<string | null>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       role: 'ai',
-      content: 'السلام عليكم! أنا المساعد الذكي لمنصة بلاغ. يمكنني مساعدتك في تحليل بيانات المنصة، وتوليد التقارير، والإجابة عن أسئلتك حول الاتجاهات. ماذا تريد أن تعرف؟'
+      content: AWQAF_WELCOME_MESSAGE
     }
   ]);
 
@@ -147,6 +157,24 @@ const AwqafAICenter = () => {
       }
     };
     fetchOrganizations();
+  }, []);
+
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      try {
+        const data = await ministerService.getAnalyticsChatHistory();
+        const history = Array.isArray(data?.history) ? data.history : [];
+        setConversationId(typeof data?.conversation_id === 'number' ? data.conversation_id : null);
+        if (history.length > 0) {
+          setChatMessages(history.map((msg: { role: 'user' | 'ai'; content: string }) => ({ role: msg.role, content: msg.content })));
+        } else {
+          setChatMessages([{ role: 'ai', content: AWQAF_WELCOME_MESSAGE }]);
+        }
+      } catch (err) {
+        console.error('Failed to load analytics history:', err);
+      }
+    };
+    fetchChatHistory();
   }, []);
 
   useEffect(() => {
@@ -183,12 +211,14 @@ const AwqafAICenter = () => {
       }
     }
 
-    setChatMessages((prev) => [...prev, { role: 'user', content: builtPrompt }]);
     try {
       setReportLoading(true);
-      const result = await ministerService.sendAnalyticsAIMessage(builtPrompt);
-      const aiText = result?.ai_response?.content || 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.';
-      setChatMessages((prev) => [...prev, { role: 'ai', content: aiText }]);
+      const result = await ministerService.sendAnalyticsAIMessage(builtPrompt, timeframe, conversationId);
+      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: builtPrompt };
+      const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تم إرسال طلب إنشاء التقرير للمساعد الذكي.' };
+      const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
+      if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
+      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
     } catch (err) {
       console.error('Create report error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'تعذر إنشاء التقرير حالياً، حاول مرة أخرى.' }]);
@@ -214,12 +244,14 @@ const AwqafAICenter = () => {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
     setChatInput('');
-    setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
       setChatLoading(true);
-      const result = await ministerService.sendAnalyticsAIMessage(text);
-      const aiText = result?.ai_response?.content || 'تعذر الحصول على رد من المساعد.';
-      setChatMessages((prev) => [...prev, { role: 'ai', content: aiText }]);
+      const result = await ministerService.sendAnalyticsAIMessage(text, timeframe, conversationId);
+      const userMessage = result?.user_message?.content ? { role: 'user' as const, content: result.user_message.content } : { role: 'user' as const, content: text };
+      const aiMessage = result?.ai_response?.content ? { role: 'ai' as const, content: result.ai_response.content } : { role: 'ai' as const, content: 'تعذر الحصول على رد من المساعد.' };
+      const nextConversationId = result?.user_message?.conversation_id ?? result?.ai_response?.conversation_id;
+      if (typeof nextConversationId === 'number') setConversationId(nextConversationId);
+      setChatMessages((prev) => [...prev, userMessage, aiMessage]);
     } catch (err) {
       console.error('Analytics chat error:', err);
       setChatMessages((prev) => [...prev, { role: 'ai', content: 'حدث خطأ أثناء التواصل مع المساعد الذكي.' }]);
@@ -275,7 +307,7 @@ const AwqafAICenter = () => {
 
   return (
     <div className="ai-center-page">
-      <div className="ai-breadcrumb-right">الذكاء الاصطناعي</div>
+      <div className="ai-breadcrumb-right">التقارير والإحصائيات</div>
 
       <div className="ai-center-title-area">
         <h1 className="ai-main-title">مركز التقارير الذكية</h1>
@@ -364,7 +396,7 @@ const AwqafAICenter = () => {
                     )
                   }}
                 >
-                  {msg.content}
+                  {msg.role === 'ai' ? normalizeAiContent(msg.content) : msg.content}
                 </ReactMarkdown>
               </div>
             ))}
