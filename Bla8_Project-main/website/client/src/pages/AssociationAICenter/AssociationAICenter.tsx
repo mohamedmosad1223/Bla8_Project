@@ -117,6 +117,13 @@ const SCHEDULE_TIMING_OPTIONS = [
   'شهريًا - اليوم الأول 9:00 صباحًا',
 ] as const;
 
+const SCHEDULE_DURATION_OPTIONS = [
+  { value: '1_month', label: 'لمدة شهر' },
+  { value: '3_months', label: 'لمدة 3 أشهر' },
+  { value: '6_months', label: 'لمدة 6 أشهر' },
+  { value: '1_year', label: 'لمدة سنة' },
+] as const;
+
 const normalizeAiContent = (content: string) =>
   content
     .replace(/(^|\n)\s*([0-9٠-٩]+)\.\s*\n+\s*/g, '$1$2. ')
@@ -141,12 +148,9 @@ const AssociationAICenter = () => {
     }
   ]);
 
-  const [schedules, setSchedules] = useState<string[]>([
-    'تقرير أداء الدعاة الشهري - كل أول يوم من الشهر الساعة 9 صباحاً',
-    'ملخص الطلبات الأسبوعي - كل يوم جمعة الساعة 4 مساءً'
-  ]);
+  const [schedules, setSchedules] = useState<string[]>([]);
   const [newScheduleReportType, setNewScheduleReportType] = useState<(typeof REPORT_TYPES)[number]>(REPORT_TYPES[0]);
-  const [newScheduleTimeframe, setNewScheduleTimeframe] = useState<(typeof TIMEFRAME_OPTIONS)[number]['value']>('this_month');
+  const [newScheduleDuration, setNewScheduleDuration] = useState<(typeof SCHEDULE_DURATION_OPTIONS)[number]['value']>('1_month');
   const [newScheduleTiming, setNewScheduleTiming] = useState<(typeof SCHEDULE_TIMING_OPTIONS)[number]>(SCHEDULE_TIMING_OPTIONS[0]);
 
   useEffect(() => {
@@ -203,12 +207,12 @@ const AssociationAICenter = () => {
   };
 
   const handleAddSchedule = () => {
-    const timeframeLabel = TIMEFRAME_OPTIONS.find((item) => item.value === newScheduleTimeframe)?.label ?? 'هذا الشهر';
-    const name = `${newScheduleReportType} - ${timeframeLabel}`;
+    const durationLabel = SCHEDULE_DURATION_OPTIONS.find((item) => item.value === newScheduleDuration)?.label ?? 'لمدة شهر';
+    const name = `${newScheduleReportType} - ${durationLabel}`;
     const timing = newScheduleTiming;
     setSchedules((prev) => [...prev, `${name} - ${timing}`]);
     setNewScheduleReportType(REPORT_TYPES[0]);
-    setNewScheduleTimeframe('this_month');
+    setNewScheduleDuration('1_month');
     setNewScheduleTiming(SCHEDULE_TIMING_OPTIONS[0]);
   };
 
@@ -419,12 +423,12 @@ const AssociationAICenter = () => {
           </div>
           <div className="ai-select-wrapper">
             <select
-              value={newScheduleTimeframe}
-              onChange={(e) => setNewScheduleTimeframe(e.target.value as (typeof TIMEFRAME_OPTIONS)[number]['value'])}
+              value={newScheduleDuration}
+              onChange={(e) => setNewScheduleDuration(e.target.value as typeof newScheduleDuration)}
               className="ai-select"
             >
-              {TIMEFRAME_OPTIONS.map((item) => (
-                <option key={`assoc-schedule-timeframe-${item.value}`} value={item.value}>{item.label}</option>
+              {SCHEDULE_DURATION_OPTIONS.map((item) => (
+                <option key={`assoc-schedule-duration-${item.value}`} value={item.value}>{item.label}</option>
               ))}
             </select>
             <ChevronDown size={16} className="ai-select-icon" />

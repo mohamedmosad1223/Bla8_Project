@@ -136,12 +136,23 @@ const AwqafAICenter = () => {
     }
   ]);
 
-  const [schedules, setSchedules] = useState<string[]>([
-    'الملخص التنفيذي الشهري - كل أول يوم من الشهر الساعة 9 صباحاً',
-    'تقرير الكفاءة الأسبوعي - كل يوم جمعة الساعة 4 مساءً'
-  ]);
-  const [newScheduleName, setNewScheduleName] = useState('');
-  const [newScheduleTime, setNewScheduleTime] = useState('');
+  const [schedules, setSchedules] = useState<string[]>([]);
+  const [newScheduleReportType, setNewScheduleReportType] = useState('أداء ومقارنة الجمعيات');
+  const [newScheduleDuration, setNewScheduleDuration] = useState('1_month');
+  const [newScheduleTiming, setNewScheduleTiming] = useState('يوميًا - 9:00 صباحًا');
+
+  const SCHEDULE_DURATION_OPTIONS = [
+    { value: '1_month', label: 'لمدة شهر' },
+    { value: '3_months', label: 'لمدة 3 أشهر' },
+    { value: '6_months', label: 'لمدة 6 أشهر' },
+    { value: '1_year', label: 'لمدة سنة' },
+  ];
+
+  const SCHEDULE_TIMING_OPTIONS = [
+    'يوميًا - 9:00 صباحًا',
+    'أسبوعيًا - الجمعة 4:00 مساءً',
+    'شهريًا - اليوم الأول 9:00 صباحًا',
+  ];
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -228,12 +239,13 @@ const AwqafAICenter = () => {
   };
 
   const handleAddSchedule = () => {
-    const name = newScheduleName.trim();
-    const timing = newScheduleTime.trim();
-    if (!name || !timing) return;
+    const durationLabel = SCHEDULE_DURATION_OPTIONS.find((item) => item.value === newScheduleDuration)?.label ?? 'لمدة شهر';
+    const name = `${newScheduleReportType} - ${durationLabel}`;
+    const timing = newScheduleTiming;
     setSchedules((prev) => [...prev, `${name} - ${timing}`]);
-    setNewScheduleName('');
-    setNewScheduleTime('');
+    setNewScheduleReportType('أداء ومقارنة الجمعيات');
+    setNewScheduleDuration('1_month');
+    setNewScheduleTiming('يوميًا - 9:00 صباحًا');
   };
 
   const handleDeleteSchedule = (index: number) => {
@@ -446,19 +458,42 @@ const AwqafAICenter = () => {
           ))}
         </div>
 
-        <div className="ai-schedule-add">
-          <input
-            className="ai-chat-input"
-            placeholder="اسم الجدولة"
-            value={newScheduleName}
-            onChange={(e) => setNewScheduleName(e.target.value)}
-          />
-          <input
-            className="ai-chat-input"
-            placeholder="الموعد (مثال: كل جمعة 4 مساءً)"
-            value={newScheduleTime}
-            onChange={(e) => setNewScheduleTime(e.target.value)}
-          />
+        <div className="ai-schedule-add ai-schedule-add--four" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px' }}>
+          <div className="ai-select-wrapper">
+            <select
+              value={newScheduleReportType}
+              onChange={(e) => setNewScheduleReportType(e.target.value)}
+              className="ai-select"
+            >
+              <option>أداء ومقارنة الجمعيات</option>
+              <option>تقرير استجابة الدعاة</option>
+            </select>
+            <ChevronDown size={16} className="ai-select-icon" />
+          </div>
+          <div className="ai-select-wrapper">
+            <select
+              value={newScheduleDuration}
+              onChange={(e) => setNewScheduleDuration(e.target.value)}
+              className="ai-select"
+            >
+              {SCHEDULE_DURATION_OPTIONS.map((item) => (
+                <option key={`awqaf-schedule-duration-${item.value}`} value={item.value}>{item.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="ai-select-icon" />
+          </div>
+          <div className="ai-select-wrapper">
+            <select
+              value={newScheduleTiming}
+              onChange={(e) => setNewScheduleTiming(e.target.value)}
+              className="ai-select"
+            >
+              {SCHEDULE_TIMING_OPTIONS.map((item) => (
+                <option key={`awqaf-schedule-timing-${item}`} value={item}>{item}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="ai-select-icon" />
+          </div>
           <button className="ai-btn-primary" onClick={handleAddSchedule}>
             <Plus size={16} /> إضافة
           </button>
