@@ -10,6 +10,7 @@ from app.schemas.schemas import (
     AIChatConversationCreate, AIChatConversationRead, AIChatConversationListResponse
 )
 from app.controllers.chats_controller import ChatsController
+from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/api/chat", tags=["Chats & AI"])
 
