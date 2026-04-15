@@ -21,6 +21,7 @@ from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.report_metric import ReportMetric  # noqa: F401
 from app.models.reference import Language, Country  # noqa: F401
 from app.models.setting import SystemSetting  # noqa: F401
+from app.models.report_schedule import ReportSchedule  # noqa: F401
 
 __all__ = [
     "User", "Admin", "Organization",
@@ -29,5 +30,5 @@ __all__ = [
     "DawahRequest", "RequestDocument", "RequestStatusHistory",
     "DawahReport", "ContactAttempt",
     "Message", "AIChatMessage", "Notification", "AuditLog", "ReportMetric",
-    "Language", "Country", "SystemSetting",
+    "Language", "Country", "SystemSetting", "ReportSchedule",
 ]

@@ -113,6 +113,23 @@ class AdminRead(AdminCreate):
     model_config = {"from_attributes": True}
 
 
+# ─── Report Schedules ─────────────────────────────────────────────────────────
+
+class ReportScheduleBase(BaseModel):
+    name: str = Field(..., min_length=2, max_length=255)
+    timing: str = Field(..., min_length=2, max_length=255)
+    report_type: str = Field(..., min_length=2, max_length=255)
+
+class ReportScheduleCreate(ReportScheduleBase):
+    pass
+
+class ReportScheduleRead(ReportScheduleBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
 # ─── Organization ────────────────────────────────────────────────────────────
 
 class OrganizationCreate(BaseModel):

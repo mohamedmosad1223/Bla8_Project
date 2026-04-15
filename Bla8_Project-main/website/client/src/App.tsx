@@ -51,6 +51,7 @@ import AdminPreacherRequestDetails from './pages/AdminPreacherRequestDetails/Adm
 import AdminAssociationRequestDetails from './pages/AdminAssociationRequestDetails/AdminAssociationRequestDetails';
 import AdminChat from './pages/AdminChat/AdminChat';
 import AdminAddSupervisor from './pages/AdminAddSupervisor/AdminAddSupervisor';
+import AdminAICenter from './pages/AdminAICenter/AdminAICenter';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { authService } from './services/authService';
 
@@ -172,6 +173,7 @@ function App() {
           <Route path="/admin/requests/preachers/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminPreacherRequestDetails /></ProtectedRoute>} />
           <Route path="/admin/requests/associations/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminAssociationRequestDetails /></ProtectedRoute>} />
           <Route path="/admin/chat/:userId?" element={<ProtectedRoute allowedRoles={['admin']}><AdminChat /></ProtectedRoute>} />
+          <Route path="/admin/ai" element={<ProtectedRoute allowedRoles={['admin']}><AdminAICenter /></ProtectedRoute>} />
           <Route path="/admin/add-supervisor" element={<ProtectedRoute allowedRoles={['admin']}><AdminAddSupervisor /></ProtectedRoute>} />
         </Route>
       </Routes>
