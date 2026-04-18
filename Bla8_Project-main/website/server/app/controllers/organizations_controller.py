@@ -249,9 +249,23 @@ class OrganizationsController:
             
             NotificationsController.create_notification(
                 db, org.user_id, NotificationType.account_rejected,
-                "تم رفض طلب الانضمام", 
-                f"نأسف لإبلاغك بأنه تم رفض طلب الجمعية. السبب: {org.rejection_reason or 'غير محدد'}"
+                "تم رفض حسابك", 
+                f"{org.rejection_reason or 'غير محدد'}"
             )
+            
+        # Revert to pending if self-updating after rejection
+        # If approval_status is not being updated by admin, but other fields are
+        if payload.approval_status is None and org.approval_status == ApprovalStatus.rejected:
+            org.approval_status = ApprovalStatus.pending
+            org.rejection_reason = None
+            # إرسال إشعار للمديرين بأن الجمعية قامت بتحديث بياناتها
+            admins = db.query(User).filter(User.role == UserRole.admin).all()
+            for admin in admins:
+                NotificationsController.create_notification(
+                    db, admin.user_id, NotificationType.status_changed,
+                    "طلب انضمام مُعاد تقديمه",
+                    f"قامت الجمعية {org.organization_name} بتحديث بياناتها بعد الرفض."
+                )
 
         db.commit()
         db.refresh(org)

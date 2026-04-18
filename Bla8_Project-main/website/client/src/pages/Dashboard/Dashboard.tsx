@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import './Dashboard.css';
+import RejectedAssociationView from './RejectedAssociationView';
 
 interface StatCardData {
   title: string;
@@ -60,10 +61,36 @@ const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [granularity, setGranularity] = useState<'day' | 'month'>('month');
 
+  const [isPending, setIsPending] = useState(false);
+  const [isRejected, setIsRejected] = useState(false);
+  const [orgProfile, setOrgProfile] = useState<any>(null);
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
+        const profileRes = await import('../../services/authService').then(m => m.authService.getMe());
+        const approvalStatus = profileRes?.extra_data?.approval_status;
+
+        if (approvalStatus === 'pending') {
+          setIsPending(true);
+          setLoading(false);
+          setIsInitialLoading(false);
+          return;
+        }
+
+        if (approvalStatus === 'rejected') {
+          setIsRejected(true);
+          const orgId = profileRes?.extra_data?.org_id || JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.org_id;
+          if (orgId) {
+            const fullProfile = await orgService.getById(orgId);
+            setOrgProfile(fullProfile.data?.data || fullProfile.data || fullProfile);
+          }
+          setLoading(false);
+          setIsInitialLoading(false);
+          return;
+        }
+
         const result = await orgService.getDashboardStats(granularity);
         setData(result);
       } catch (err: unknown) {
@@ -76,6 +103,31 @@ const Dashboard = () => {
     };
     fetchDashboard();
   }, [granularity]);
+
+  if (isRejected && orgProfile) {
+    return <RejectedAssociationView profile={orgProfile} />;
+  }
+
+  if (isPending) {
+    return (
+      <div className="pd-page" dir="rtl" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center', color: '#dba841', background: '#fdf7e3', padding: '3rem', borderRadius: '12px', border: '1px solid #f9ebd1', maxWidth: '500px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', fontWeight: 700 }}>حساب قيد المراجعة</h2>
+          <p style={{ color: '#6b572a', lineHeight: 1.6, marginBottom: '2rem' }}>
+            طلب تسجيل الجمعية الآن قيد المراجعة من قبل الإدارة. سيتم إشعارك بمجرد قبول الطلب لتتمكن من الوصول للوحة التحكم.
+          </p>
+          <button 
+            type="button" 
+            onClick={() => import('../../services/authService').then(m => m.authService.logout().then(() => window.location.href = '/'))}
+            style={{ background: '#dba841', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            تسجيل الخروج
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isInitialLoading) {
     return (

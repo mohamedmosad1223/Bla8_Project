@@ -41,6 +41,18 @@ export const orgService = {
   },
 
   /**
+   * Update an organization's details using FormData for file uploads
+   */
+  updateFormData: async (orgId: number | string, formData: FormData) => {
+    const response = await api.patch(`/organizations/${orgId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  /**
    * Delete an organization
    */
   delete: async (orgId: number | string) => {

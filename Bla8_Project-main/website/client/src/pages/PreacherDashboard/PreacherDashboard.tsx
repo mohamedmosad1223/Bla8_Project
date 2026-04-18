@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './PreacherDashboard.css';
 import { preacherService, PreacherDashboardData, ChartDataPoint } from '../../services/preacherService';
+import RejectedPreacherView from './RejectedPreacherView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface TooltipState { visible: boolean; x: number; y: number; value: string; label: string; }
@@ -308,6 +309,8 @@ const PreacherDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [isRejected, setIsRejected] = useState(false);
+  const [preacherProfile, setPreacherProfile] = useState<any>(null);
   const [interval, setIntervalVal] = useState<'month' | 'day'>('month');
 
   const fetchDashboardData = async (selectedInterval: 'month' | 'day') => {
@@ -319,6 +322,17 @@ const PreacherDashboard: React.FC = () => {
 
       if (approvalStatus === 'pending') {
         setIsPending(true);
+        setLoading(false);
+        return;
+      }
+      
+      if (approvalStatus === 'rejected') {
+        setIsRejected(true);
+        const preacherId = profileRes?.extra_data?.preacher_id || JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.preacher_id;
+        if (preacherId) {
+            const fullProfile = await preacherService.getById(preacherId);
+            setPreacherProfile(fullProfile.data?.data || fullProfile.data || fullProfile);
+        }
         setLoading(false);
         return;
       }
@@ -340,6 +354,9 @@ const PreacherDashboard: React.FC = () => {
 
   if (loading) return <LoadingSkeleton />;
 
+  if (isRejected && preacherProfile) {
+    return <RejectedPreacherView profile={preacherProfile} />;
+  }
   if (isPending) {
     return (
       <div className="pd-page" dir="rtl" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>

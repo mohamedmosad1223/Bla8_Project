@@ -91,6 +91,18 @@ export const preacherService = {
   },
 
   /**
+   * Update a preacher's details using FormData for file uploads
+   */
+  updateFormData: async (preacherId: number | string, formData: FormData) => {
+    const response = await api.post(`/preachers/${preacherId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  /**
    * Update a preacher's status (approved/rejected)
    * specifically for Admin/Organization status updates
    */
