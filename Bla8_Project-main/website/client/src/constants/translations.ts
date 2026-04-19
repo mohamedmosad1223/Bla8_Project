@@ -9,6 +9,9 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "التاغالوغية": "التاغالوغية",
     "الأردية": "الأردية",
     "الأوردو": "الأوردو",
+    "الألمانية": "الألمانية",
+    "التاملية": "التاملية",
+    "التلغو": "التلغو",
     // Religions
     "الإسلام": "الإسلام",
     "المسيحية": "المسيحية",
@@ -31,6 +34,13 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "نيبال": "نيبال",
     "أمريكا": "أمريكا",
     "بريطانيا": "بريطانيا",
+    "باكستان": "باكستان",
+    "تشاد": "تشاد",
+    "نيجيريا": "نيجيريا",
+    "السنغال": "السنغال",
+    "ألمانيا": "ألمانيا",
+    "إسبانيا": "إسبانيا",
+    "فرنسا": "فرنسا",
     // Common
     "أخرى": "أخرى"
   },
@@ -43,6 +53,9 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "التاغالوغية": "Tagalog",
     "الأردية": "Urdu",
     "الأوردو": "Urdu",
+    "الألمانية": "German",
+    "التاملية": "Tamil",
+    "التلغو": "Telugu",
     "الإسلام": "Islam",
     "المسيحية": "Christianity",
     "مسيحية": "Christianity",
@@ -63,6 +76,13 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "نيبال": "Nepal",
     "أمريكا": "USA",
     "بريطانيا": "UK",
+    "باكستان": "Pakistan",
+    "تشاد": "Chad",
+    "نيجيريا": "Nigeria",
+    "السنغال": "Senegal",
+    "ألمانيا": "Germany",
+    "إسبانيا": "Spain",
+    "فرنسا": "France",
     "أخرى": "Other"
   },
   fr: {
@@ -74,6 +94,9 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "التاغالوغية": "Tagalog",
     "الأردية": "Ourdou",
     "الأوردو": "Ourdou",
+    "الألمانية": "Allemand",
+    "التاملية": "Tamoul",
+    "التلغو": "Télougou",
     "الإسلام": "Islam",
     "المسيحية": "Christianisme",
     "مسيحية": "Christianisme",
@@ -94,6 +117,13 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "نيبال": "Népal",
     "أمريكا": "États-Unis",
     "بريطانيا": "Royaume-Uni",
+    "باكستان": "Pakistan",
+    "تشاد": "Tchad",
+    "نيجيريا": "Nigéria",
+    "السنغال": "Sénégal",
+    "ألمانيا": "Allemagne",
+    "إسبانيا": "Espagne",
+    "فرنسا": "France",
     "أخرى": "Autre"
   },
   es: {
@@ -105,6 +135,9 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "التاغالوغية": "Tagalo",
     "الأردية": "Urdu",
     "الأوردو": "Urdu",
+    "الألمانية": "Alemán",
+    "التاملية": "Tamil",
+    "التلغو": "Telugu",
     "الإسلام": "Islam",
     "المسيحية": "Cristianismo",
     "مسيحية": "Cristianismo",
@@ -125,6 +158,13 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "نيبال": "Nepal",
     "أمريكا": "USA",
     "بريطانيا": "Reino Unido",
+    "باكستان": "Pakistán",
+    "تشاد": "Chad",
+    "نيجيريا": "Nigeria",
+    "السنغال": "Senegal",
+    "ألمانيا": "Alemania",
+    "إسبانيا": "España",
+    "فرنسا": "Francia",
     "أخرى": "Otros"
   },
   ur: {
@@ -136,6 +176,9 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "التاغالوغية": "ٹیگالوگ",
     "الأردية": "اردو",
     "الأوردو": "اردو",
+    "الألمانية": "جرمن",
+    "التاملية": "تامل",
+    "التلغو": "تیلگو",
     "الإسلام": "اسلام",
     "المسيحية": "عیسائیت",
     "مسيحية": "عیسائیت",
@@ -156,6 +199,13 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "نيبال": "نیپال",
     "أمريكا": "امریکہ",
     "بريطانيا": "برطانیہ",
+    "باكستان": "پاکستان",
+    "تشاد": "چاڈ",
+    "نيجيريا": "نائجیریا",
+    "السنغال": "سینیگال",
+    "ألمانيا": "جرمنی",
+    "إسبانيا": "سپین",
+    "فرنسا": "فرانس",
     "أخرى": "دیگر"
   },
   de: {
@@ -167,6 +217,9 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "التاغالوغية": "Tagalog",
     "الأردية": "Urdu",
     "الأوردو": "Urdu",
+    "الألمانية": "Deutsch",
+    "التاملية": "Tamilisch",
+    "التلغو": "Telugu",
     "الإسلام": "Islam",
     "المسيحية": "Christentum",
     "مسيحية": "Christentum",
@@ -187,6 +240,13 @@ export const OPTION_TRANSLATIONS: Record<string, Record<string, string>> = {
     "نيبال": "Nepal",
     "أمريكا": "USA",
     "بريطانيا": "Großbritannien",
+    "باكستان": "Pakistan",
+    "تشاد": "Tschad",
+    "نيجيريا": "Nigeria",
+    "السنغال": "Senegal",
+    "ألمانيا": "Deutschland",
+    "إسبانيا": "Spanien",
+    "فرنسا": "Frankreich",
     "أخرى": "Andere"
   }
 };
@@ -199,5 +259,8 @@ export const NATIVE_LANGUAGE_NAMES: Record<string, string> = {
   "الأردية": "اردو",
   "الأوردو": "اردو",
   "الهندية": "हिन्दी",
-  "التاغالوغية": "Tagalog"
+  "التاغالوغية": "Tagalog",
+  "الألمانية": "Deutsch",
+  "التاملية": "தமிழ்",
+  "التلغو": "తెలుగు"
 };

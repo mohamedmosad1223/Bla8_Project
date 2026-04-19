@@ -4,11 +4,28 @@ import { ChevronRight, ChevronDown, Upload, X, Check, AlertCircle, Loader2 } fro
 import api from '../../services/api';
 import { preacherService } from '../../services/preacherService';
 import SuccessModal from '../../components/common/Modal/SuccessModal';
+import { useLanguage } from '../../i18n';
+import { OPTION_TRANSLATIONS, NATIVE_LANGUAGE_NAMES } from '../../constants/translations';
 import './AddCaller.css';
 
 
 const AddCaller = () => {
   const navigate = useNavigate();
+  const { lang: currentAppLang } = useLanguage();
+  const currentLangCode = currentAppLang === 'SA' ? 'ar' : currentAppLang === 'US' ? 'en' : currentAppLang === 'PK' ? 'ur' : currentAppLang.toLowerCase();
+  const translations = OPTION_TRANSLATIONS[currentLangCode] || OPTION_TRANSLATIONS['en'];
+  const englishTranslations = OPTION_TRANSLATIONS['en'];
+
+  // Helper for language display
+  const getLanguageLabel = (name: string) => {
+    const trimmed = name.trim();
+    // For Organization/Preacher adding a caller, Hindi/Tamil/Telugu must be in English
+    if (trimmed === 'التاغالوغية' || trimmed === 'التاملية' || trimmed === 'التلغو') {
+      return englishTranslations[trimmed] || trimmed;
+    }
+    return translations[trimmed] || trimmed;
+  };
+
   const [availableLangs, setAvailableLangs] = useState<{id: number, name: string}[]>([]);
   const [availableCountries, setAvailableCountries] = useState<{id: number, name: string}[]>([]);
   const [selectedLangs, setSelectedLangs] = useState<number[]>([]); 
@@ -252,7 +269,11 @@ const AddCaller = () => {
                 <div className="tags-wrapper">
                   {formData.nationalityCountryId ? (
                     <span className="tag" style={{ border: 'none', background: 'transparent', padding: 0 }}>
-                      {availableCountries.find(c => c.id === formData.nationalityCountryId)?.name || 'اختر الجنسية'}
+                      {(() => {
+                        const country = availableCountries.find(c => c.id === formData.nationalityCountryId);
+                        const name = country?.name || '';
+                        return translations[name.trim()] || name || 'اختر الجنسية';
+                      })()}
                     </span>
                   ) : (
                     <span className="placeholder-text">اختر الجنسية</span>
@@ -274,7 +295,7 @@ const AddCaller = () => {
                         <div className={`checkbox-custom check-align-left ${isSelected ? 'checked' : ''}`}>
                           {isSelected && <Check size={12} strokeWidth={4} color="white" />}
                         </div>
-                        <span>{c.name}</span>
+                        <span>{translations[c.name.trim()] || c.name}</span>
                       </div>
                     );
                   })}
@@ -316,7 +337,7 @@ const AddCaller = () => {
                     const lang = availableLangs.find(l => l.id === langId);
                     return (
                       <span key={langId} className="tag" onClick={(e) => e.stopPropagation()}>
-                        {lang?.name}
+                        {getLanguageLabel(lang?.name || '')}
                         {!isSuspended && (
                           <button type="button" className="tag-remove" onClick={(e) => {
                             e.stopPropagation();
@@ -345,7 +366,7 @@ const AddCaller = () => {
                         <div className={`checkbox-custom check-align-left ${isSelected ? 'checked' : ''}`}>
                           {isSelected && <Check size={12} strokeWidth={4} color="white" />}
                         </div>
-                        <span>{lang.name}</span>
+                        <span>{getLanguageLabel(lang.name)}</span>
                       </div>
                     );
                   })}

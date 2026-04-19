@@ -142,6 +142,13 @@ const Register: React.FC = () => {
   const { t, lang, dir } = useLanguage();
   const currentLang = lang === 'SA' ? 'ar' : lang === 'US' ? 'en' : lang === 'PK' ? 'ur' : lang.toLowerCase();
   const translations = OPTION_TRANSLATIONS[currentLang] || OPTION_TRANSLATIONS['en'];
+  
+  // Helper for language display
+  const getLanguageLabel = (name: string) => {
+    const trimmed = name.trim();
+    // For Non-Muslim registration, follow app language for everything
+    return translations[trimmed] || trimmed;
+  };
 
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') || sessionStorage.getItem('registerRole');
@@ -339,7 +346,7 @@ const Register: React.FC = () => {
                     name="communication_lang_id" placeholder={isNonMuslim ? t('register.language') : 'لغة التواصل'} icon={<Languages size={18} />}
                     options={options.languages.map(l => ({ 
                       value: String(l.id), 
-                      label: NATIVE_LANGUAGE_NAMES[l.name.trim()] || translations[l.name.trim()] || l.name 
+                      label: getLanguageLabel(l.name) 
                     }))}
                     value={formData.communication_lang_id} onChange={handleValueChange} required
                   />

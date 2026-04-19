@@ -13,6 +13,17 @@ const PreacherRegister: React.FC = () => {
   const { t, lang } = useLanguage();
   const currentLang = lang === 'SA' ? 'ar' : lang === 'US' ? 'en' : lang === 'PK' ? 'ur' : lang.toLowerCase();
   const translations = OPTION_TRANSLATIONS[currentLang] || OPTION_TRANSLATIONS['en'];
+  const englishTranslations = OPTION_TRANSLATIONS['en'];
+
+  // Helper for language display
+  const getLanguageLabel = (name: string) => {
+    const trimmed = name.trim();
+    // For Preachers, Hindi/Tamil/Telugu must be in English
+    if (trimmed === 'التاغالوغية' || trimmed === 'التاملية' || trimmed === 'التلغو') {
+       return englishTranslations[trimmed] || trimmed;
+    }
+    return translations[trimmed] || trimmed;
+  };
   
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -228,7 +239,7 @@ const PreacherRegister: React.FC = () => {
                     const lang = availableLangs.find(l => l.id === langId);
                     return (
                       <span key={langId} className="preg-tag" onClick={(e) => e.stopPropagation()}>
-                        {NATIVE_LANGUAGE_NAMES[lang?.name.trim() || ''] || translations[lang?.name.trim() || ''] || lang?.name}
+                        {getLanguageLabel(lang?.name || '')}
                         <button type="button" className="tag-remove" onClick={(e) => {
                           e.stopPropagation();
                           toggleLanguage(langId);
@@ -251,7 +262,7 @@ const PreacherRegister: React.FC = () => {
                         <div className={`checkbox-custom check-align-right ${isSelected ? 'checked' : ''}`}>
                           {isSelected && <Check size={12} strokeWidth={4} color="white" />}
                         </div>
-                        <span>{NATIVE_LANGUAGE_NAMES[lang.name.trim()] || translations[lang.name.trim()] || lang.name}</span>
+                        <span>{getLanguageLabel(lang.name)}</span>
                       </div>
                     );
                   })}
