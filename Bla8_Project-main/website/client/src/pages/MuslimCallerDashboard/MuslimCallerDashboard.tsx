@@ -90,7 +90,17 @@ const MuslimCallerDashboard: React.FC = () => {
   const { t, lang } = useLanguage();
   const currentLang = lang === 'SA' ? 'ar' : lang === 'US' ? 'en' : lang === 'PK' ? 'ur' : lang.toLowerCase();
   const translations = OPTION_TRANSLATIONS[currentLang] || OPTION_TRANSLATIONS['en'];
+  const englishTranslations = OPTION_TRANSLATIONS['en'];
 
+  // Helper for language display
+  const getLanguageLabel = (name: string) => {
+    const trimmed = name.trim();
+    // For Muslim Caller adding non-Muslims, show Hindi/Tamil/Telugu in English
+    if (trimmed === 'التاغالوغية' || trimmed === 'التاملية' || trimmed === 'التلغو') {
+       return englishTranslations[trimmed] || trimmed;
+    }
+    return translations[trimmed] || trimmed;
+  };
   const [form, setForm] = useState({
     fullName: '', 
     religion: '', 
@@ -284,7 +294,7 @@ const MuslimCallerDashboard: React.FC = () => {
             value={form.language} onChange={handle} error={getError('language')}
             options={languages.map(l => ({ 
               value: String(l.id), 
-              label: NATIVE_LANGUAGE_NAMES[l.name.trim()] || translations[l.name.trim()] || l.name 
+              label: getLanguageLabel(l.name)
             }))}
           />
 

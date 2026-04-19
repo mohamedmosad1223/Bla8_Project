@@ -351,14 +351,25 @@
 }
 
 .areq-modal-btn.areq-confirm-btn {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #cbd5e0;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+  background-color: #ef4444;
+  color: white;
+  flex: 2;
+}
+
+.areq-modal-btn.areq-confirm-btn:disabled {
+  background-color: #fca5a5;
+  cursor: not-allowed;
+}
+
+.areq-modal-btn.areq-cancel-btn {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.areq-modal-btn.areq-cancel-btn:hover {
+  background-color: #e5e7eb;
 }
 
 .checkbox-custom.checked-gold {

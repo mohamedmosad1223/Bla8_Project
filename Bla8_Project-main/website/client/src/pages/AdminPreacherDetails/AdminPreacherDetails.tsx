@@ -190,7 +190,11 @@ const AdminPreacherDetails = () => {
             className="apreach-crumb-link" 
             onClick={() => {
               if (userRole === 'admin') {
-                id ? navigate(`/admin/associations/${id}`) : navigate('/admin/callers');
+                if (id) {
+                  navigate(`/admin/associations/${id}`);
+                } else {
+                  navigate('/admin/callers');
+                }
               } else {
                 navigate('/callers');
               }
@@ -297,7 +301,7 @@ const AdminPreacherDetails = () => {
                 <div key={idx} className="apreach-gov-row">
                   <div className="apreach-gov-header">
                     <span className="apreach-gov-name">{country.label}</span>
-                    <span className="apreach-gov-count">{country.value} الف شخص</span>
+                    <span className="apreach-gov-count">{country.value} شخص</span>
                   </div>
                   <div className="apreach-gov-progress">
                     <div

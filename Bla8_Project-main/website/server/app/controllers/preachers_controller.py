@@ -346,7 +346,8 @@ class PreachersController:
                 preacher.user.status = AccountStatus.suspended
 
         # في حالة التفعيل مرة أخرى والموافقة
-        if (payload.status == PreacherStatus.active or payload.approval_status == ApprovalStatus.approved) and preacher.approval_status == ApprovalStatus.approved:
+        if payload.approval_status == ApprovalStatus.approved:
+             preacher.status = PreacherStatus.active
              if preacher.user:
                 preacher.user.status = AccountStatus.active
              NotificationsController.create_notification(
@@ -356,12 +357,39 @@ class PreachersController:
         
         # في حالة الرفض
         elif payload.approval_status == ApprovalStatus.rejected:
+            preacher.status = PreacherStatus.suspended
             if preacher.user:
                 preacher.user.status = AccountStatus.suspended
             NotificationsController.create_notification(
                 db, preacher.user_id, NotificationType.account_rejected,
-                "تم رفض طلب الانضمام", f"نأسف لإبلاغك بأنه تم رفض طلبك. السبب: {preacher.rejection_reason or 'غير محدد'}"
+                "تم رفض حسابك", f"{preacher.rejection_reason or 'غير محدد'}"
             )
+            
+        # Revert to pending if self-updating after rejection
+        current_user = getattr(payload, '_current_user_role', None) # We'll need to pass this safely, or just assume if no approval_status in payload but the preacher was rejected...
+        if payload.approval_status is None and preacher.approval_status == ApprovalStatus.rejected:
+            # If the user is updating their own profile, set it back to pending
+            preacher.approval_status = ApprovalStatus.pending
+            preacher.rejection_reason = None
+            
+            from app.models.organization import Organization
+            # إرسال إشعار للجهة المسئولة (الجمعية التابع لها أو الأدمن لو كان منفرد)
+            if preacher.org_id:
+                org = db.query(Organization).filter(Organization.org_id == preacher.org_id).first()
+                if org and org.user_id:
+                    NotificationsController.create_notification(
+                        db, org.user_id, NotificationType.status_changed,
+                        "طلب انضمام مُعاد تقديمه",
+                        f"قام الداعية {preacher.full_name} بتحديث بياناته بعد الرفض."
+                    )
+            else:
+                admins = db.query(User).filter(User.role == UserRole.admin).all()
+                for admin in admins:
+                    NotificationsController.create_notification(
+                        db, admin.user_id, NotificationType.status_changed,
+                        "طلب انضمام مُعاد تقديمه",
+                        f"قام الداعية {preacher.full_name} بتحديث بياناته بعد الرفض."
+                    )
 
         db.commit()
         db.refresh(preacher)

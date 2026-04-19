@@ -55,10 +55,13 @@ class ProfilesController:
             profile_record = user.preacher
             if profile_record:
                 extra_data = {
-                    "scientific_qualification": profile_record.scientific_qualification,
-                    "type": profile_record.type,
-                    "org_id": profile_record.org_id,
-                    "approval_status": profile_record.approval_status
+                    "preacher_id": profile_record.preacher_id,
+                    "scientific_qualification": getattr(profile_record, "scientific_qualification", None),
+                    "qualification_file": getattr(profile_record, "qualification_file", None),
+                    "nationality_country_id": getattr(profile_record, "nationality_country_id", None),
+                    "type": profile_record.type.value if getattr(profile_record, "type", None) else None,
+                    "org_id": getattr(profile_record, "org_id", None),
+                    "approval_status": profile_record.approval_status.value if getattr(profile_record, "approval_status", None) else None
                 }
         elif user.role == UserRole.muslim_caller:
             profile_record = user.muslim_caller
@@ -66,9 +69,14 @@ class ProfilesController:
             profile_record = user.organization
             if profile_record:
                 extra_data = {
-                    "organization_name": profile_record.organization_name,
-                    "license_number": profile_record.license_number,
-                    "manager_name": profile_record.manager_name
+                    "org_id": getattr(profile_record, "org_id", None),
+                    "organization_name": getattr(profile_record, "organization_name", None),
+                    "license_number": getattr(profile_record, "license_number", None),
+                    "manager_name": getattr(profile_record, "manager_name", None),
+                    "license_file": getattr(profile_record, "license_file", None),
+                    "country_id": getattr(profile_record, "country_id", None),
+                    "approval_status": profile_record.approval_status.value if getattr(profile_record, "approval_status", None) else None,
+                    "rejection_reason": getattr(profile_record, "rejection_reason", None)
                 }
         elif user.role == UserRole.interested:
             profile_record = user.interested_person

@@ -10,7 +10,7 @@ interface Notification {
   user_id: number;
   type: string;
   title: string;
-  message: string;
+  body: string;
   related_id: number | null;
   is_read: boolean;
   created_at: string;
@@ -23,6 +23,9 @@ const Header = () => {
   const isNonMuslim = localStorage.getItem('userRole') === 'non_muslim' || localStorage.getItem('userRole') === 'interested';
 
   const [userData, setUserData] = useState<any>(null);
+
+  // Modal for rejection reason
+  const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
 
   // Update user data whenever route changes or custom auth event fires
   useEffect(() => {
@@ -129,11 +132,24 @@ const Header = () => {
   const handleNotifClick = (notif: Notification) => {
     if (!notif.is_read) markAsRead(notif.notification_id);
     
-    // Navigate based on type
+    // Navigate based on type + role
     if (notif.type === 'new_message' && notif.related_id) {
-       navigate(`/conversations?request_id=${notif.related_id}`);
+      const role = localStorage.getItem('userRole');
+      if (role === 'admin') {
+        // Admin chat uses /admin/chat/:userId route
+        navigate(`/admin/chat/${notif.related_id}`);
+      } else if (role === 'non_muslim' || role === 'interested') {
+        // Non-Muslim: related_id is always request_id
+        navigate(`/conversations?request_id=${notif.related_id}`);
+      } else {
+        // Preacher / Organization: related_id can be request_id OR sender user_id (DM)
+        // Use notify_id so Conversations.tsx can try both
+        navigate(`/conversations?notify_id=${notif.related_id}`);
+      }
     } else if (notif.type === 'request_update') {
        navigate('/current-requests');
+    } else if (notif.type === 'account_rejected') {
+       setSelectedNotif(notif);
     } else if (notif.type === 'system_alert') {
        // Just mark as read
     }
@@ -141,6 +157,19 @@ const Header = () => {
   };
 
   return (
+    <>
+    {selectedNotif && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
+            <h3 style={{ color: '#dc2626', marginBottom: '1rem' }}>{selectedNotif.title}</h3>
+            <p style={{ lineHeight: 1.6, marginBottom: '1.5rem', color: '#374151' }}>{selectedNotif.body}</p>
+            <button 
+              onClick={() => setSelectedNotif(null)}
+              style={{ background: '#f3f4f6', color: '#111827', border: '1px solid #d1d5db', padding: '0.5rem 1.5rem', borderRadius: '4px', cursor: 'pointer' }}
+            >إغلاق</button>
+          </div>
+        </div>
+    )}
     <header className="header" dir={isNonMuslim ? dir : 'rtl'}>
       {(!isNonMuslim || dir === 'rtl') && <div className="header-spacer"></div>}
       <div className="header-actions">
@@ -183,7 +212,7 @@ const Header = () => {
                       </div>
                       <div className="notif-content">
                         <strong className="notif-title">{notif.title}</strong>
-                        <p className="notif-desc">{notif.message}</p>
+                        <p className="notif-desc">{notif.body}</p>
                         <span className="notif-time">{formatNotifTime(notif.created_at)}</span>
                       </div>
                       {!notif.is_read && <span className="notif-dot"></span>}
@@ -215,6 +244,7 @@ const Header = () => {
         <Menu size={24} />
       </button>
     </header>
+    </>
   );
 };
 

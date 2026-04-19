@@ -178,6 +178,8 @@ const Conversations = () => {
   const { stream } = useSSEStream();
   const initRequestId = searchParams.get('request_id');
   const initUserId = searchParams.get('user_id');
+  // notify_id: from notification click — could be request_id OR sender user_id
+  const initNotifyId = searchParams.get('notify_id');
 
   // Panel 1 — Chats list
   const [chats, setChats] = useState<ChatPreview[]>([]);
@@ -251,14 +253,25 @@ const Conversations = () => {
       const res = await api.get('/messages/my-chats');
       const data: ChatPreview[] = res.data?.data || [];
 
-      if (!hasAutoOpened.current && (initRequestId || initUserId)) {
+      if (!hasAutoOpened.current && (initRequestId || initUserId || initNotifyId)) {
         hasAutoOpened.current = true;
 
         let found: ChatPreview | null = null;
+
         if (initRequestId) {
+          // Direct request_id param
           found = data.find(c => c.request_id === Number(initRequestId)) || null;
         } else if (initUserId) {
+          // Direct user_id param (DM)
           found = data.find(c => c.other_user_id === Number(initUserId) && c.is_direct) || null;
+        } else if (initNotifyId) {
+          // Notification click: related_id could be request_id OR sender's user_id (DM)
+          // Try request_id first
+          found = data.find(c => c.request_id === Number(initNotifyId)) || null;
+          // If not found, try as other_user_id in DMs
+          if (!found) {
+            found = data.find(c => c.other_user_id === Number(initNotifyId) && c.is_direct) || null;
+          }
         }
 
         if (found) {
@@ -300,12 +313,15 @@ const Conversations = () => {
           setChats([placeholder, ...data]);
           setActiveChat(placeholder);
           setMessages([]);
+        } else {
+          // notify_id not found in any chat — just show the chat list
+          setChats(data);
         }
       } else {
         setChats(data);
       }
     } catch { /* silent */ }
-  }, [initRequestId, initUserId, searchParams]);
+  }, [initRequestId, initUserId, initNotifyId, searchParams]);
 
   useEffect(() => { fetchChats(); }, [fetchChats]);
 

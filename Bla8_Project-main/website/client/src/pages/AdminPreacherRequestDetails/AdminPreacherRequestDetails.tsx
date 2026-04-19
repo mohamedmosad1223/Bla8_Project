@@ -41,7 +41,7 @@ const AdminPreacherRequestDetails = () => {
     setLoading(true);
     try {
       const res = await preacherService.getById(id);
-      setRequestDetails(res.data);
+      setRequestDetails(res.data?.data || res.data || res);
     } catch (err) {
       console.error('Error fetching details:', err);
     } finally {

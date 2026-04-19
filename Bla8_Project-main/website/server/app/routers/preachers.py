@@ -237,15 +237,9 @@ async def update_preacher(
     
     # معالجة الملف لو موجود
     if qualification_file:
-        import os, uuid
-        UPLOAD_DIR = "static/uploads/qualifications"
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        ext = os.path.splitext(qualification_file.filename)[1]
-        filename = f"{uuid.uuid4()}{ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        with open(filepath, "wb") as f:
-            f.write(qualification_file.file.read())
-        preacher.qualification_file = f"/static/uploads/qualifications/{filename}"
+        from app.utils.file_handler import save_upload_file
+        file_path = save_upload_file(qualification_file, "preachers/certificates")
+        preacher.qualification_file = file_path
 
     if not payload:
         raise HTTPException(status_code=400, detail="لم يتم إرسال بيانات لتحديثها")

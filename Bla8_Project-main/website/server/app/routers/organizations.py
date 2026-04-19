@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Response, Request
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from datetime import date
-from pydantic import EmailStr
+from pydantic import EmailStr, ValidationError
 from datetime import datetime
-
 
 from app.database import get_db
 from app.schemas import OrganizationUpdate, OrganizationRegister
@@ -12,6 +11,7 @@ from app.controllers.organizations_controller import OrganizationsController
 from app.controllers.profiles_controller import ProfilesController
 from app.auth import get_current_user, check_role, get_optional_current_user
 from app.models.user import User
+from app.models.organization import Organization
 from app.models.enums import UserRole, ApprovalStatus, AccountStatus
 
 router = APIRouter(prefix="/api/organizations", tags=["Organizations"])
@@ -89,16 +89,71 @@ def get_organization(
 
 @router.patch("/{org_id}")
 @router.post("/{org_id}")
-def update_organization(org_id: int, payload: OrganizationUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """تحديث بيانات الجمعية"""
+async def update_organization(
+    org_id: int, 
+    request: Request,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user),
+    organization_name: Optional[str] = Form(None),
+    license_number: Optional[str] = Form(None),
+    manager_name: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    email: Optional[EmailStr] = Form(None),
+    approval_status: Optional[ApprovalStatus] = Form(None),
+    rejection_reason: Optional[str] = Form(None),
+    license_file: Optional[UploadFile] = File(None)
+):
+    """تحديث بيانات الجمعية (يدعم JSON و Form)"""
+    content_type = request.headers.get("content-type", "")
+    
+    if "application/json" in content_type:
+        try:
+            payload_data = await request.json()
+            payload = OrganizationUpdate(**payload_data)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {str(e)}")
+            
+        if current_user.role != UserRole.admin:
+             if not current_user.organization or current_user.organization.org_id != org_id:
+                 raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات جمعية أخرى")
+             if payload.approval_status is not None or payload.rejection_reason is not None:
+                 raise HTTPException(status_code=403, detail="لا تملك صلاحية تعديل حالة الموافقة")
+                 
+        return OrganizationsController.update_organization(db, org_id, payload, admin_user=current_user)
+
+    # Handle Form Data
+    org = db.query(Organization).filter(Organization.org_id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="الجمعية غير موجودة")
+
     if current_user.role != UserRole.admin:
          if not current_user.organization or current_user.organization.org_id != org_id:
              raise HTTPException(status_code=403, detail="لا يمكنك تعديل بيانات جمعية أخرى")
-         
-         # منع المستخدم العادي من تعديل حالة الموافقة
-         if payload.approval_status is not None or payload.rejection_reason is not None:
+         if approval_status is not None or rejection_reason is not None:
              raise HTTPException(status_code=403, detail="لا تملك صلاحية تعديل حالة الموافقة")
-             
+
+    update_dict = {}
+    if organization_name: update_dict["organization_name"] = organization_name
+    if license_number: update_dict["license_number"] = license_number
+    if manager_name: update_dict["manager_name"] = manager_name
+    if phone: update_dict["phone"] = phone
+    if email: update_dict["email"] = email
+    if approval_status: update_dict["approval_status"] = approval_status
+    if rejection_reason: update_dict["rejection_reason"] = rejection_reason
+
+    if license_file:
+        from app.utils.file_handler import save_upload_file
+        file_path = save_upload_file(license_file, "organizations/licenses")
+        org.license_file = file_path
+
+    try:
+        payload = OrganizationUpdate(**update_dict)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    if not update_dict and not license_file:
+         raise HTTPException(status_code=400, detail="لم يتم إرسال بيانات لتحديثها")
+
     return OrganizationsController.update_organization(db, org_id, payload, admin_user=current_user)
 
 
