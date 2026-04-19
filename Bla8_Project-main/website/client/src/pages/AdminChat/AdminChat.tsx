@@ -81,6 +81,13 @@ const AdminChat = () => {
     fetchContacts();
   }, [fetchContacts]);
 
+  // Sync activeContactId with URL param (handles navigation via notifications)
+  useEffect(() => {
+    if (userId) {
+      setActiveContactId(parseInt(userId));
+    }
+  }, [userId]);
+
   useEffect(() => {
     if (activeContactId) {
       fetchHistory(activeContactId);

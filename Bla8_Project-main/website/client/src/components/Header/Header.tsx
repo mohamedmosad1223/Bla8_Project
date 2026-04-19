@@ -132,9 +132,20 @@ const Header = () => {
   const handleNotifClick = (notif: Notification) => {
     if (!notif.is_read) markAsRead(notif.notification_id);
     
-    // Navigate based on type
+    // Navigate based on type + role
     if (notif.type === 'new_message' && notif.related_id) {
-       navigate(`/conversations?request_id=${notif.related_id}`);
+      const role = localStorage.getItem('userRole');
+      if (role === 'admin') {
+        // Admin chat uses /admin/chat/:userId route
+        navigate(`/admin/chat/${notif.related_id}`);
+      } else if (role === 'non_muslim' || role === 'interested') {
+        // Non-Muslim: related_id is always request_id
+        navigate(`/conversations?request_id=${notif.related_id}`);
+      } else {
+        // Preacher / Organization: related_id can be request_id OR sender user_id (DM)
+        // Use notify_id so Conversations.tsx can try both
+        navigate(`/conversations?notify_id=${notif.related_id}`);
+      }
     } else if (notif.type === 'request_update') {
        navigate('/current-requests');
     } else if (notif.type === 'account_rejected') {
