@@ -89,15 +89,15 @@ class SafeSQLExecutor:
             if not rows:
                 return "[لا توجد بيانات مطابقة لهذا الاستعلام في قاعدة البيانات حالياً]"
 
-            # تنسيق النتائج كجدول نصي أنيق
-            header = " | ".join(columns)
-            separator = "-+-".join("-" * len(str(col)) for col in columns)
+            # تنسيق النتائج كجدول Markdown احترافي (يظهر بشكل سليم حتى لو فشل منسق الذكاء الاصطناعي)
+            header = "| " + " | ".join(str(col) for col in columns) + " |"
+            separator = "|" + "|".join("---" for _ in columns) + "|"
             lines = [header, separator]
             for row in rows:
-                lines.append(" | ".join(str(v) if v is not None else "—" for v in row))
+                lines.append("| " + " | ".join(str(v).replace("\n", " ") if v is not None else "—" for v in row) + " |")
 
-            note = f"\n\n[ملاحظة: تم عرض {len(rows)} صف فقط من أصل {MAX_ROWS} حد أقصى للحماية]" if len(rows) == MAX_ROWS else ""
-            return "\n".join(lines) + note
+            note = f"\n*(ملاحظة: تم عرض {len(rows)} صف فقط للحماية)*" if len(rows) == MAX_ROWS else ""
+            return "\n" + "\n".join(lines) + "\n" + note
 
         except Exception as e:
             db.rollback() # تنظيف الترانزاكشن الفاشلة للسماح بعمليات لاحقة
@@ -191,6 +191,10 @@ class AnalyticsAIOrchestrator:
         ai_response = LLMService.generate_analytics_response(request_messages, role=active_role)
         logger.info(f"Analytics [{role}]: first LLM turn done.")
 
+        # تحقق هل الـ AI فشل بسبب ضغط السيرفرات (Rate Limit / Exception)
+        if ai_response.strip().startswith("[عذراً"):
+            return ai_response
+
         # تحقق هل الـ AI طلب SQL؟ (يدعم استعلامات متعددة)
         sql_matches = list(SQL_TAG_PATTERN.finditer(ai_response))
         if not sql_matches:
@@ -212,6 +216,11 @@ class AnalyticsAIOrchestrator:
                 }
             ]
             ai_response = LLMService.generate_analytics_response(retry_messages, role=active_role)
+            
+            # تحقق هل الـ retry فشل أيضاً بسبب ضغط السيرفرات
+            if ai_response.strip().startswith("[عذراً"):
+                return ai_response
+
             sql_matches = list(SQL_TAG_PATTERN.finditer(ai_response))
 
             with open("analytics_debug.log", "a", encoding="utf-8") as f:
