@@ -316,7 +316,7 @@ const Register: React.FC = () => {
             />
 
             <Input
-              name="phone" type="tel" placeholder={isNonMuslim ? t('register.phone') : 'رقم الهاتف (اختياري)'}
+              name="phone" type="tel" placeholder={role === 'muslim_caller' ? t('register.phoneMuslim') : t('register.phone')}
               icon={<Phone size={18} />} value={formData.phone}
               onChange={handleInputChange} autoComplete="none"
             />
