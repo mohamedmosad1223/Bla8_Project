@@ -7,6 +7,32 @@ import api from '../../services/api';
 import { useLanguage } from '../../i18n';
 import './NonMuslimDashboard.css';
 
+// ─── Guest Session Isolation ──────────────────────────────────────────────────
+// كل browser session بتاخد UUID فريد — لضمان عزل الـ sessions بين المستخدمين
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+// ─── Auth State Helper ────────────────────────────────────────────────────────
+// الـ Backend يستخدم HttpOnly Cookie مش Bearer Token.
+// ⚠️ userRole وحده مش كافي — بيتحفظ حتى للـ guest من صفحة HowToStart
+//    بدون login حقيقي. نستخدم userData اللي بيتحفظ فقط بعد login ناجح (getMe).
+const getIsActuallyLoggedIn = (): boolean => {
+  const userData = localStorage.getItem('userData');
+  if (!userData) return false;
+  try {
+    const parsed = JSON.parse(userData);
+    // userData بيكون فيه user object بـ user_id لو اللوجين نجح فعلاً
+    return !!(parsed?.user?.user_id ?? parsed?.user_id);
+  } catch {
+    return false;
+  }
+};
+
 interface Message {
   id: string;
   sender: 'bot' | 'user';
@@ -32,25 +58,52 @@ const NonMuslimDashboard: React.FC = () => {
   const [isGuest, setIsGuest] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 1. التحقق من حالة الدخول عند تحميل المكون
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 1. تحديد حالة الدخول عند أول تحميل
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const authStatus = !token;
-    setIsGuest(authStatus);
+    const loggedIn = getIsActuallyLoggedIn();
+    setIsGuest(!loggedIn);
 
-    if (authStatus) {
-      // إذا كان زائراً: تحميل من sessionStorage (مؤقت)
-      const saved = sessionStorage.getItem('guest_nm_sessions');
-      if (saved) {
+    if (!loggedIn) {
+      // ─── زائر (Guest) ───────────────────────────────────────────────────────
+      // نجيب أو ننشئ UUID فريد لهذه الـ browser session
+      // لو تغير المستخدم أو انتهت الـ session، الـ UUID بيتغير وبيمسحلنا البيانات القديمة
+      let browserSessionId = sessionStorage.getItem('nm_browser_session_id');
+      if (!browserSessionId) {
+        browserSessionId = generateUUID();
+        sessionStorage.setItem('nm_browser_session_id', browserSessionId);
+      }
+
+      const savedSessions = sessionStorage.getItem('guest_nm_sessions');
+      const savedSessionOwner = sessionStorage.getItem('guest_nm_session_owner');
+
+      if (savedSessions && savedSessionOwner === browserSessionId) {
+        // نفس الـ browser session → نحمل الجلسات المحفوظة
         try {
-          const parsed = JSON.parse(saved);
+          const parsed = JSON.parse(savedSessions);
           const guestSessions = parsed.map((s: any) => ({ ...s, timestamp: new Date(s.timestamp) }));
           setSessions(guestSessions);
           setActiveChatId(sessionStorage.getItem('guest_nm_active_id'));
-        } catch { setSessions([]); }
+        } catch {
+          setSessions([]);
+        }
+      } else {
+        // browser session مختلفة أو شخص جديد → نمسح القديم ونبدأ نظيف
+        sessionStorage.removeItem('guest_nm_sessions');
+        sessionStorage.removeItem('guest_nm_active_id');
+        sessionStorage.setItem('guest_nm_session_owner', browserSessionId);
+        setSessions([]);
       }
     } else {
-      // إذا كان مسجلاً: جلب الجلسات الحقيقية من الباكيند
+      // ─── مستخدم مسجل ────────────────────────────────────────────────────────
+      // نمسح أي بيانات guest قديمة (لو كان زائراً قبل كده في نفس الـ browser)
+      sessionStorage.removeItem('guest_nm_sessions');
+      sessionStorage.removeItem('guest_nm_active_id');
+      sessionStorage.removeItem('guest_nm_session_owner');
+      sessionStorage.removeItem('nm_browser_session_id');
+
+      // نجلب المحادثات من الـ Backend — مفلترة بـ user_id تلقائياً
       api.get('/chat/conversations')
         .then(res => {
           const conversations = res.data?.conversations || [];
@@ -74,10 +127,16 @@ const NonMuslimDashboard: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // 2. حفظ بيانات الضيف فقط في sessionStorage (تُمسح عند إغلاق التبويب)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2. حفظ بيانات الزائر في sessionStorage (مرتبطة بـ browser session ID)
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (isGuest && sessions.length > 0) {
       sessionStorage.setItem('guest_nm_sessions', JSON.stringify(sessions));
+      const browserSessionId = sessionStorage.getItem('nm_browser_session_id');
+      if (browserSessionId) {
+        sessionStorage.setItem('guest_nm_session_owner', browserSessionId);
+      }
     }
   }, [sessions, isGuest]);
 
@@ -87,55 +146,81 @@ const NonMuslimDashboard: React.FC = () => {
     }
   }, [activeChatId, isGuest]);
 
+  // ─────────────────────────────────────────────────────────────────────────────
   // 3. جلب التاريخ عند تغيير المحادثة
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeChatId) {
       scrollToBottom();
-      
-      const historyUrl = isGuest 
+
+      // ✔️ مسارات صحيحة:
+      //   Guest:  /chat/ai/guest/history/{session_id}  (مع /ai/)
+      //   Logged: /chat/conversations/{id}/messages    (بدون /ai/)
+      const historyUrl = isGuest
         ? `/chat/ai/guest/history/${activeChatId}`
-        : `/chat/ai/conversations/${activeChatId}/messages`;
+        : `/chat/conversations/${activeChatId}/messages`;
 
       api.get(historyUrl)
         .then(res => {
           const history = res.data?.history || [];
+          // الرسالة الترحيبية من السيرفر (موجودة في كلا المسارين)
+          const serverWelcome: string | undefined = res.data?.welcome_message;
+
+          let mappedMessages: Message[];
+
           if (history.length > 0) {
-            const mappedMessages: Message[] = history.map((m: any) => ({
+            // يوجد تاريخ → نعرضه كما هو
+            mappedMessages = history.map((m: any) => ({
               id: m.id.toString(),
-              sender: m.role === 'ai' ? 'bot' : 'user',
+              sender: (m.role === 'ai' || m.role === 'assistant') ? 'bot' : 'user',
               text: m.content,
               timestamp: new Date(m.created_at)
             }));
-
-            setSessions(prev => prev.map(s => {
-              if (s.id === activeChatId) {
-                // دمج التاريخ مع الحفاظ على أي رسائل محلية جديدة لم تُحفظ بعد في السيرفر (اختياري)
-                return { ...s, messages: mappedMessages };
-              }
-              return s;
-            }));
+          } else {
+            // محادثة جديدة فارغة → نعرض الرسالة الترحيبية
+            const welcomeText = serverWelcome ||
+              'مرحباً بك! 👋 أنا مساعدك الذكي هنا للإجابة على استفساراتك حول الإسلام والتعريف به. كيف يمكنني مساعدتك اليوم؟';
+            mappedMessages = [{
+              id: `welcome-${activeChatId}`,
+              sender: 'bot',
+              text: welcomeText,
+              timestamp: new Date()
+            }];
           }
+
+          setSessions(prev => prev.map(s => {
+            if (s.id === activeChatId) {
+              return { ...s, messages: mappedMessages };
+            }
+            return s;
+          }));
         })
         .catch(err => console.error('Failed to fetch history:', err));
     }
   }, [activeChatId, isGuest]);
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4. بدء محادثة جديدة
+  // ─────────────────────────────────────────────────────────────────────────────
   const startNewChat = async () => {
     if (isGuest) {
-      const newId = Date.now().toString();
+      // UUID فريد لكل محادثة guest → يضمن عزل المحادثات في الـ DB
+      const newId = generateUUID();
       const newSession: ChatSession = {
         id: newId,
         title: `${t('nonMuslimDashboard.guestSession')} ${sessions.length + 1}`,
         lastMessage: t('nonMuslimDashboard.welcomeMsg'),
         timestamp: new Date(),
-        messages: [] // الرسالة الترحيبية ستأتي من الباكيند
+        messages: []
       };
       setSessions(prev => [newSession, ...prev]);
       setActiveChatId(newId);
     } else {
-      // إنشاء جلسة جديدة في الباكيند للمستخدم المسجل
+      // إنشاء جلسة جديدة في الـ Backend للمستخدم المسجل
       try {
-        const res = await api.post('/chat/conversations', { title: `${t('nonMuslimDashboard.newChat')} ${sessions.length + 1}` });
+        const res = await api.post('/chat/conversations', {
+          title: `${t('nonMuslimDashboard.newChat')} ${sessions.length + 1}`
+        });
         const newConv = res.data;
         const newSession: ChatSession = {
           id: newConv.id.toString(),
@@ -152,6 +237,9 @@ const NonMuslimDashboard: React.FC = () => {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 5. إرسال رسالة مع Streaming
+  // ─────────────────────────────────────────────────────────────────────────────
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputValue.trim() || !activeChatId || loading) return;
@@ -167,7 +255,7 @@ const NonMuslimDashboard: React.FC = () => {
     const initialBotMessage: Message = {
       id: (Date.now() + 1).toString(),
       sender: 'bot',
-      text: '...', // مؤشر بدء التفكير
+      text: '...',
       timestamp: new Date()
     };
 
@@ -182,24 +270,28 @@ const NonMuslimDashboard: React.FC = () => {
       }
       return session;
     }));
-    
+
     setInputValue('');
     setLoading(true);
 
     try {
-      const streamUrl = isGuest 
-        ? '/api/chat/ai/guest/send?stream=true' 
-        : `/api/chat/ai/conversations/${activeChatId}/messages?stream=true`;
-      
-      const body = isGuest 
+      // ✔️ مسارات صحيحة:
+      //   Guest:  /api/chat/ai/guest/send?stream=true       (مع /ai/)
+      //   Logged: /api/chat/conversations/{id}/messages      (بدون /ai/)
+      const streamUrl = isGuest
+        ? '/api/chat/ai/guest/send?stream=true'
+        : `/api/chat/conversations/${activeChatId}/messages?stream=true`;
+
+      const body = isGuest
         ? JSON.stringify({ session_id: activeChatId, message: userText })
         : JSON.stringify({ content: userText });
 
+      // credentials: 'include' يبعت الـ HttpOnly Cookie تلقائياً مع الـ request
       const response = await fetch(streamUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: body,
-        credentials: 'include' // للحفاظ على الجلسة (HttpOnly Cookies)
+        credentials: 'include'
       });
 
       if (!response.ok) throw new Error('connection error');
@@ -213,7 +305,7 @@ const NonMuslimDashboard: React.FC = () => {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value, { stream: true });
           const lines = (partialLine + chunk).split('\n');
           partialLine = lines.pop() || '';
@@ -221,21 +313,19 @@ const NonMuslimDashboard: React.FC = () => {
           for (const line of lines) {
             if (!line || line === 'data: [DONE]') continue;
 
-            // Robustly strip the "data:" prefix but PRESERVE following spaces in content
             const content = line.replace(/^data:\s?/i, '');
             if (content) {
               fullContent += content;
             }
 
-            // تحديث الواجهة لحظياً بالقطعة الجديدة
             setSessions(prev => prev.map(session => {
               if (session.id === activeChatId) {
                 const updatedMessages = [...session.messages];
                 const lastMsgIndex = updatedMessages.length - 1;
                 if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
-                  updatedMessages[lastMsgIndex] = { 
-                    ...updatedMessages[lastMsgIndex], 
-                    text: fullContent 
+                  updatedMessages[lastMsgIndex] = {
+                    ...updatedMessages[lastMsgIndex],
+                    text: fullContent
                   };
                 }
                 return { ...session, messages: updatedMessages, lastMessage: fullContent };
@@ -248,7 +338,7 @@ const NonMuslimDashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Error in streaming:', error);
       const errorText = t('nonMuslimDashboard.connectionError');
-      
+
       setSessions(prev => prev.map(session => {
         if (session.id === activeChatId) {
           const updatedMessages = [...session.messages];
@@ -263,11 +353,15 @@ const NonMuslimDashboard: React.FC = () => {
     } finally {
       setLoading(false);
 
+      // Refresh history from server after streaming completes
       const currentId = activeChatId;
       if (currentId) {
+        // ✔️ مسارات صحيحة:
+        //   Guest:  /chat/ai/guest/history/{session_id}  (مع /ai/)
+        //   Logged: /chat/conversations/{id}/messages    (بدون /ai/)
         const historyUrl = isGuest
           ? `/chat/ai/guest/history/${currentId}`
-          : `/chat/ai/conversations/${currentId}/messages`;
+          : `/chat/conversations/${currentId}/messages`;
 
         api.get(historyUrl)
           .then(res => {
@@ -367,15 +461,15 @@ const NonMuslimDashboard: React.FC = () => {
                 >
                   {msg.sender === 'bot' ? (
                     <div className="markdown-content">
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           a: ({ node, ...props }) => {
                             const isRegisterLink = props.href === '/register';
                             if (isRegisterLink) {
                               return (
-                                <a 
-                                  href="/register" 
+                                <a
+                                  href="/register"
                                   className="nm-register-btn-inline"
                                   onClick={(e) => {
                                     e.preventDefault();
