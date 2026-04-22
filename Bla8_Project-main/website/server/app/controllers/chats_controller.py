@@ -16,7 +16,7 @@ from app.utils.analytics_service import AnalyticsAIOrchestrator
 
 class ChatsController:
 
-    GUEST_CONVERSION_PROMPT = "\n\n---\nهل تريد التسجيل للتواصل مع الدعاة للمساعدة في الوصول للهداية ويجاوب عليك بأفضل وأدق المعلومات؟ [إنشاء حساب الآن 🔗](/register)"
+    GUEST_CONVERSION_PROMPT = "[GUEST_CONVERSION_PROMPT]"
     WELCOME_MESSAGE = "مرحباً بك! أنا مساعد ذكي هنا للإجابة على استفساراتك حول الإسلام والتعريف به. كيف يمكنني مساعدتك اليوم؟"
 
     @staticmethod
@@ -151,10 +151,24 @@ class ChatsController:
         # 3. إرسال الرسائل للذكاء الاصطناعي (الزوار دائماً يأخذون برومبت الغير مسلم)
         ai_response_text = LLMService.generate_chat_response(messages, role="guest")
 
-        # 4. تحقق من عدد الرسائل لإظهار دعوة التسجيل (بعد 5 رسائل من المستخدم)
-        user_msg_count = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id, AIChatMessage.role == "user").count()
-        if user_msg_count == 5:
-            ai_response_text += ChatsController.GUEST_CONVERSION_PROMPT
+        # 4. منطق إظهار دعوة التسجيل (بعد 5 رسائل من المستخدم الزائر)
+        user_msg_count = db.query(AIChatMessage).filter(
+            AIChatMessage.session_id == payload.session_id,
+            AIChatMessage.role == "user",
+            AIChatMessage.user_id.is_(None)
+        ).count()
+        
+        # التأكد أننا لم نرسل الدعوة مسبقاً في هذه الجلسة لتجنب التكرار
+        already_sent = db.query(AIChatMessage).filter(
+            AIChatMessage.session_id == payload.session_id,
+            AIChatMessage.role == "ai",
+            AIChatMessage.content.contains("[GUEST_CONVERSION_PROMPT]")
+        ).first()
+
+        if user_msg_count >= 5 and not already_sent:
+            ai_response_text += f"\n\n---\n{ChatsController.GUEST_CONVERSION_PROMPT}"
+
+
         
         # 5. حفظ رد الذكاء الاصطناعي
         ai_msg = AIChatMessage(
@@ -299,13 +313,17 @@ class ChatsController:
                 full_response += chunk
                 yield f"data: {chunk}\n\n"
             
-            # تحقق من عدد الرسائل لبث دعوة التسجيل في نهاية الستريم (عند الرسالة الخامسة)
-            user_msg_count = db.query(AIChatMessage).filter(AIChatMessage.session_id == payload.session_id, AIChatMessage.role == "user").count()
-            if user_msg_count == 5:
-                # إرسال الزرار سطر بسطر لضمان وصوله صح للفرونت إند
-                for line in ChatsController.GUEST_CONVERSION_PROMPT.split('\n'):
-                    yield f"data: {line}\n\n"
-                full_response += ChatsController.GUEST_CONVERSION_PROMPT
+            # الفرونت إند يتولى عرض بانر التسجيل بعد الرسالة الخامسة
+            # لا حاجة لإرسال أي كود إضافي من السيرفر
+
+
+
+
+
+
+
+
+
             
             if full_response:
                 ai_msg = AIChatMessage(
@@ -323,17 +341,9 @@ class ChatsController:
         """جلب تاريخ المحادثة للزائر باستخدام session_id"""
         history = db.query(AIChatMessage).filter(AIChatMessage.session_id == session_id).order_by(AIChatMessage.created_at.asc()).all()
         
-        # إذا كان التاريخ فارغ، أضف رسالة ترحيبية
+        # إذا كان التاريخ فارغ، نرجع قائمة فارغة والفرونت إند سيتعامل مع رسالة الترحيب
         if not history:
-            welcome_msg = AIChatMessage(
-                session_id=session_id,
-                role="ai",
-                content="أهلاً 👋 أنا مساعدك. كيف يمكنني مساعدتك اليوم؟"
-            )
-            db.add(welcome_msg)
-            db.commit()
-            db.refresh(welcome_msg)
-            history = [welcome_msg]
+            return {"history": []}
         
         return {"history": history}
 

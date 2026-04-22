@@ -3,7 +3,7 @@ import { User, Mail, Phone, ChevronLeft, ChevronRight, ChevronDown, Lock, Eye, E
 import { profileService } from '../../services/profileService';
 import { authService } from '../../services/authService';
 import ForgotPasswordModal from '../../components/common/Modal/ForgotPasswordModal';
-import { useLanguage } from '../../i18n';
+import { useLanguage, LANGUAGES } from '../../i18n';
 import './Profile.css';
 
 type ActiveSection = 'account-info' | 'change-password' | 'language' | 'help-center' | 'help-center-faq' | 'customer-service' | 'privacy-policy';
@@ -564,12 +564,9 @@ const Profile: React.FC = () => {
             <form className="profile-form" onSubmit={handleLanguageSave}>
               <div className="pf-input-icon">
                 <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)}>
-                  <option value="SA">العربية</option>
-                  <option value="US">English</option>
-                  <option value="PK">اردو</option>
-                  <option value="FR">Français</option>
-                  <option value="ES">Español</option>
-                  <option value="DE">Deutsch</option>
+                  {LANGUAGES.map(l => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
+                  ))}
                 </select>
                 <span className="pf-icon"><Globe size={18} /></span>
               </div>

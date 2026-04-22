@@ -817,7 +817,8 @@ def build_messages_with_history(system_prompt: str, messages: List[Dict[str, str
     question = user_question
     
     # Detect if we should use Arabic headers based ONLY on the user's explicit question
-    has_arabic = bool(re.search(r"[\u0600-\u06FF]", question))
+    # Use the detected language from the intelligence pass instead of just regex
+    has_arabic = (user_lang.lower() == "arabic")
     
     if has_arabic:
         user_content = f"رسالة المستخدم:\n{question}"
@@ -921,12 +922,14 @@ YOUR TASK: Analyze the user's latest message and the conversation history to ret
 
 JSON FIELDS:
 1. "rewritten_query": A FULL, EXPLICIT, standalone search query in Formal Arabic (الفصحى). Even if the user spoke English/French, this field MUST be Formal Arabic. If the message is just a greeting/gratitude, use "NO_SEARCH_NEEDED".
-2. "detected_language": The name of the language the user is speaking (e.g., "english", "french", "spanish", "hindi", "arabic"). Use lowercase.
+2. "detected_language": The name of the language the user is speaking (e.g., "english", "french", "spanish", "hindi", "arabic"). Use lowercase. Base this on the PRIMARY language of the text content, ignoring stray characters or punctuation from other scripts.
 3. "language_code": The ISO 2-letter code (en, fr, es, hi, ar, etc.).
 
 STRICT RULES:
 - Output ONLY valid JSON.
 - NO conversational filler, NO explanation.
+- If the text contains mixed English and Arabic characters but the content is clearly English (e.g., "hello ؟"), detected_language MUST be "english".
+
 """
         history_text = "\n".join([f"{'User' if m['role']=='user' else 'AI'}: {m['content']}" for m in messages[-3:]])
         prompt = f"### History:\n{history_text}\n\n### Last Message:\n{question}\n\n### JSON Output:"

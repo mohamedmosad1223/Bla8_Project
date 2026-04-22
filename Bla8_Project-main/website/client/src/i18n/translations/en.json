@@ -205,7 +205,10 @@
     "guestSession": "Guest Session",
     "connectionError": "Sorry, a connection error occurred. Please try again.",
     "previousChat": "Previous Chat",
-    "welcomeMsg": "Hello 👋 I am your assistant...",
+    "welcomeMsg": "Welcome! 👋 I am your smart assistant here to answer your questions about Islam and introduce it to you. How can I help you today?",
+    "guestConversionPrompt": "Would you like to register to connect with preachers for guidance and receive the most accurate information? [Create an account now 🔗](/register)",
+    "guestConversionText": "Would you like to register to connect with preachers for guidance and receive the most accurate information?",
+    "guestConversionCta": "Create an account now",
     "loading": "Loading..."
   },
   "nonMuslimConversation": {

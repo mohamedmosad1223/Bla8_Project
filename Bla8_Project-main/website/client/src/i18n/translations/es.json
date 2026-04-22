@@ -205,8 +205,9 @@
     "guestSession": "Chat de invitado",
     "connectionError": "Lo sentimos, ocurrió un error de conexión. Por favor intenta de nuevo.",
     "previousChat": "Conversación anterior",
-    "welcomeMsg": "أهلاً 👋 أنا مساعدك...",
-    "loading": "جاري التحميل..."
+    "welcomeMsg": "¡Bienvenido! 👋 Soy tu asistente inteligente aquí para responder tus preguntas sobre el Islam y presentártelo. ¿Cómo puedo ayudarte hoy?",
+    "guestConversionPrompt": "¿Desea registrarse para conectarse con predicadores para obtener orientación y recibir la información más precisa? [Crear una cuenta ahora 🔗](/register)",
+    "loading": "Cargando..."
   },
   "nonMuslimConversation": {
     "messages": "Mensajes",

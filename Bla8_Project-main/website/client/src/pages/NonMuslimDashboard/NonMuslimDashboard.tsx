@@ -49,7 +49,7 @@ interface ChatSession {
 }
 
 const NonMuslimDashboard: React.FC = () => {
-  const { t, dir } = useLanguage();
+  const { t, dir, lang } = useLanguage();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -146,6 +146,7 @@ const NonMuslimDashboard: React.FC = () => {
     }
   }, [activeChatId, isGuest]);
 
+
   // ─────────────────────────────────────────────────────────────────────────────
   // 3. جلب التاريخ عند تغيير المحادثة
   // ─────────────────────────────────────────────────────────────────────────────
@@ -164,7 +165,8 @@ const NonMuslimDashboard: React.FC = () => {
         .then(res => {
           const history = res.data?.history || [];
           // الرسالة الترحيبية من السيرفر (موجودة في كلا المسارين)
-          const serverWelcome: string | undefined = res.data?.welcome_message;
+          // We prioritize the frontend translation to support multiple languages
+          const welcomeText = t('nonMuslimDashboard.welcomeMsg');
 
           let mappedMessages: Message[];
 
@@ -178,8 +180,6 @@ const NonMuslimDashboard: React.FC = () => {
             }));
           } else {
             // محادثة جديدة فارغة → نعرض الرسالة الترحيبية
-            const welcomeText = serverWelcome ||
-              'مرحباً بك! 👋 أنا مساعدك الذكي هنا للإجابة على استفساراتك حول الإسلام والتعريف به. كيف يمكنني مساعدتك اليوم؟';
             mappedMessages = [{
               id: `welcome-${activeChatId}`,
               sender: 'bot',
@@ -197,7 +197,7 @@ const NonMuslimDashboard: React.FC = () => {
         })
         .catch(err => console.error('Failed to fetch history:', err));
     }
-  }, [activeChatId, isGuest]);
+  }, [activeChatId, isGuest, lang, t]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 4. بدء محادثة جديدة
@@ -259,6 +259,7 @@ const NonMuslimDashboard: React.FC = () => {
       timestamp: new Date()
     };
 
+
     setSessions(prev => prev.map(session => {
       if (session.id === activeChatId) {
         return {
@@ -306,34 +307,53 @@ const NonMuslimDashboard: React.FC = () => {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = (partialLine + chunk).split('\n');
+          const chunkStr = decoder.decode(value, { stream: true });
+          const lines = (partialLine + chunkStr).split('\n');
           partialLine = lines.pop() || '';
 
           for (const line of lines) {
-            if (!line || line === 'data: [DONE]') continue;
+            const trimmedLine = line.trim();
+            if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
 
-            const content = line.replace(/^data:\s?/i, '');
-            if (content) {
+            if (trimmedLine.startsWith('data:')) {
+              const content = line.replace(/^data:\s?/i, '');
               fullContent += content;
-            }
 
-            setSessions(prev => prev.map(session => {
-              if (session.id === activeChatId) {
-                const updatedMessages = [...session.messages];
-                const lastMsgIndex = updatedMessages.length - 1;
-                if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
-                  updatedMessages[lastMsgIndex] = {
-                    ...updatedMessages[lastMsgIndex],
-                    text: fullContent
-                  };
+              setSessions(prev => prev.map(session => {
+                if (session.id === activeChatId) {
+                  const updatedMessages = [...session.messages];
+                  const lastMsgIndex = updatedMessages.length - 1;
+                  if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
+                    updatedMessages[lastMsgIndex] = {
+                      ...updatedMessages[lastMsgIndex],
+                      text: fullContent
+                    };
+                  }
+                  return { ...session, messages: updatedMessages, lastMessage: fullContent };
                 }
-                return { ...session, messages: updatedMessages, lastMessage: fullContent };
-              }
-              return session;
-            }));
+                return session;
+              }));
+            }
           }
         }
+        
+        // Process any remaining partial line
+        if (partialLine.startsWith('data:')) {
+          const content = partialLine.replace(/^data:\s?/i, '');
+          fullContent += content;
+          setSessions(prev => prev.map(session => {
+            if (session.id === activeChatId) {
+              const updatedMessages = [...session.messages];
+              const lastMsgIndex = updatedMessages.length - 1;
+              if (updatedMessages[lastMsgIndex]?.sender === 'bot') {
+                updatedMessages[lastMsgIndex].text = fullContent;
+              }
+              return { ...session, messages: updatedMessages, lastMessage: fullContent };
+            }
+            return session;
+          }));
+        }
+
       }
     } catch (error: any) {
       console.error('Error in streaming:', error);
@@ -352,6 +372,9 @@ const NonMuslimDashboard: React.FC = () => {
       }));
     } finally {
       setLoading(false);
+
+      // بعد انتهاء الرد
+      // البانر يتحكم فيه useEffect الخاص به بشكل تلقائي
 
       // Refresh history from server after streaming completes
       const currentId = activeChatId;
@@ -453,47 +476,74 @@ const NonMuslimDashboard: React.FC = () => {
 
             {/* Messages */}
             <div className="nm-chat-messages">
-              {activeSession.messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`nm-message ${msg.sender === 'bot' ? 'nm-bot-message' : 'nm-user-message'}`}
-                  dir={dir}
-                >
-                  {msg.sender === 'bot' ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          a: ({ node, ...props }) => {
-                            const isRegisterLink = props.href === '/register';
-                            if (isRegisterLink) {
-                              return (
-                                <a
-                                  href="/register"
-                                  className="nm-register-btn-inline"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    navigate('/register');
-                                  }}
-                                >
-                                  {props.children}
-                                </a>
-                              );
-                            }
-                            return <a {...props} />;
-                          }
-                        }}
+              {(() => {
+                let botMsgCount = 0;
+                return activeSession.messages.map((msg, idx) => {
+                  if (msg.sender === 'bot') botMsgCount++;
+                  const showCard = msg.sender === 'bot' && botMsgCount === 5;
+
+
+                  return (
+                    <React.Fragment key={msg.id}>
+                      <div
+                        className={`nm-message ${msg.sender === 'bot' ? 'nm-bot-message' : 'nm-user-message'}`}
+                        dir={dir}
                       >
-                        {msg.text}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    msg.text
-                  )}
-                </div>
-              ))}
+                        {msg.sender === 'bot' ? (
+                          <div className="markdown-content">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                a: ({ node, ...props }) => {
+                                  const isRegisterLink = props.href === '/register';
+                                  if (isRegisterLink) {
+                                    return (
+                                      <a
+                                        href="/register"
+                                        className="nm-register-btn-inline"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          navigate('/register');
+                                        }}
+                                      >
+                                        {props.children}
+                                      </a>
+                                    );
+                                  }
+                                  return <a {...props} />;
+                                }
+                              }}
+                            >
+                              {msg.text?.replace('[GUEST_CONVERSION_PROMPT]', t('nonMuslimDashboard.guestConversionPrompt')) || ''}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          msg.text
+                        )}
+                      </div>
+
+                      {/* ── Conversion Card: تظهر تحت أول رد AI بعد الرسالة الخامسة ── */}
+                      {showCard && (
+
+                        <div className="nm-conversion-card">
+                          <span className="nm-conversion-card-text">
+                            {t('nonMuslimDashboard.guestConversionText')}
+                          </span>
+                          <button
+                            className="nm-conversion-card-btn"
+                            onClick={() => navigate('/register')}
+                          >
+                            🔗 {t('nonMuslimDashboard.guestConversionCta')}
+                          </button>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                });
+              })()}
               <div ref={messagesEndRef} />
             </div>
+
 
             {/* Input */}
             <form className="nm-chat-input-area" onSubmit={handleSend}>
@@ -502,6 +552,7 @@ const NonMuslimDashboard: React.FC = () => {
                 type="text"
                 placeholder={t('nonMuslimDashboard.typeMessage')}
                 className="nm-chat-input"
+                dir={dir}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
               />
