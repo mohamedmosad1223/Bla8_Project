@@ -43,6 +43,14 @@ class ChatsController:
             db.commit()
             db.refresh(new_conv)
             conversation_id = new_conv.id
+        else:
+            # ✅ التحقق من أن الجلسة تخص هذا المستخدم تحديداً
+            conv = db.query(AIChatConversation).filter(
+                AIChatConversation.id == conversation_id,
+                AIChatConversation.user_id == user.user_id
+            ).first()
+            if not conv:
+                raise HTTPException(status_code=403, detail="ليس لديك صلاحية للوصول لهذه المحادثة")
 
         # 2. حفظ رسالة المستخدم
         user_msg = AIChatMessage(
@@ -175,6 +183,14 @@ class ChatsController:
             db.commit()
             db.refresh(new_conv)
             conversation_id = new_conv.id
+        else:
+            # ✅ التحقق من أن الجلسة تخص هذا المستخدم تحديداً
+            conv = db.query(AIChatConversation).filter(
+                AIChatConversation.id == conversation_id,
+                AIChatConversation.user_id == user.user_id
+            ).first()
+            if not conv:
+                raise HTTPException(status_code=403, detail="ليس لديك صلاحية للوصول لهذه المحادثة")
 
         # 2. حفظ رسالة المستخدم
         user_msg = AIChatMessage(
@@ -371,7 +387,8 @@ class ChatsController:
             AIChatMessage.conversation_id == conversation_id
         ).order_by(AIChatMessage.created_at.asc()).all()
         
-        return {"history": messages, "welcome_message": f"مرحباً بك في جلسة: {conv.title}"}
+        return {"history": messages, "welcome_message": ChatsController.WELCOME_MESSAGE}
+
 
     @staticmethod
     def _get_or_create_admin_conversation(db: Session, user_id: int) -> int:
