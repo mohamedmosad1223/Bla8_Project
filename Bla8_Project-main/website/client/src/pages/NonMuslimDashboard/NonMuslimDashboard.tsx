@@ -26,7 +26,10 @@ const getIsActuallyLoggedIn = (): boolean => {
   if (!userData) return false;
   try {
     const parsed = JSON.parse(userData);
-    // userData بيكون فيه user object بـ user_id لو اللوجين نجح فعلاً
+    const role = parsed?.user?.role || parsed?.role;
+    if (role && role !== 'non_muslim' && role !== 'interested') {
+      return false; // Force other roles to act as unconnected guests to avoid mixing with their main chat
+    }
     return !!(parsed?.user?.user_id ?? parsed?.user_id);
   } catch {
     return false;

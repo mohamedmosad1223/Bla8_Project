@@ -24,7 +24,21 @@ class ChatsController:
         """جلب تاريخ المحادثة مع الذكاء الاصطناعي"""
         # السماح لجميع المسجلين (دعاة، مهتمين، إلخ) برؤية تاريخهم
         
-        history = db.query(AIChatMessage).filter(AIChatMessage.user_id == user.user_id).order_by(AIChatMessage.created_at.asc()).all()
+        last_msg = db.query(AIChatMessage).filter(
+            AIChatMessage.user_id == user.user_id
+        ).order_by(AIChatMessage.created_at.desc()).first()
+
+        history = []
+        if last_msg:
+            if last_msg.conversation_id:
+                history = db.query(AIChatMessage).filter(
+                    AIChatMessage.conversation_id == last_msg.conversation_id
+                ).order_by(AIChatMessage.created_at.asc()).all()
+            else:
+                history = db.query(AIChatMessage).filter(
+                    AIChatMessage.user_id == user.user_id,
+                    AIChatMessage.conversation_id.is_(None)
+                ).order_by(AIChatMessage.created_at.asc()).all()
         
         return {
             "welcome_message": ChatsController.WELCOME_MESSAGE,
