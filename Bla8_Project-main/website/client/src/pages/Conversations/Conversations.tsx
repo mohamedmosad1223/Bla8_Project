@@ -181,7 +181,11 @@ const Conversations = () => {
   // notify_id: from notification click — could be request_id OR sender user_id
   const initNotifyId = searchParams.get('notify_id');
 
+  const userRole = localStorage.getItem('userRole');
+  const isAssociation = userRole === 'organization';
+
   // Panel 1 — Chats list
+
   const [chats, setChats] = useState<ChatPreview[]>([]);
   const [search, setSearch] = useState('');
   const [activeChat, setActiveChat] = useState<ChatPreview | null>(null);
@@ -624,109 +628,114 @@ const Conversations = () => {
       </div>
 
       {/* ─── Floating AI Button ─── */}
-      <button className={`ai-fab-btn ${isAIOpen ? 'hidden' : ''}`} onClick={() => setIsAIOpen(true)} aria-label="افتح المساعد">
-        <AIBotIcon size={32} />
-      </button>
+      {!isAssociation && (
+        <>
+          <button className={`ai-fab-btn ${isAIOpen ? 'hidden' : ''}`} onClick={() => setIsAIOpen(true)} aria-label="افتح المساعد">
+            <AIBotIcon size={32} />
+          </button>
 
-      {/* ─── Left: AI Assistant (Now a Popup) ─── */}
-      <div className={`conv-ai-col ${isAIOpen ? 'open' : 'closed'}`}>
-        <div className="conv-ai-header">
-          <div className="conv-ai-title-wrap" style={{ justifyContent: 'space-between', width: '100%' }}>
-            <button className="conv-icon-btn" onClick={closeAIPanel} aria-label="أغلق المساعد">
-              <X size={24} />
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="conv-ai-title">المساعد الشخصي</h3>
-              <div className="conv-ai-avatar">
-                <AIBotIcon />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="conv-chat-messages">
-          {aiMessages.length === 0 && (
-            <p style={{ textAlign: 'center', color: '#94a3b8', marginTop: '2rem', fontSize: '0.9rem' }}>
-              كيف يمكنني مساعدتك اليوم؟
-            </p>
-          )}
-          {aiMessages.map((msg, i) => (
-            <div key={i} className={`conv-msg-row conv-msg-ai ${msg.role === 'user' ? 'conv-msg-sent' : 'conv-msg-received'}`}>
-              {msg.role === 'user' && (
-                <div className="conv-msg-avatar bg-red-100"><AvatarIcon /></div>
-              )}
-
-              <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
-                {msg.role === 'assistant' ? (
-                  <div className="conv-msg-text markdown-content" id={`ai-msg-${i}`}>
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        a: ({ node, ...props }) => {
-                          const isRegisterLink = props.href === '/register';
-                          if (isRegisterLink) {
-                            return (
-                              <button 
-                                className="nm-register-btn-inline"
-                                onClick={() => navigate('/register')}
-                              >
-                                {props.children}
-                              </button>
-                            );
-                          }
-                          return <a {...props} />;
-                        }
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
+          {/* ─── Left: AI Assistant (Now a Popup) ─── */}
+          <div className={`conv-ai-col ${isAIOpen ? 'open' : 'closed'}`}>
+            <div className="conv-ai-header">
+              <div className="conv-ai-title-wrap" style={{ justifyContent: 'space-between', width: '100%' }}>
+                <button className="conv-icon-btn" onClick={closeAIPanel} aria-label="أغلق المساعد">
+                  <X size={24} />
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <h3 className="conv-ai-title">المساعد الشخصي</h3>
+                  <div className="conv-ai-avatar">
+                    <AIBotIcon />
                   </div>
-                ) : (
-                  <p className="conv-msg-text">{msg.content}</p>
-                )}
-                {/* Download button — for any analytical message or report. Hidden for preachers */}
-                {msg.role === 'assistant' && isDownloadableReport(msg.content) && localStorage.getItem('userRole') !== 'preacher' && (
-                  <button
-                    className="ai-download-btn"
-                    onClick={() => handleDownloadReport(msg.content)}
-                    disabled={isExporting}
-                    title="تحميل التقرير PDF"
-                  >
-                    <Download size={14} />
-                    <span>{isExporting ? 'جاري التحميل...' : 'تحميل التقرير PDF'}</span>
-                  </button>
-                )}
-                {msg.created_at && <span className="conv-msg-time">{formatTime(msg.created_at)}</span>}
+                </div>
               </div>
-
-              {msg.role === 'assistant' && (
-                <div className="conv-msg-avatar"><AIBotIcon size={36} /></div>
-              )}
             </div>
-          ))}
 
-          <div ref={aiEndRef} />
-        </div>
+            <div className="conv-chat-messages">
+              {aiMessages.length === 0 && (
+                <p style={{ textAlign: 'center', color: '#94a3b8', marginTop: '2rem', fontSize: '0.9rem' }}>
+                  كيف يمكنني مساعدتك اليوم؟
+                </p>
+              )}
+              {aiMessages.map((msg, i) => (
+                <div key={i} className={`conv-msg-row conv-msg-ai ${msg.role === 'user' ? 'conv-msg-sent' : 'conv-msg-received'}`}>
+                  {msg.role === 'user' && (
+                    <div className="conv-msg-avatar bg-red-100"><AvatarIcon /></div>
+                  )}
 
-        <div className="conv-chat-input-area">
-          <div className="conv-input-wrapper">
-            <button className="conv-input-btn conv-input-send" onClick={sendAI} disabled={aiLoading}>
-              <Send size={18} />
-            </button>
-            <input
-              type="text"
-              placeholder="اسأل المساعد ..."
-              className="conv-input"
-              value={aiInput}
-              onChange={e => setAiInput(e.target.value)}
-              onKeyDown={handleAIKey}
-            />
+                  <div className={`conv-msg-bubble ${msg.role === 'user' ? 'bg-gold-light' : 'bg-gold'}`}>
+                    {msg.role === 'assistant' ? (
+                      <div className="conv-msg-text markdown-content" id={`ai-msg-${i}`}>
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ node, ...props }) => {
+                              const isRegisterLink = props.href === '/register';
+                              if (isRegisterLink) {
+                                return (
+                                  <button 
+                                    className="nm-register-btn-inline"
+                                    onClick={() => navigate('/register')}
+                                  >
+                                    {props.children}
+                                  </button>
+                                );
+                              }
+                              return <a {...props} />;
+                            }
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="conv-msg-text">{msg.content}</p>
+                    )}
+                    {/* Download button — for any analytical message or report. Hidden for preachers */}
+                    {msg.role === 'assistant' && isDownloadableReport(msg.content) && localStorage.getItem('userRole') !== 'preacher' && (
+                      <button
+                        className="ai-download-btn"
+                        onClick={() => handleDownloadReport(msg.content)}
+                        disabled={isExporting}
+                        title="تحميل التقرير PDF"
+                      >
+                        <Download size={14} />
+                        <span>{isExporting ? 'جاري التحميل...' : 'تحميل التقرير PDF'}</span>
+                      </button>
+                    )}
+                    {msg.created_at && <span className="conv-msg-time">{formatTime(msg.created_at)}</span>}
+                  </div>
+
+                  {msg.role === 'assistant' && (
+                    <div className="conv-msg-avatar"><AIBotIcon size={36} /></div>
+                  )}
+                </div>
+              ))}
+
+              <div ref={aiEndRef} />
+            </div>
+
+            <div className="conv-chat-input-area">
+              <div className="conv-input-wrapper">
+                <button className="conv-input-btn conv-input-send" onClick={sendAI} disabled={aiLoading}>
+                  <Send size={18} />
+                </button>
+                <input
+                  type="text"
+                  placeholder="اسأل المساعد ..."
+                  className="conv-input"
+                  value={aiInput}
+                  onChange={e => setAiInput(e.target.value)}
+                  onKeyDown={handleAIKey}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       <ErrorModal
         isOpen={isErrorModalOpen}
+
         onClose={() => setIsErrorModalOpen(false)}
         message={errorMessage}
       />

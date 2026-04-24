@@ -2,6 +2,7 @@ from typing import List, Dict
 import os
 import re
 import logging
+import httpx
 from groq import Groq
 from app.config import settings
 from app.utils.rag_service import retrieve_context
@@ -40,7 +41,8 @@ try:
         ds_key = settings.DEEPSEEK_API_KEY.strip().strip("'\"").strip()
         ds_client = OpenAI(
             api_key=ds_key, 
-            base_url="https://api.deepseek.com" # Removed /v1 which can cause issues
+            base_url="https://api.deepseek.com", # Removed /v1 which can cause issues
+            http_client=httpx.Client()
         )
         logger.info(f"DeepSeek initialized with key: {ds_key[:5]}...")
 except Exception as e:
@@ -194,13 +196,20 @@ DB_SCHEMA_PROMPT = """
 - users (user_id, email, role, status, created_at)
 - organizations (org_id, user_id, organization_name, governorate, approval_status)
 - preachers (preacher_id, user_id, org_id, type [volunteer/official], full_name, phone, email, gender, status, approval_status)
-- dawah_requests (request_id, request_type, status, invited_gender, assigned_preacher_id, conversion_date, governorate, invited_language_id)
+- interested_persons (person_id, first_name, last_name, gender, phone, email, religion)
+- dawah_requests (request_id, request_type, status, invited_gender, assigned_preacher_id, conversion_date, governorate, invited_language_id, invited_first_name, invited_last_name, submitted_by_person_id)
 - preacher_statistics (stat_id, preacher_id, total_accepted, converted_count, in_progress_count, rejected_count, no_response_count)
 - muslim_callers (caller_id, user_id, full_name, phone, gender)
 - languages (language_id, language_name, language_code)
 - preacher_languages (preacher_id, language_id, proficiency)
 
-- **الاستعلامات المتعددة (Multi-Queries):** إذا طلب المستخدم استخراج بيانات ومقارنتها بغيرها (مثال: طلب مقارنة الطلبات الجديدة بالدعاة المتاحين)، يجب عليك تلقائياً توليد أكثر من بلوك `<SQL>...</SQL>` متتالي في نفس الرسالة (مثلاً استخدام النمط 4 لطباعة الطلبات مع النمط 5 لمقارنة اللغات بالدعاة)، حتى لو لم يذكر المستخدم كلمة "لغات" صراحةً. هدفك هو تقديم تقرير أوتوماتيكي شامل وكبير بدلاً من الاقتصار على جزء واحد.
+- **الاستعلامات المتعددة (Multi-Queries) - إجباري جداً:** إذا طلب المستخدم تقريراً تفصيلياً أو استخراج "كل حاجة"، **يجب عليك فوراً إرسال 3 استعلامات SQL مختلفة في 3 بلوكات منفصلة داخل ردك**: 
+  (البلوك الأول للنمط 1 لإحصائيات الجمعيات) + (البلوك الثاني للنمط 2 لمعلومات الدعاة) + (البلوك الثالث للنمط 3 لعرض شيت قائمة الأفراد بالأسماء كاملة). إياك أن ترسل استعلاماً واحداً فقط عندما يطلب منك "كل حاجة".
+- **الوضع الافتراضي عند السؤال عن "الحالات" تحديداً:** إذا طلب المستخدم سؤالاً مخصصاً عن "تقرير الحالات" أو الأشخاص، فيجب أن تستخدم (النمط 3) لعرض شيت الأسماء بالكامل كقائمة تفصيلية عوضاً عن إعطائه أرقاماً مجردة. لكن إن أراد "كل شيء" فاستخدم الثلاثة.
+- **قواعد أمنية صارمة للـ SQL (CRITICAL):**
+  1. يُمنع تماماً وباتاً كتابة أي تعليقات (مثل `--` أو `/*`) داخل وسوم `<SQL>`.
+  2. يجب أن يبدأ النص داخل `<SQL>` بكلمة `SELECT` فوراً ولا شيء قبلها.
+  3. يُمنع دمج استعلامين بفاصلة منقوطة `;` في بلوك واحد. ضع كل استعلام في بلوك `<SQL>...</SQL>` مستقل تماماً.
 
 - **الترجمة العربية الإجبارية (SQL Level):** يُمنع تماماً ترك كلمات مثل `active` أو `suspended` تخرج من الداتابيز. استخدم دائماً `CASE WHEN p.status::TEXT = 'active' THEN 'نشط' WHEN p.status::TEXT = 'suspended' THEN 'موقوف' ELSE 'غير معروف' END AS "الحالة"` داخل استعلام الـ SQL نفسه.
 - **منع تكرار الأسماء (Unique Names):** لضمان ظهور كل اسم مرة واحدة فقط (وحل مشكلة "محمد" المتكرر)، الزم دائماً استخدام `GROUP BY p.full_name, o.organization_name` في تقارير الدعاة، مع تجميع الإحصائيات (`SUM`, `COUNT DISTINCT`). للحالة، استخدم `MAX(CASE...)` لضمان اختيار حالة واحدة للاسم الموحد.
@@ -232,18 +241,25 @@ DB_SCHEMA_PROMPT = """
   ```
 
 - **النمط 3: قائمة كل الطلبات (All Requests) — أعمدة عربية كاملة — MANDATORY:**
+  (استخدم هذا النمط دائماً عندما يطلب المستخدم "تقرير الحالات" أو "قائمة الأسماء" أو "تفاصيل الأفراد")
   ```sql
   SELECT
     r.request_id AS "رقم الطلب",
+    COALESCE(r.invited_first_name || ' ' || r.invited_last_name, ip.first_name || ' ' || ip.last_name, 'غير متوفر') AS "اسم المدعو",
     CASE WHEN r.request_type::TEXT = 'self_interested' THEN 'مهتم من تلقاء نفسه' WHEN r.request_type::TEXT = 'invited' THEN 'مدعو' ELSE r.request_type::TEXT END AS "نوع الطلب",
     CASE WHEN r.status::TEXT = 'converted' THEN 'أسلم' WHEN r.status::TEXT IN ('in_progress','under_persuasion') THEN 'قيد الإقناع' WHEN r.status::TEXT = 'rejected' THEN 'مرفوض' WHEN r.status::TEXT = 'no_response' THEN 'لا استجابة' WHEN r.status::TEXT = 'pending' THEN 'جديد' ELSE r.status::TEXT END AS "الحالة",
     CASE WHEN r.invited_gender::TEXT = 'male' THEN 'ذكر' WHEN r.invited_gender::TEXT = 'female' THEN 'أنثى' ELSE r.invited_gender::TEXT END AS "جنس المدعو",
     COALESCE(p.full_name, 'لم يُسند بعد') AS "الداعية",
     o.organization_name AS "الجمعية"
   FROM dawah_requests r
+  LEFT JOIN interested_persons ip ON r.submitted_by_person_id = ip.person_id
   LEFT JOIN preachers p ON r.assigned_preacher_id = p.preacher_id
   LEFT JOIN organizations o ON p.org_id = o.org_id
-  WHERE o.org_id = [ORG_ID]
+  /*
+  ملاحظة هامة للفلترة: 
+  - إذا كنت (Admin أو Minister) وتريد تقريراً عاماً لكل المنصة، احذف جملة الـ WHERE o.org_id تماماً.
+  - إذا كنت تطلب تقريراً لجمعية محددة أو كان الـ org_id ممرراً لك في السياق، استخدم: WHERE o.org_id = ...
+  */
   ORDER BY r.request_id DESC;
   ```
 
@@ -251,12 +267,14 @@ DB_SCHEMA_PROMPT = """
   ```sql
   SELECT
     r.request_id AS "رقم الطلب",
+    COALESCE(r.invited_first_name || ' ' || r.invited_last_name, ip.first_name || ' ' || ip.last_name, 'غير متوفر') AS "اسم المدعو",
     CASE WHEN r.request_type::TEXT = 'self_interested' THEN 'مهتم من تلقاء نفسه' WHEN r.request_type::TEXT = 'invited' THEN 'مدعو' ELSE r.request_type::TEXT END AS "نوع الطلب",
     'جديد' AS "الحالة",   
     CASE WHEN r.invited_gender::TEXT = 'male' THEN 'ذكر' WHEN r.invited_gender::TEXT = 'female' THEN 'أنثى' ELSE r.invited_gender::TEXT END AS "جنس المدعو",
     l.language_name AS "لغة التواصل",
     r.governorate AS "المحافظة"
   FROM dawah_requests r
+  LEFT JOIN interested_persons ip ON r.submitted_by_person_id = ip.person_id
   LEFT JOIN languages l ON r.invited_language_id = l.language_id
   WHERE r.status::TEXT = 'pending' AND r.assigned_preacher_id IS NULL
   ORDER BY r.request_id DESC;
@@ -276,7 +294,10 @@ DB_SCHEMA_PROMPT = """
   ORDER BY 2 DESC;
   ```
 
-- **عزل السياق:** تجاهل الحالات السابقة واستخدم المطلوب في آخر سؤال فقط.
+- **النمط 6 (هام جداً): عرض كل البيانات للجميع (All Records Ignore State):**
+  النمط الافتراضي لسؤال "تقرير عن الحالات". استخدم النمط 3 تماماً ولكن **بدون** الـ `WHERE o.org_id = [ORG_ID]` نهائياً وبدون أي فلترة. هات كل الـ `dawah_requests` كما هي، ليظهر (أسلم، جديد، مرفوض، كله جنباً إلى جنب).
+
+- **الثبات وعدم الاختصار (Consistency Rule):** إياك أن تفترض أنك أجبت على المستخدم سابقاً فتقوم بالاختصار. في كل مرة يطلب فيها "كل حاجة" أو "تقرير شامل"، يجب عليك كتابة الـ Multi-Queries كاملة من جديد.
 
 """
 
@@ -796,7 +817,8 @@ def build_messages_with_history(system_prompt: str, messages: List[Dict[str, str
     question = user_question
     
     # Detect if we should use Arabic headers based ONLY on the user's explicit question
-    has_arabic = bool(re.search(r"[\u0600-\u06FF]", question))
+    # Use the detected language from the intelligence pass instead of just regex
+    has_arabic = (user_lang.lower() == "arabic")
     
     if has_arabic:
         user_content = f"رسالة المستخدم:\n{question}"
@@ -900,12 +922,14 @@ YOUR TASK: Analyze the user's latest message and the conversation history to ret
 
 JSON FIELDS:
 1. "rewritten_query": A FULL, EXPLICIT, standalone search query in Formal Arabic (الفصحى). Even if the user spoke English/French, this field MUST be Formal Arabic. If the message is just a greeting/gratitude, use "NO_SEARCH_NEEDED".
-2. "detected_language": The name of the language the user is speaking (e.g., "english", "french", "spanish", "hindi", "arabic"). Use lowercase.
+2. "detected_language": The name of the language the user is speaking (e.g., "english", "french", "spanish", "hindi", "arabic"). Use lowercase. Base this on the PRIMARY language of the text content, ignoring stray characters or punctuation from other scripts.
 3. "language_code": The ISO 2-letter code (en, fr, es, hi, ar, etc.).
 
 STRICT RULES:
 - Output ONLY valid JSON.
 - NO conversational filler, NO explanation.
+- If the text contains mixed English and Arabic characters but the content is clearly English (e.g., "hello ؟"), detected_language MUST be "english".
+
 """
         history_text = "\n".join([f"{'User' if m['role']=='user' else 'AI'}: {m['content']}" for m in messages[-3:]])
         prompt = f"### History:\n{history_text}\n\n### Last Message:\n{question}\n\n### JSON Output:"
@@ -1055,17 +1079,24 @@ STRICT RULES:
                 max_tokens=2048,
             )
             return response.choices[0].message.content or ""
-        except Exception as e:
-            logger.error(f"DeepSeek analytics failed: {e}. Falling back to Groq.")
+        except Exception as e_ds:
+            logger.error(f"DeepSeek analytics failed: {e_ds}. Falling back to Groq.")
+            # Log more specifically for 402
+            if "402" in str(e_ds) or "Insufficient Balance" in str(e_ds):
+                logger.critical(f"FATAL: DeepSeek reported INSUFFICIENT BALANCE for key {settings.DEEPSEEK_API_KEY[:6]}...")
             if client:
-                response = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=api_messages,
-                    temperature=0.0,
-                    max_tokens=2048,
-                )
-                return response.choices[0].message.content or ""
-            return ""
+                try:
+                    response = client.chat.completions.create(
+                        model="llama-3.1-8b-instant",
+                        messages=api_messages,
+                        temperature=0.0,
+                        max_tokens=2048,
+                    )
+                    return response.choices[0].message.content or ""
+                except Exception as e_groq:
+                    logger.error(f"Groq analytics failed: {e_groq}")
+                    return "[عذراً الخادم تحت ضغط حالياً وتم تخطي الحد الأقصى للطلبات (Rate Limit Exceeded)، يرجى الانتظار دقيقة والمحاولة مرة أخرى]"
+            return "[عذراً، لا يوجد أي نموذج ذكاء اصطناعي متاح حالياً]"
 
     # ─── generate_chat_response (non-stream fallback) ───────────────────────
     @staticmethod
@@ -1152,18 +1183,17 @@ STRICT RULES:
     def format_db_result(user_question: str, db_result: str, period_label: str = "") -> str:
         LLMService._ensure_clients()
 
-        STRICT_FORMATTER_PROMPT = """أنت خبير تحليل بيانات استراتيجي. مهمتك هي إنتاج تقرير منظم يتكون من ثلاثة أجزاء بالترتيب الآتي:
+        STRICT_FORMATTER_PROMPT = """أنت خبير تحليل بيانات استراتيجي. مهمتك هي إنتاج تقرير منظم يتكون من الأجزاء الآتية بالترتيب:
 
 **أولاً: العنوان الرئيسي للتقرير**
 - يجب أن يكون أول شيء في الرد.
 - الصيغة: `# تقرير [موضوع التقرير] خلال [الإطار الزمني]`
 - استخرج موضوع التقرير والإطار الزمني من سؤال المستخدم.
-- مثال: `# تقرير الطلبات خلال آخر ٣ أشهر`
-
-**ثانياً: جدول البيانات (Markdown Table)**
-- استخدم تنسيق `|---|---|` حصراً.
-- اعرض البيانات الحقيقية من قاعدة البيانات بدقة 100%.
-- حول المعرفات التقنية لمسميات بشرية (مثلاً: id → الاسم).
+**ثانياً: جداول البيانات (Markdown Tables)**
+- **إجباري جداً:** يجب عليك دائماً وأبداً تحويل جميع نتائج قاعدة البيانات (التي تأتيك كنص عادي) إلى جداول Markdown `|---|---|` منسقة بشكل احترافي.
+- يُمنع منعاً باتاً من أداة التنسيق (أنت) القيام بفلترة، تعديل، إخفاء، أو حذف أي صف من البيانات المرفقة لك من قاعدة البيانات. يجب عرض النتائج التي تأتيك كاملة كما هي!
+- لا تنخدع بسؤال المستخدم وتقوم بحذف نتائج لا تعجبك؛ وظيفتك هي التنسيق، اعرض كل ما يصلك!
+- إذا احتوت النتائج على أقسام مختلفة، ضع عنواناً فرعياً `###` فوق كل جدول وافصلهم، ولا تدمج كيانات في جدول واحد.
 
 **ثالثاً: التحليل الاستراتيجي**
 - **ملخص الأداء:** شرح مختصر للأرقام وما تعنيه.
@@ -1172,7 +1202,7 @@ STRICT RULES:
 
 قواعد إجبارية:
 - يُمنع منعاً باتاً اختراع أرقام أو بيانات غير موجودة في نتيجة قاعدة البيانات.
-- الرد يجب أن يبدأ بعنوان # ثم الجدول ثم التحليل بهذا الترتيب الإجباري.
+- الرد يجب أن يبدأ بعنوان # ثم الجداول المنفصلة ثم التحليل. المنهاجية أساسية للتوضيح.
 - تحدث بلغة مهنية وباللغة العربية الفصحى.
 """
         period_hint = f"\nالإطار الزمني للتقرير: {period_label}" if period_label else ""
@@ -1201,7 +1231,7 @@ STRICT RULES:
             if client:
                 try:
                     response = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
+                        model="llama-3.1-8b-instant",
                         messages=api_messages,
                         temperature=0.0,
                         max_tokens=1500,
@@ -1209,4 +1239,4 @@ STRICT RULES:
                     return response.choices[0].message.content or db_result
                 except Exception as e2:
                     logger.error(f"Groq Formatter failed: {e2}")
-            return f"**نتائج قاعدة البيانات:**\n\n```\n{db_result}\n```"
+            return f"### نتائج قاعدة البيانات (وضع الاستجابة السريعة):\n\n{db_result}"

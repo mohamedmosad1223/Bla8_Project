@@ -373,6 +373,14 @@ class DawahRequestsController:
                         "الحمد لله على نعمة الإسلام! 🕋✨", 
                         body
                     )
+
+                    # Send SMS to Muslim Caller
+                    from app.utils.sms_service import send_conversion_sms
+                    send_conversion_sms(
+                        to_phone=caller.phone,
+                        invited_name=invited_name,
+                    )
+
             
             # 2. Notify the Interested Person (The New Muslim) - Welcoming message
             if request.submitted_by_person_id:

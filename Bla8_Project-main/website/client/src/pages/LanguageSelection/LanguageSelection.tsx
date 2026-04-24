@@ -1,16 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout/AuthLayout';
+import { LANGUAGES } from '../../i18n';
 import './LanguageSelection.css';
-
-const languages = [
-  { code: 'SA', name: 'العربية', subtitle: 'ابدأ الآن' },
-  { code: 'US', name: 'English', subtitle: 'Start Now' },
-  { code: 'FR', name: 'Français', subtitle: 'Commencer' },
-  { code: 'DE', name: 'Deutsch', subtitle: 'Jetzt starten' },
-  { code: 'ES', name: 'Español', subtitle: 'Empezar ahora' },
-  { code: 'PK', name: 'اردو', subtitle: 'شروع کریں' },
-];
 
 const LanguageSelection = () => {
   const [selectedLang, setSelectedLang] = useState<string | null>(null);
@@ -41,7 +33,7 @@ const LanguageSelection = () => {
         </div>
 
         <div className="language-list">
-          {languages.map((lang) => (
+          {LANGUAGES.map((lang) => (
             <button 
               key={lang.code}
               className={`language-card ${selectedLang === lang.code ? 'selected' : ''}`}

@@ -8,8 +8,9 @@ import de from './translations/de.json';
 import es from './translations/es.json';
 import ur from './translations/ur.json';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-export type LangCode = 'SA' | 'US' | 'FR' | 'DE' | 'ES' | 'PK';
+import { LangCode, LANGUAGES, RTL_LANGS } from './languages';
+export * from './languages';
+
 
 interface TranslationDict {
   [key: string]: string | TranslationDict;
@@ -32,7 +33,7 @@ const translations: Record<LangCode, TranslationDict> = {
   PK: ur as unknown as TranslationDict,
 };
 
-const RTL_LANGS: LangCode[] = ['SA', 'PK'];
+
 
 // ─── Helper: resolve dot-notation key ────────────────────────────────────────
 function resolve(dict: TranslationDict, key: string): string {
@@ -96,12 +97,4 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export const useLanguage = (): LanguageContextType => useContext(LanguageContext);
 
-// ─── Language metadata (for UI pickers) ──────────────────────────────────────
-export const LANGUAGES: { code: LangCode; name: string; subtitle: string; flag: string }[] = [
-  { code: 'SA', name: 'العربية',  subtitle: 'ابدأ الآن',     flag: '🇸🇦' },
-  { code: 'US', name: 'English',  subtitle: 'Start Now',     flag: '🇺🇸' },
-  { code: 'FR', name: 'Français', subtitle: 'Commencer',     flag: '🇫🇷' },
-  { code: 'DE', name: 'Deutsch',  subtitle: 'Jetzt starten', flag: '🇩🇪' },
-  { code: 'ES', name: 'Español',  subtitle: 'Empezar ahora', flag: '🇪🇸' },
-  { code: 'PK', name: 'اردو',    subtitle: 'شروع کریں',     flag: '🇵🇰' },
-];
+
