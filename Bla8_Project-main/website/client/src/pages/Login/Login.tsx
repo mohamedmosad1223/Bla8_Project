@@ -44,10 +44,13 @@ const Login: React.FC = () => {
       // Full reload so RoleDashboard reads fresh localStorage
       window.location.href = '/dashboard';
     } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { detail?: string } }; request?: unknown; code?: string };
+      const apiErr = err as { response?: { status?: number; data?: { detail?: string } }; request?: unknown; code?: string };
       if (!apiErr.response && apiErr.request) {
         // Network error — backend is unreachable
         setError(isNonMuslim ? 'Cannot connect to server. Please try again later.' : 'لا يمكن الاتصال بالخادم. تأكد من تشغيل الباك اند وحاول مرة أخرى.');
+      } else if (apiErr.response?.status === 403) {
+        // Account pending/suspended — show the specific message from backend
+        setError(apiErr.response?.data?.detail || (isNonMuslim ? 'Your account is under review.' : 'حسابك قيد المراجعة.'));
       } else {
         setError(isNonMuslim ? t('login.wrongCredentials') : (apiErr.response?.data?.detail || 'كلمة المرور أو البريد الإلكتروني غير صحيح'));
       }

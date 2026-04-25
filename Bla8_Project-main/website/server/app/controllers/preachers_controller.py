@@ -115,6 +115,15 @@ class PreachersController:
                 "مراجعة طلب الانضمام",
                 "تم استلام طلب تسجيلك كداعية بنجاح وهو الآن قيد المراجعة. برجاء الانتظار حتى يتم تأكيد طلبك وتفعيل حسابك قريباً."
             )
+            # إرسال إشعار لجميع الأدمنز بوجود طلب داعية جديد
+            admins = db.query(User).filter(User.role == UserRole.admin).all()
+            for admin in admins:
+                NotificationsController.create_notification(
+                    db, admin.user_id, NotificationType.new_request,
+                    "طلب انضمام داعية جديد",
+                    f"تقدم الداعية «{payload.full_name}» بطلب انضمام جديد ويحتاج إلى مراجعة.",
+                    related_id=preacher.preacher_id
+                )
 
         db.commit()
         db.refresh(preacher)

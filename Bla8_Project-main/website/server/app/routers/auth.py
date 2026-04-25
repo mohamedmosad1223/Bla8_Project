@@ -36,6 +36,18 @@ def login(request: Request, response: Response, db: Session = Depends(get_db), f
             detail="كلمة المرور أو البريد الإلكتروني غير صحيح",
         )
     
+    # Check account status — pending/suspended users cannot login
+    if user.status == AccountStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="طلبك قيد المراجعة من قبل الإدارة. سيتم إشعارك عند قبول الطلب.",
+        )
+    if user.status == AccountStatus.suspended:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="حسابك معلق حالياً. يرجى التواصل مع الإدارة.",
+        )
+    
     # Optional role validation
     effective_role = role
     if role == "non_muslim":

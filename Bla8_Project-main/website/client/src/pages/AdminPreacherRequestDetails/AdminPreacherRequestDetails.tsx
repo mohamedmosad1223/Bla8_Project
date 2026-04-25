@@ -292,8 +292,13 @@ const AdminPreacherRequestDetails = () => {
           </div>
         </div>
       )}
-      {/* ── PDF Viewer Modal ── */}
-      {isPdfOpen && requestDetails?.qualification_file && (
+      {/* ── File Viewer Modal ── */}
+      {isPdfOpen && requestDetails?.qualification_file && (() => {
+        const filePath = requestDetails.qualification_file;
+        const fileUrl = `/uploads/${filePath}`;
+        const ext = filePath.split('.').pop()?.toLowerCase() || '';
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+        return (
         <div className="library-viewer-modal" onClick={() => setIsPdfOpen(false)}>
           <div className="library-viewer-content" onClick={e => e.stopPropagation()}>
             <button className="library-viewer-close" onClick={() => setIsPdfOpen(false)}>
@@ -302,7 +307,7 @@ const AdminPreacherRequestDetails = () => {
             <h2 className="library-viewer-title" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <span>ملف المؤهلات: {requestDetails.full_name}</span>
               <a 
-                href={`/uploads/${requestDetails.qualification_file}`} 
+                href={fileUrl} 
                 target="_blank" 
                 rel="noreferrer"
                 download 
@@ -312,15 +317,24 @@ const AdminPreacherRequestDetails = () => {
               </a>
             </h2>
             <div className="library-viewer-body">
-              <iframe 
-                src={`/uploads/${requestDetails.qualification_file}`} 
-                className="library-viewer-pdf" 
-                title="الملف المرفق" 
-              />
+              {isImage ? (
+                <img 
+                  src={fileUrl}
+                  alt="ملف المؤهلات"
+                  style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+                />
+              ) : (
+                <iframe 
+                  src={fileUrl}
+                  className="library-viewer-pdf" 
+                  title="الملف المرفق" 
+                />
+              )}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       <ErrorModal
         isOpen={isErrorModalOpen}

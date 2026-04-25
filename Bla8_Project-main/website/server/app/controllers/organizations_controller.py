@@ -63,6 +63,17 @@ class OrganizationsController:
             "أهلاً بك في منصة بلاغ", "تم استلام طلب الانضمام الخاص بجمعيتكم، وهو حالياً قيد المراجعة من قبل الإدارة."
         )
 
+        # إرسال إشعار لجميع الأدمنز بوجود طلب جمعية جديد
+        if not is_admin:
+            admins = db.query(User).filter(User.role == UserRole.admin).all()
+            for admin in admins:
+                NotificationsController.create_notification(
+                    db, admin.user_id, NotificationType.new_request,
+                    "طلب انضمام جمعية جديدة",
+                    f"تقدمت جمعية «{payload.organization_name}» بطلب انضمام جديد ويحتاج إلى مراجعة.",
+                    related_id=org.org_id
+                )
+
         db.commit()
         db.refresh(org)
         return {"message": OrganizationMessages.REGISTERED, "data": org}

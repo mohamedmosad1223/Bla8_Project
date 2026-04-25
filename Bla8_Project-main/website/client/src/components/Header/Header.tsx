@@ -132,9 +132,10 @@ const Header = () => {
   const handleNotifClick = (notif: Notification) => {
     if (!notif.is_read) markAsRead(notif.notification_id);
     
+    const role = localStorage.getItem('userRole');
+    
     // Navigate based on type + role
     if (notif.type === 'new_message' && notif.related_id) {
-      const role = localStorage.getItem('userRole');
       if (role === 'admin') {
         // Admin chat uses /admin/chat/:userId route
         navigate(`/admin/chat/${notif.related_id}`);
@@ -146,6 +147,23 @@ const Header = () => {
         // Use notify_id so Conversations.tsx can try both
         navigate(`/conversations?notify_id=${notif.related_id}`);
       }
+    } else if (notif.type === 'new_request' && role === 'admin') {
+      // طلب انضمام جديد — التوجه لصفحة الطلبات
+      if (notif.related_id) {
+        // Detect if it's org or preacher from the title
+        if (notif.title.includes('جمعية')) {
+          navigate(`/admin/requests/associations/${notif.related_id}`);
+        } else if (notif.title.includes('داعية')) {
+          navigate(`/admin/requests/preachers/${notif.related_id}`);
+        } else {
+          navigate('/admin/requests');
+        }
+      } else {
+        navigate('/admin/requests');
+      }
+    } else if (notif.type === 'status_changed' && role === 'admin') {
+      // طلب مُعاد تقديمه
+      navigate('/admin/requests');
     } else if (notif.type === 'request_update') {
        navigate('/current-requests');
     } else if (notif.type === 'account_rejected') {
