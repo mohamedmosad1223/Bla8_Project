@@ -145,19 +145,19 @@ const GovernoratesSection = ({ data }: { data: ChartDataPoint[] }) => {
 
 // ─── Donut Chart (Requests by Status) ────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  converted:         { label: 'تم إسلامه',    color: '#10B981' },
-  rejected:          { label: 'مرفوض',        color: '#EF4444' },
-  under_persuasion:  { label: 'قيد الإقناع',  color: '#F59E0B' },
-  in_progress:       { label: 'قيد الإقناع',  color: '#F59E0B' },
-  pending:           { label: 'قيد الإقناع',  color: '#F59E0B' },
-  assigned:          { label: 'قيد الإقناع',  color: '#F59E0B' },
-  cancelled:         { label: 'ملغي',          color: '#9CA3AF' },
-  closed:            { label: 'مغلق',          color: '#9CA3AF' },
+  converted: { label: 'تم إسلامه', color: '#10B981' },
+  rejected: { label: 'مرفوض', color: '#EF4444' },
+  under_persuasion: { label: 'قيد الإقناع', color: '#F59E0B' },
+  in_progress: { label: 'قيد الإقناع', color: '#F59E0B' },
+  pending: { label: 'قيد الإقناع', color: '#F59E0B' },
+  assigned: { label: 'قيد الإقناع', color: '#F59E0B' },
+  cancelled: { label: 'ملغي', color: '#9CA3AF' },
+  closed: { label: 'مغلق', color: '#9CA3AF' },
 };
 
 const DonutChart = ({ data }: { data: ChartDataPoint[] }) => {
   const [hovered, setHovered] = useState<number | null>(null);
-  
+
   if (!data || data.length === 0) {
     return <div style={{ textAlign: 'center', color: '#a0aec0', padding: '2rem' }}>لا توجد بيانات بعد</div>;
   }
@@ -325,13 +325,13 @@ const PreacherDashboard: React.FC = () => {
         setLoading(false);
         return;
       }
-      
+
       if (approvalStatus === 'rejected') {
         setIsRejected(true);
         const preacherId = profileRes?.extra_data?.preacher_id || JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.preacher_id;
         if (preacherId) {
-            const fullProfile = await preacherService.getById(preacherId);
-            setPreacherProfile(fullProfile.data?.data || fullProfile.data || fullProfile);
+          const fullProfile = await preacherService.getById(preacherId);
+          setPreacherProfile(fullProfile.data?.data || fullProfile.data || fullProfile);
         }
         setLoading(false);
         return;
@@ -366,8 +366,8 @@ const PreacherDashboard: React.FC = () => {
           <p style={{ color: '#6b572a', lineHeight: 1.6, marginBottom: '2rem' }}>
             طلب تسجيلك كداعية الآن قيد المراجعة من قبل الإدارة. سيتم إشعارك بمجرد قبول الطلب لتتمكن من الوصول للوحة التحكم والبدء في استلام طلبات المهتمين. يمكنك مراجعة بياناتك من قسم "الملف الشخصي".
           </p>
-          <button 
-            onClick={() => import('../../services/authService').then(m => m.authService.logout()).then(() => window.location.href = '/')}
+          <button
+            onClick={() => import('../../services/authService').then(m => m.authService.logout()).then(() => window.location.href = '/preacher-association-login')}
             style={{ background: '#dba841', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             تسجيل الخروج

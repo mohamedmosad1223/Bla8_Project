@@ -85,6 +85,10 @@ class NotificationType(str, enum.Enum):
     new_message = "new_message"
     account_approved = "account_approved"
     account_rejected = "account_rejected"
+    new_organization_request = "new_organization_request"
+    new_preacher_request = "new_preacher_request"
+    organization_data_updated = "organization_data_updated"
+    preacher_data_updated = "preacher_data_updated"
     alert_42h = "alert_42h"
     auto_reclaimed = "auto_reclaimed"
 

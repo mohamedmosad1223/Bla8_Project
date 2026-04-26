@@ -117,9 +117,9 @@ const Dashboard = () => {
           <p style={{ color: '#6b572a', lineHeight: 1.6, marginBottom: '2rem' }}>
             طلب تسجيل الجمعية الآن قيد المراجعة من قبل الإدارة. سيتم إشعارك بمجرد قبول الطلب لتتمكن من الوصول للوحة التحكم.
           </p>
-          <button 
-            type="button" 
-            onClick={() => import('../../services/authService').then(m => m.authService.logout().then(() => window.location.href = '/'))}
+          <button
+            type="button"
+            onClick={() => import('../../services/authService').then(m => m.authService.logout().then(() => window.location.href = '/preacher-association-login'))}
             style={{ background: '#dba841', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             تسجيل الخروج
@@ -216,10 +216,10 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-            <div className="chart-content" style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              flex: 1, 
+            <div className="chart-content" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
               minHeight: '250px',
               position: 'relative',
               opacity: loading ? 0.6 : 1,

@@ -45,7 +45,7 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     await authService.logout();
-    navigate('/');
+    navigate('/preacher-association-login');
   };
 
 
@@ -260,7 +260,7 @@ const Sidebar = () => {
           </li>
         </ul>
       </div>
-    
+
     </>
   );
 

@@ -5,7 +5,12 @@ import api from '../../services/api';
 import './AdminRequests.css';
 
 const AdminRequests = () => {
-  const [activeTab, setActiveTab] = useState<'associations' | 'preachers'>('associations');
+  const navigate = useNavigate();
+  const query = new URLSearchParams(window.location.search);
+
+  const [activeTab, setActiveTab] = useState<'associations' | 'preachers'>(
+    (query.get('tab') as 'associations' | 'preachers') || 'associations'
+  );
   const [assocRequests, setAssocRequests] = useState<any[]>([]);
   const [preacherRequests, setPreacherRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,7 +22,7 @@ const AdminRequests = () => {
   const [rejectNote, setRejectNote] = useState('');
 
   // Search & Filter & Sort States
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState(query.get('search') || '');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -38,7 +43,6 @@ const AdminRequests = () => {
 
   const filterRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   // Debounce search
   useEffect(() => {

@@ -133,18 +133,52 @@ const Header = () => {
     if (!notif.is_read) markAsRead(notif.notification_id);
     
     // Navigate based on type + role
+    const title = notif.title || '';
+    const body = notif.body || '';
+
     if (notif.type === 'new_message' && notif.related_id) {
       const role = localStorage.getItem('userRole');
       if (role === 'admin') {
-        // Admin chat uses /admin/chat/:userId route
         navigate(`/admin/chat/${notif.related_id}`);
       } else if (role === 'non_muslim' || role === 'interested') {
-        // Non-Muslim: related_id is always request_id
         navigate(`/conversations?request_id=${notif.related_id}`);
       } else {
-        // Preacher / Organization: related_id can be request_id OR sender user_id (DM)
-        // Use notify_id so Conversations.tsx can try both
         navigate(`/conversations?notify_id=${notif.related_id}`);
+      }
+    } 
+    // Handle Organization Requests (New or Updated)
+    else if (
+      notif.type === 'new_organization_request' || 
+      notif.type === 'organization_data_updated' ||
+      (notif.type === 'status_changed' && (title.includes('جمعية') || body.includes('الجمعية')))
+    ) {
+      if (notif.related_id) {
+        navigate(`/admin/requests/associations/${notif.related_id}`);
+      } else {
+        // Fallback: search for the organization name in the body
+        const orgNameMatch = body.match(/الجمعية\s+([^\s]+(\s+[^\s]+)?)/);
+        const searchName = orgNameMatch ? orgNameMatch[1] : '';
+        navigate(`/admin/requests?tab=associations&search=${encodeURIComponent(searchName)}`);
+      }
+    } 
+    // Handle Preacher Requests (New or Updated)
+    else if (
+      notif.type === 'new_preacher_request' || 
+      notif.type === 'preacher_data_updated' ||
+      (notif.type === 'status_changed' && (title.includes('داعية') || body.includes('الداعية') || title.includes('انضمام')))
+    ) {
+      if (notif.related_id) {
+        const role = localStorage.getItem('userRole');
+        if (role === 'admin') {
+          navigate(`/admin/requests/preachers/${notif.related_id}`);
+        } else if (role === 'organization') {
+          navigate(`/callers/view/${notif.related_id}`);
+        }
+      } else {
+        // Fallback: search for the preacher name in the body
+        const preacherNameMatch = body.match(/الداعية\s+([^\s]+(\s+[^\s]+)?)/);
+        const searchName = preacherNameMatch ? preacherNameMatch[1] : '';
+        navigate(`/admin/requests?tab=preachers&search=${encodeURIComponent(searchName)}`);
       }
     } else if (notif.type === 'request_update') {
        navigate('/current-requests');
@@ -207,6 +241,8 @@ const Header = () => {
                     >
                       <div className="notif-icon-wrap">
                         {notif.type === 'new_message' ? <Bell size={16} color="#DBA829" /> :
+                         (notif.type === 'new_organization_request' || notif.type === 'new_preacher_request') ? <Bell size={16} color="#3B82F6" /> :
+                         (notif.type === 'organization_data_updated' || notif.type === 'preacher_data_updated') ? <Clock size={16} color="#F59E0B" /> :
                          notif.type === 'request_update' ? <CheckCircle size={16} color="#10B981" /> :
                          <Clock size={16} color="#475569" />}
                       </div>

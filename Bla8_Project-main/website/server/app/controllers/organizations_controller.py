@@ -63,6 +63,16 @@ class OrganizationsController:
             "أهلاً بك في منصة بلاغ", "تم استلام طلب الانضمام الخاص بجمعيتكم، وهو حالياً قيد المراجعة من قبل الإدارة."
         )
 
+        # إرسال إشعار للمديرين
+        admins = db.query(User).filter(User.role == UserRole.admin).all()
+        for admin in admins:
+            NotificationsController.create_notification(
+                db, admin.user_id, NotificationType.new_organization_request,
+                "طلب انضمام جمعية جديد",
+                f"تم استلام طلب انضمام جديد من جمعية: {payload.organization_name}",
+                related_id=org.org_id
+            )
+
         db.commit()
         db.refresh(org)
         return {"message": OrganizationMessages.REGISTERED, "data": org}
@@ -262,9 +272,10 @@ class OrganizationsController:
             admins = db.query(User).filter(User.role == UserRole.admin).all()
             for admin in admins:
                 NotificationsController.create_notification(
-                    db, admin.user_id, NotificationType.status_changed,
-                    "طلب انضمام مُعاد تقديمه",
-                    f"قامت الجمعية {org.organization_name} بتحديث بياناتها بعد الرفض."
+                    db, admin.user_id, NotificationType.organization_data_updated,
+                    "طلب انضمام جمعية مُعاد تقديمه",
+                    f"قامت الجمعية {org.organization_name} بتحديث بياناتها بعد الرفض.",
+                    related_id=org.org_id
                 )
 
         db.commit()

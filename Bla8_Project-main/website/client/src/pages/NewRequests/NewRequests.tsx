@@ -362,6 +362,7 @@ const NewRequests = () => {
   const [isSkipModalOpen, setIsSkipModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isPending, setIsPending] = useState(false);
   const [pendingActionRequest, setPendingActionRequest] = useState<PoolRequest | null>(null);
 
   // ── Filter & Sort state ───────────────────────────────────────────────────
@@ -407,7 +408,16 @@ const NewRequests = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchPool(); }, [fetchPool]);
+  useEffect(() => { 
+    // Check approval status
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const status = userData?.extra_data?.approval_status;
+    if (status === 'pending' || status === 'rejected') {
+      setIsPending(true);
+    }
+    
+    fetchPool(); 
+  }, [fetchPool]);
 
   // ── Click outside close ───────────────────────────────────────────────────
   useEffect(() => {
@@ -542,7 +552,25 @@ const NewRequests = () => {
         <ErrorModal onClose={closeModals} message={errorMessage} />
       )}
 
-      {view === 'detail' && selectedRequest ? (
+      {isPending ? (
+        <div className="nreq-body-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <div style={{ textAlign: 'center', color: '#e53e3e', background: '#fff5f5', padding: '2.5rem', borderRadius: '15px', border: '1px solid #fed7d7', maxWidth: '600px', width: '90%' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem' }}>⚠️</div>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '0.8rem', fontWeight: 700, color: '#c53030' }}>
+              {JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.approval_status === 'rejected' 
+                ? 'تم رفض الحساب' 
+                : (userRole === 'preacher' ? 'لا يمكنك رؤية الطلبات الجديدة حتى تتم الموافقة على حسابك' : 'حسابك قيد المراجعة')}
+            </h2>
+            <p style={{ color: '#9b2c2c', lineHeight: 1.6, fontSize: '0.95rem' }}>
+              {JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.approval_status === 'rejected'
+                ? 'نعتذر، لقد تم رفض طلب انضمامكم للنظام. يرجى مراجعة أسباب الرفض من الصفحة الرئيسية وتعديل البيانات المطلوبة.'
+                : (userRole === 'preacher' 
+                    ? 'نعتذر، ولكن حسابك كداعية لا يزال تحت المراجعة من قبل الإدارة. ستتمكن من استلام طلبات جديدة فور تفعيل حسابك.' 
+                    : 'نعتذر، ولكن حساب الجمعية لا يزال تحت المراجعة. ستتمكن من إدارة الطلبات والدعاة فور تفعيل الحساب من قبل الإدارة.')}
+            </p>
+          </div>
+        </div>
+      ) : view === 'detail' && selectedRequest ? (
         <DetailView
           detail={selectedRequest}
           onBack={handleBack}

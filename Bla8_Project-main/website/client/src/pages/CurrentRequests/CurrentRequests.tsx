@@ -193,9 +193,6 @@ const UpdateStatusModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
   const handleSave = async () => {
     setLoading(true);
     setError('');
@@ -236,46 +233,39 @@ const UpdateStatusModal = ({
   );
 
   return (
-    <>
-      <div className="umodal-backdrop" onClick={onClose}>
-        <div className="umodal-box" onClick={e => e.stopPropagation()} dir="rtl">
-          <button className="umodal-close" onClick={onClose}><X size={20} strokeWidth={2} /></button>
-          <h2 className="umodal-title">تحديث الحالة</h2>
-          <div className="umodal-toggle-container">
-            <button
-              className={`umodal-tab-btn ${selected === 'Islam' ? 'active-green' : 'inactive-gray'}`}
-              onClick={() => setSelected('Islam')}
-            >تم اسلامه</button>
-            <button
-              className={`umodal-tab-btn ${selected === 'Reject' ? 'active-green' : 'inactive-gray'}`}
-              onClick={() => setSelected('Reject')}
-            >رفض الاسلام</button>
-          </div>
-          <div className="umodal-field">
-            <textarea
-              className="umodal-textarea"
-              placeholder="مثال ملاحظة"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              rows={4}
-            />
-            <span className="umodal-label-float">ملاحظة</span>
-          </div>
-          {error && <div style={{ color: '#ff6b6b', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
-          <div className="umodal-actions">
-            <button className="umodal-btn-save" onClick={handleSave} disabled={loading}>
-              {loading ? '...' : 'حفظ'}
-            </button>
-            <button className="umodal-btn-cancel" onClick={onClose} disabled={loading}>الغاء</button>
-          </div>
+    <div className="umodal-backdrop" onClick={onClose}>
+      <div className="umodal-box" onClick={e => e.stopPropagation()} dir="rtl">
+        <button className="umodal-close" onClick={onClose}><X size={20} strokeWidth={2} /></button>
+        <h2 className="umodal-title">تحديث الحالة</h2>
+        <div className="umodal-toggle-container">
+          <button
+            className={`umodal-tab-btn ${selected === 'Islam' ? 'active-green' : 'inactive-gray'}`}
+            onClick={() => setSelected('Islam')}
+          >تم اسلامه</button>
+          <button
+            className={`umodal-tab-btn ${selected === 'Reject' ? 'active-green' : 'inactive-gray'}`}
+            onClick={() => setSelected('Reject')}
+          >رفض الاسلام</button>
+        </div>
+        <div className="umodal-field">
+          <textarea
+            className="umodal-textarea"
+            placeholder="مثال ملاحظة"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            rows={4}
+          />
+          <span className="umodal-label-float">ملاحظة</span>
+        </div>
+        {error && <div style={{ color: '#ff6b6b', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+        <div className="umodal-actions">
+          <button className="umodal-btn-save" onClick={handleSave} disabled={loading}>
+            {loading ? '...' : 'حفظ'}
+          </button>
+          <button className="umodal-btn-cancel" onClick={onClose} disabled={loading}>الغاء</button>
         </div>
       </div>
-      <ErrorModal 
-        isOpen={isErrorModalOpen} 
-        onClose={() => setIsErrorModalOpen(false)} 
-        message={errorMessage} 
-      />
-    </>
+    </div>
   );
 };
 
@@ -521,6 +511,8 @@ const CurrentRequests = () => {
   const [allRequests, setAllRequests] = useState<PoolRequest[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
+  const [isPending, setIsPending]     = useState(false);
+  const userRole = localStorage.getItem('userRole');
 
   // ── View state ──────────────────────────────────────────────────────────────
   const [view, setView]                   = useState<'list' | 'detail'>('list');
@@ -585,7 +577,15 @@ const CurrentRequests = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  useEffect(() => { 
+    // Check approval status
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const status = userData?.extra_data?.approval_status;
+    if (status === 'pending' || status === 'rejected') {
+      setIsPending(true);
+    }
+    fetchRequests(); 
+  }, [fetchRequests]);
 
   // ── Click outside close ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -662,7 +662,25 @@ const CurrentRequests = () => {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="creq-page">
-      {view === 'detail' && selectedRequest ? (
+      {isPending ? (
+        <div className="creq-body-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <div style={{ textAlign: 'center', color: '#e53e3e', background: '#fff5f5', padding: '2.5rem', borderRadius: '15px', border: '1px solid #fed7d7', maxWidth: '600px', width: '90%' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem' }}>⚠️</div>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '0.8rem', fontWeight: 700, color: '#c53030' }}>
+              {JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.approval_status === 'rejected' 
+                ? 'تم رفض الحساب' 
+                : (userRole === 'preacher' ? 'لا يمكنك رؤية الطلبات الحالية حتى تتم الموافقة على حسابك' : 'حسابك قيد المراجعة')}
+            </h2>
+            <p style={{ color: '#9b2c2c', lineHeight: 1.6, fontSize: '0.95rem' }}>
+              {JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.approval_status === 'rejected'
+                ? 'نعتذر، لقد تم رفض طلب انضمامكم للنظام. يرجى مراجعة أسباب الرفض من الصفحة الرئيسية وتعديل البيانات المطلوبة.'
+                : (userRole === 'preacher' 
+                    ? 'نعتذر، ولكن حسابك كداعية لا يزال تحت المراجعة من قبل الإدارة. ستتمكن من رؤية طلباتك الحالية فور تفعيل حسابك.' 
+                    : 'نعتذر، ولكن حساب الجمعية لا يزال تحت المراجعة. ستتمكن من إدارة الطلبات والدعاة فور تفعيل الحساب من قبل الإدارة.')}
+            </p>
+          </div>
+        </div>
+      ) : view === 'detail' && selectedRequest ? (
         <DetailView detail={selectedRequest} onBack={handleBack} />
       ) : (
         <>
