@@ -90,6 +90,7 @@ const Callers = () => {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
   const [togglingId,    setTogglingId]    = useState<number | null>(null); 
+  const [isPending,     setIsPending]     = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [preacherToDelete, setPreacherToDelete] = useState<PreacherAPI | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -163,7 +164,15 @@ const Callers = () => {
   }, [sortOrder, filterDateAfter, filterGender, filterStatus]);
 
   // Initial fetch
-  useEffect(() => { fetchPreachers(); }, [fetchPreachers]);
+  useEffect(() => { 
+    // Check approval status
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const status = userData?.extra_data?.approval_status;
+    if (status === 'pending' || status === 'rejected') {
+      setIsPending(true);
+    }
+    fetchPreachers(); 
+  }, [fetchPreachers]);
 
   // ── Toggle active/suspended ────────────────────────────────────────────
   const toggleActive = async (preacher: PreacherAPI) => {
@@ -254,18 +263,34 @@ const Callers = () => {
         onClose={() => setIsErrorModalOpen(false)}
         message={errorMessage}
       />
-      <div className="callers-header-area">
-        <h1 className="page-title">دعاة الجمعية</h1>
-
-        {isSuspended && (
-          <div className="error-alert" style={{ marginBottom: '20px', width: '100%', maxWidth: 'none' }}>
-            <AlertCircle size={20} />
-            <div style={{ marginRight: '10px' }}>
-              <strong>تنبيه: حساب الجمعية موقوف حالياً.</strong>
-              <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>لا يمكنك إضافة دعاة جدد، أو تعديل حالاتهم، أو حذفهم حتى يتم تفعيل الحساب من قبل الإدارة.</p>
-            </div>
+      {isPending ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '500px', width: '100%' }}>
+          <div style={{ textAlign: 'center', color: '#e53e3e', background: '#fff5f5', padding: '3rem', borderRadius: '15px', border: '1px solid #fed7d7', maxWidth: '600px', width: '90%' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>⏳</div>
+            <h2 style={{ fontSize: '1.6rem', marginBottom: '1rem', fontWeight: 700, color: '#c53030' }}>
+               {JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.approval_status === 'rejected' ? 'تم رفض حساب الجمعية' : 'حساب الجمعية قيد المراجعة'}
+            </h2>
+            <p style={{ color: '#9b2c2c', lineHeight: 1.8, fontSize: '1rem' }}>
+              {JSON.parse(localStorage.getItem('userData') || '{}')?.extra_data?.approval_status === 'rejected'
+                ? 'نعتذر، لقد تم رفض طلب انضمام الجمعية للنظام. يرجى مراجعة أسباب الرفض من الصفحة الرئيسية.'
+                : 'نعتذر، ولكن حساب الجمعية لا يزال تحت المراجعة من قبل الإدارة. ستتمكن من إضافة وإدارة دعاة الجمعية فور تفعيل الحساب.'}
+            </p>
           </div>
-        )}
+        </div>
+      ) : (
+        <>
+          <div className="callers-header-area">
+            <h1 className="page-title">دعاة الجمعية</h1>
+
+            {isSuspended && (
+              <div className="error-alert" style={{ marginBottom: '20px', width: '100%', maxWidth: 'none' }}>
+                <AlertCircle size={20} />
+                <div style={{ marginRight: '10px' }}>
+                  <strong>تنبيه: حساب الجمعية موقوف حالياً.</strong>
+                  <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>لا يمكنك إضافة دعاة جدد، أو تعديل حالاتهم، أو حذفهم حتى يتم تفعيل الحساب من قبل الإدارة.</p>
+                </div>
+              </div>
+            )}
 
         <div className="callers-actions">
           <button 
@@ -461,8 +486,21 @@ const Callers = () => {
       <div className="callers-content-wrapper">
         <div className="callers-content">
 
+          {/* Pending Approval warning */}
+          {isPending && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', width: '100%' }}>
+              <div style={{ textAlign: 'center', color: '#e53e3e', background: '#fff5f5', padding: '2.5rem', borderRadius: '15px', border: '1px solid #fed7d7', maxWidth: '600px', width: '90%' }}>
+                <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem' }}>⏳</div>
+                <h2 style={{ fontSize: '1.4rem', marginBottom: '0.8rem', fontWeight: 700, color: '#c53030' }}>حساب الجمعية قيد المراجعة</h2>
+                <p style={{ color: '#9b2c2c', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  نعتذر، ولكن حساب الجمعية لا يزال تحت المراجعة من قبل الإدارة. ستتمكن من إضافة وإدارة دعاة الجمعية فور تفعيل الحساب.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Loading */}
-          {loading && (
+          {!isPending && loading && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px', gap: '12px', color: '#6B7280' }}>
               <Loader2 size={28} className="spin-icon" />
               <span>جاري تحميل قائمة الدعاة...</span>
@@ -662,6 +700,8 @@ const Callers = () => {
 
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

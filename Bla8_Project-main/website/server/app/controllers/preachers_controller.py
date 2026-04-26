@@ -111,10 +111,20 @@ class PreachersController:
         
         if approval_status == ApprovalStatus.pending:
             NotificationsController.create_notification(
-                db, user.user_id, NotificationType.account_approved,
+                db, user.user_id, NotificationType.status_changed,
                 "مراجعة طلب الانضمام",
                 "تم استلام طلب تسجيلك كداعية بنجاح وهو الآن قيد المراجعة. برجاء الانتظار حتى يتم تأكيد طلبك وتفعيل حسابك قريباً."
             )
+            
+            # إرسال إشعار للمديرين (لو تسجيل ذاتي) أو للجمعية (لو الجمعية هي اللي ضافته - بس هنا الأفضل دايماً للأدمن لو Pending)
+            admins = db.query(User).filter(User.role == UserRole.admin).all()
+            for admin in admins:
+                NotificationsController.create_notification(
+                    db, admin.user_id, NotificationType.new_preacher_request,
+                    "طلب انضمام داعية جديد",
+                    f"تم استلام طلب انضمام جديد من الداعية: {preacher.full_name}",
+                    related_id=preacher.preacher_id
+                )
 
         db.commit()
         db.refresh(preacher)
@@ -378,17 +388,19 @@ class PreachersController:
                 org = db.query(Organization).filter(Organization.org_id == preacher.org_id).first()
                 if org and org.user_id:
                     NotificationsController.create_notification(
-                        db, org.user_id, NotificationType.status_changed,
+                        db, org.user_id, NotificationType.preacher_data_updated,
                         "طلب انضمام مُعاد تقديمه",
-                        f"قام الداعية {preacher.full_name} بتحديث بياناته بعد الرفض."
+                        f"قام الداعية {preacher.full_name} بتحديث بياناته بعد الرفض.",
+                        related_id=preacher.preacher_id
                     )
             else:
                 admins = db.query(User).filter(User.role == UserRole.admin).all()
                 for admin in admins:
                     NotificationsController.create_notification(
-                        db, admin.user_id, NotificationType.status_changed,
-                        "طلب انضمام مُعاد تقديمه",
-                        f"قام الداعية {preacher.full_name} بتحديث بياناته بعد الرفض."
+                        db, admin.user_id, NotificationType.preacher_data_updated,
+                        "طلب انضمام داعية مُعاد تقديمه",
+                        f"قام الداعية {preacher.full_name} بتحديث بياناته بعد الرفض.",
+                        related_id=preacher.preacher_id
                     )
 
         db.commit()

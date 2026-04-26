@@ -77,7 +77,7 @@ const RejectedAssociationView = ({ profile }: { profile: any }) => {
               تعديل البيانات وإعادة التقديم
             </button>
             <button 
-              onClick={() => authService.logout().then(() => window.location.href = '/')}
+              onClick={() => authService.logout().then(() => window.location.href = '/preacher-association-login')}
               style={{ background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '0.8rem 0', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
             >
               تسجيل الخروج
