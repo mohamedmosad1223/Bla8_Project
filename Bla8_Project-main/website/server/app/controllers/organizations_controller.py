@@ -75,7 +75,9 @@ class OrganizationsController:
 
         db.commit()
         db.refresh(org)
-        return {"message": OrganizationMessages.REGISTERED, "data": org}
+        org_data = {column.name: getattr(org, column.name) for column in org.__table__.columns}
+        org_data["account_status"] = user.status.value
+        return {"message": OrganizationMessages.REGISTERED, "data": org_data}
 
     @staticmethod
     def list_organizations(
@@ -280,7 +282,9 @@ class OrganizationsController:
 
         db.commit()
         db.refresh(org)
-        return {"message": OrganizationMessages.UPDATED, "data": org}
+        org_data = {column.name: getattr(org, column.name) for column in org.__table__.columns}
+        org_data["account_status"] = org.user.status.value if org.user else AccountStatus.pending.value
+        return {"message": OrganizationMessages.UPDATED, "data": org_data}
 
     @staticmethod
     def delete_organization(db: Session, org_id: int):

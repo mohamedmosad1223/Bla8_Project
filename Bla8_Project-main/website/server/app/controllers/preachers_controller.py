@@ -150,7 +150,25 @@ class PreachersController:
             print(f"Error sending welcome email: {e}")
             # لا نوقف العملية لو فشل الإيميل، لكن نكتفي بتسجيل الخطأ
 
-        return {"message": PreacherMessages.REGISTERED, "data": preacher}
+        return {
+            "message": PreacherMessages.REGISTERED,
+            "data": {
+                "preacher_id": preacher.preacher_id,
+                "user_id": preacher.user_id,
+                "full_name": preacher.full_name,
+                "email": preacher.email,
+                "phone": preacher.phone,
+                "gender": preacher.gender.value if preacher.gender else None,
+                "type": preacher.type.value if preacher.type else None,
+                "status": preacher.status.value if preacher.status else None,
+                "approval_status": preacher.approval_status.value if preacher.approval_status else None,
+                "nationality_country_id": preacher.nationality_country_id,
+                "scientific_qualification": preacher.scientific_qualification,
+                "org_id": preacher.org_id,
+                "qualification_file": preacher.qualification_file,
+                "created_at": preacher.created_at.isoformat() if preacher.created_at else None,
+            }
+        }
 
     @staticmethod
     def list_preachers(
